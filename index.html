@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,70 +14,99 @@
             border: 2px solid transparent;
             transition: all 0.2s;
         }
-
         .editable-cell:hover {
             background-color: #f3f4f6;
             border-color: #3b82f6;
         }
-
         .editing {
             background-color: #fff;
             border-color: #3b82f6;
         }
-
         .truncated-desc {
             max-width: 200px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
         .expanded-desc {
             white-space: pre-wrap;
             max-width: 300px;
         }
-
         @media (max-width: 768px) {
             .editable-cell {
                 cursor: default;
                 pointer-events: none;
             }
-
             .editable-cell:hover {
                 background-color: transparent;
                 border-color: transparent;
             }
-
             .mobile-edit-btn {
                 display: inline-block;
             }
-
             .desktop-only-hint {
                 display: none;
             }
         }
-
         @media (min-width: 769px) {
             .mobile-edit-btn {
                 display: none;
             }
         }
+        #mobileMenu {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
-
 <body class="bg-gray-50">
     <div id="app"></div>
 
-    <div id="editJobModal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()"></div>
+    
+    <!-- Mobile Menu Sidebar -->
+    <div id="mobileMenu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform -translate-x-full">
+        <div class="p-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-gray-900">Menu</h2>
+                <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <nav class="space-y-2">
+                <button onclick="changeView('dashboard'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                    📊 Dashboard
+                </button>
+                <button onclick="changeView('create-job'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                    ➕ Create Job
+                </button>
+                <button onclick="changeView('all-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                    📋 Active Jobs
+                </button>
+                <button onclick="changeView('completed-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                    ✅ Completed Jobs
+                </button>
+                <button onclick="changeView('staff-management'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                    👥 Staff
+                </button>
+                <hr class="my-4">
+                <button onclick="logout(); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">
+                    🚪 Logout
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <div id="editJobModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Edit Job</h2>
                     <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -121,19 +149,16 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                        <textarea id="edit_address" required rows="2"
-                            class="w-full px-4 py-2 border rounded-lg"></textarea>
+                        <textarea id="edit_address" required rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
-                        <textarea id="edit_job_description" required rows="4"
-                            class="w-full px-4 py-2 border rounded-lg"></textarea>
+                        <textarea id="edit_job_description" required rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
-                            <input type="number" step="0.01" id="edit_price" required
-                                class="w-full px-4 py-2 border rounded-lg">
+                            <input type="number" step="0.01" id="edit_price" required class="w-full px-4 py-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">GST</label>
@@ -157,38 +182,45 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Amount Paid ($)</label>
-                        <input type="number" step="0.01" id="edit_amount_paid"
-                            class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" step="0.01" id="edit_amount_paid" class="w-full px-4 py-2 border rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Photo URLs</label>
-                        <textarea id="edit_photo_urls" rows="3" placeholder="One URL per line"
-                            class="w-full px-4 py-2 border rounded-lg"></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos Album)</label>
+                        <input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-4 py-2 border rounded-lg">
+                        <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p>
                     </div>
                     <div class="flex gap-4 pt-4">
-                        <button type="submit"
-                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save
-                            Changes</button>
-                        <button type="button" onclick="closeEditModal()"
-                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save Changes</button>
+                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-
     <script>
-        const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+        
         let currentUser = null;
         let currentView = 'dashboard';
         let jobs = [];
         let staff = [];
         let editingJob = null;
         let expandedDescriptions = new Set();
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            if (menu.classList.contains('-translate-x-full')) {
+                menu.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                menu.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
 
         async function login(username, password) {
             try {
@@ -364,7 +396,7 @@
             document.getElementById('edit_price_includes_gst').checked = job.price_includes_gst;
             document.getElementById('edit_priority').value = job.priority;
             document.getElementById('edit_amount_paid').value = job.amount_paid || '';
-            document.getElementById('edit_photo_urls').value = (job.photo_urls || []).join('\n');
+            document.getElementById('edit_photo_urls').value = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
             document.getElementById('edit_assigned_to').innerHTML = '<option value="">Unassigned</option>' + staff.map(s => `<option value="${s.id}" ${job.assigned_to === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('');
         }
 
@@ -375,7 +407,7 @@
         async function handleEditSubmit(e) {
             e.preventDefault();
             const jobId = document.getElementById('edit_job_id').value;
-            const photoUrls = document.getElementById('edit_photo_urls').value.split('\n').map(url => url.trim()).filter(url => url.length > 0);
+            const photoUrl = document.getElementById('edit_photo_urls').value.trim();
             const jobData = {
                 date: document.getElementById('edit_date').value,
                 start_time: document.getElementById('edit_start_time').value,
@@ -391,7 +423,7 @@
                 priority: document.getElementById('edit_priority').value,
                 assigned_to: document.getElementById('edit_assigned_to').value || null,
                 amount_paid: document.getElementById('edit_amount_paid').value ? parseFloat(document.getElementById('edit_amount_paid').value) : null,
-                photo_urls: photoUrls.length > 0 ? photoUrls : null
+                photo_urls: photoUrl ? [photoUrl] : null
             };
 
             if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
@@ -476,21 +508,27 @@
 
         function renderHeader() {
             return `
-                <nav class="bg-white shadow-sm sticky top-0 z-50">
+                <nav class="bg-white shadow-sm sticky top-0 z-30">
                     <div class="max-w-full mx-auto px-4">
                         <div class="flex justify-between items-center h-16">
-                            <div class="flex items-center space-x-8">
-                                <h1 class="text-xl font-bold text-gray-900">Job Management</h1>
-                                <div class="hidden md:flex space-x-4">
-                                    <button onclick="changeView('dashboard')" class="px-3 py-2 rounded-md ${currentView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Dashboard</button>
-                                    <button onclick="changeView('create-job')" class="px-3 py-2 rounded-md ${currentView === 'create-job' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Create Job</button>
-                                    <button onclick="changeView('all-jobs')" class="px-3 py-2 rounded-md ${currentView === 'all-jobs' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">All Jobs</button>
-                                    <button onclick="changeView('staff-management')" class="px-3 py-2 rounded-md ${currentView === 'staff-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Staff</button>
+                            <div class="flex items-center space-x-4">
+                                <button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    </svg>
+                                </button>
+                                <h1 class="text-lg md:text-xl font-bold text-gray-900">Job Management</h1>
+                                <div class="hidden md:flex space-x-2">
+                                    <button onclick="changeView('dashboard')" class="px-3 py-2 rounded-md text-sm ${currentView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Dashboard</button>
+                                    <button onclick="changeView('create-job')" class="px-3 py-2 rounded-md text-sm ${currentView === 'create-job' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Create Job</button>
+                                    <button onclick="changeView('all-jobs')" class="px-3 py-2 rounded-md text-sm ${currentView === 'all-jobs' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Active Jobs</button>
+                                    <button onclick="changeView('completed-jobs')" class="px-3 py-2 rounded-md text-sm ${currentView === 'completed-jobs' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Completed</button>
+                                    <button onclick="changeView('staff-management')" class="px-3 py-2 rounded-md text-sm ${currentView === 'staff-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}">Staff</button>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-4">
-                                <span class="text-sm text-gray-600">Welcome, ${currentUser.full_name}</span>
-                                <button onclick="logout()" class="text-sm text-red-600 hover:text-red-700">Logout</button>
+                            <div class="flex items-center space-x-2 md:space-x-4">
+                                <span class="text-xs md:text-sm text-gray-600 hidden sm:inline">Hi, ${currentUser.full_name}</span>
+                                <button onclick="logout()" class="text-xs md:text-sm text-red-600 hover:text-red-700 font-medium">Logout</button>
                             </div>
                         </div>
                     </div>
@@ -503,6 +541,7 @@
                 case 'dashboard': return renderDashboard();
                 case 'create-job': return renderJobForm();
                 case 'all-jobs': return renderAllJobs();
+                case 'completed-jobs': return renderCompletedJobs();
                 case 'staff-management': return renderStaffManagement();
                 default: return renderDashboard();
             }
@@ -531,29 +570,41 @@
             const workload = staff.map(s => ({...s, activeJobs: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length}));
 
             return `
-                <div class="space-y-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white rounded-lg shadow p-6"><div class="text-sm font-medium text-gray-500">Unassigned</div><div class="text-3xl font-bold text-yellow-600 mt-2">${unassigned}</div></div>
-                        <div class="bg-white rounded-lg shadow p-6"><div class="text-sm font-medium text-gray-500">Assigned</div><div class="text-3xl font-bold text-blue-600 mt-2">${assigned}</div></div>
-                        <div class="bg-white rounded-lg shadow p-6"><div class="text-sm font-medium text-gray-500">In Progress</div><div class="text-3xl font-bold text-purple-600 mt-2">${inProgress}</div></div>
-                        <div class="bg-white rounded-lg shadow p-6"><div class="text-sm font-medium text-gray-500">Completed Today</div><div class="text-3xl font-bold text-green-600 mt-2">${completedToday}</div></div>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-                        <h3 class="text-lg font-medium mb-4">Today's Revenue</h3>
-                        <div class="text-4xl font-bold mb-4">$${todayRevenue.toFixed(2)}</div>
-                        <div class="flex space-x-6 text-sm">
-                            <div><div class="opacity-90">Cash</div><div class="text-xl font-semibold">$${cashTotal.toFixed(2)}</div></div>
-                            <div><div class="opacity-90">Bank Transfer</div><div class="text-xl font-semibold">$${bankTotal.toFixed(2)}</div></div>
+                <div class="space-y-4 md:space-y-6">
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                            <div class="text-xs md:text-sm font-medium text-gray-500">Unassigned</div>
+                            <div class="text-2xl md:text-3xl font-bold text-yellow-600 mt-2">${unassigned}</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                            <div class="text-xs md:text-sm font-medium text-gray-500">Assigned</div>
+                            <div class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">${assigned}</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                            <div class="text-xs md:text-sm font-medium text-gray-500">In Progress</div>
+                            <div class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">${inProgress}</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                            <div class="text-xs md:text-sm font-medium text-gray-500">Done Today</div>
+                            <div class="text-2xl md:text-3xl font-bold text-green-600 mt-2">${completedToday}</div>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Staff Workload</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 md:p-6 text-white">
+                        <h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Today's Revenue</h3>
+                        <div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4">${todayRevenue.toFixed(2)}</div>
+                        <div class="flex space-x-4 md:space-x-6 text-xs md:text-sm">
+                            <div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold">${cashTotal.toFixed(2)}</div></div>
+                            <div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold">${bankTotal.toFixed(2)}</div></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                        <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Staff Workload</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                             ${workload.map(s => `
-                                <div class="border rounded-lg p-4" style="border-left: 4px solid ${s.color_code}">
-                                    <div class="font-medium text-gray-900">${s.full_name}</div>
-                                    <div class="text-2xl font-bold mt-2" style="color: ${s.color_code}">${s.activeJobs} active</div>
+                                <div class="border rounded-lg p-3 md:p-4" style="border-left: 4px solid ${s.color_code}">
+                                    <div class="text-sm md:text-base font-medium text-gray-900">${s.full_name}</div>
+                                    <div class="text-xl md:text-2xl font-bold mt-1 md:mt-2" style="color: ${s.color_code}">${s.activeJobs}</div>
                                 </div>
                             `).join('')}
                         </div>
@@ -567,53 +618,54 @@
             const isEditing = !!editingJob;
             return `
                 <div class="max-w-3xl mx-auto">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-6">${isEditing ? 'Edit Job' : 'Create New Job'}</h2>
-                        <form onsubmit="handleJobSubmit(event)" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg shadow p-4 md:p-6">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">${isEditing ? 'Edit Job' : 'Create New Job'}</h2>
+                        <form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                                <input type="date" name="date" required value="${job.date || ''}" class="w-full px-4 py-2 border rounded-lg"></div>
+                                <input type="date" name="date" required value="${job.date || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-                                <select name="start_time" required class="w-full px-4 py-2 border rounded-lg"><option value="">Select...</option>${generateTimeOptions(job.start_time || '')}</select></div>
+                                <select name="start_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>${generateTimeOptions(job.start_time || '')}</select></div>
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
-                                <select name="end_time" required class="w-full px-4 py-2 border rounded-lg"><option value="">Select...</option>${generateTimeOptions(job.end_time || '')}</select></div>
+                                <select name="end_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>${generateTimeOptions(job.end_time || '')}</select></div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
-                                <input type="text" name="client_name" required value="${job.client_name || ''}" class="w-full px-4 py-2 border rounded-lg"></div>
+                                <input type="text" name="client_name" required value="${job.client_name || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                                <input type="tel" name="client_phone" required value="${job.client_phone || ''}" class="w-full px-4 py-2 border rounded-lg"></div>
+                                <input type="tel" name="client_phone" required value="${job.client_phone || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
                             </div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            <input type="email" name="client_email" value="${job.client_email || ''}" class="w-full px-4 py-2 border rounded-lg"></div>
+                            <input type="email" name="client_email" value="${job.client_email || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                            <textarea name="address" required rows="2" class="w-full px-4 py-2 border rounded-lg">${job.address || ''}</textarea></div>
+                            <textarea name="address" required rows="2" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">${job.address || ''}</textarea></div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
-                            <textarea name="job_description" required rows="4" class="w-full px-4 py-2 border rounded-lg">${job.job_description || ''}</textarea></div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <textarea name="job_description" required rows="3" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">${job.job_description || ''}</textarea></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
-                                <input type="number" step="0.01" name="price" required value="${job.price || ''}" class="w-full px-4 py-2 border rounded-lg"></div>
+                                <input type="number" step="0.01" name="price" required value="${job.price || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
                                 <div><label class="block text-sm font-medium text-gray-700 mb-2">GST</label>
                                 <label class="flex items-center p-3 border rounded-lg cursor-pointer">
                                 <input type="checkbox" name="price_includes_gst" ${job.price_includes_gst ? 'checked' : ''} class="w-4 h-4 text-blue-600">
-                                <span class="ml-3">Price includes GST</span></label></div>
+                                <span class="ml-3 text-sm md:text-base">Price includes GST</span></label></div>
                             </div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                            <select name="priority" class="w-full px-4 py-2 border rounded-lg">
+                            <select name="priority" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
                                 <option value="Normal" ${job.priority === 'Normal' ? 'selected' : ''}>Normal</option>
                                 <option value="High" ${job.priority === 'High' ? 'selected' : ''}>High</option>
                                 <option value="Urgent" ${job.priority === 'Urgent' ? 'selected' : ''}>Urgent</option>
                             </select></div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                            <select name="assigned_to" class="w-full px-4 py-2 border rounded-lg">
+                            <select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
                                 <option value="">-- Leave Unassigned --</option>
                                 ${staff.map(s => `<option value="${s.id}" ${job.assigned_to === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('')}
                             </select></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URLs (Google Drive)</label>
-                            <textarea name="photo_urls" rows="3" placeholder="One URL per line" class="w-full px-4 py-2 border rounded-lg">${(job.photo_urls || []).join('\n')}</textarea></div>
-                            <div class="flex gap-4">
-                                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">${isEditing ? 'Update' : 'Create'} Job</button>
-                                <button type="button" onclick="cancelJobForm()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos)</label>
+                            <input type="url" name="photo_urls" placeholder="https://photos.google.com/share/..." value="${(job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                            <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div>
+                            <div class="flex flex-col md:flex-row gap-3 md:gap-4">
+                                <button type="submit" class="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-sm md:text-base">${isEditing ? 'Update' : 'Create'} Job</button>
+                                <button type="button" onclick="cancelJobForm()" class="w-full md:flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg text-sm md:text-base">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -622,94 +674,126 @@
         }
 
         function renderAllJobs() {
-            return `
-                <div class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-gray-900">All Jobs</h2>
-                        <button onclick="changeView('create-job')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">+ Create Job</button>
+            const activeJobs = jobs.filter(j => j.status !== 'Completed');
+            return renderJobsTable(activeJobs, 'Active Jobs', 'No active jobs at the moment.');
+        }
+
+        function renderCompletedJobs() {
+            const completedJobs = jobs.filter(j => j.status === 'Completed');
+            return renderJobsTable(completedJobs, 'Completed Jobs', 'No completed jobs yet.');
+        }
+
+        function renderJobsTable(jobsList, title, emptyMessage) {
+            if (jobsList.length === 0) {
+                return `
+                    <div class="space-y-4">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900">${title}</h2>
+                        <div class="bg-white rounded-lg shadow p-8 md:p-12 text-center">
+                            <p class="text-gray-500">${emptyMessage}</p>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow overflow-x-auto">
+                `;
+            }
+
+            return `
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900">${title}</h2>
+                        <button onclick="changeView('create-job')" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button>
+                    </div>
+                    
+                    <!-- Mobile Card View -->
+                    <div class="md:hidden space-y-3">
+                        ${jobsList.map(job => `
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 ${
+                                job.priority === 'Urgent' ? 'border-red-500' :
+                                job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300'
+                            }">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="font-semibold text-gray-900">${job.client_name}</div>
+                                        <div class="text-xs text-gray-500">${new Date(job.date).toLocaleDateString()}</div>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                        job.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                        job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                        job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
+                                        'bg-gray-100 text-gray-800'
+                                    }">${job.status}</span>
+                                </div>
+                                <div class="space-y-1 text-sm text-gray-600 mb-3">
+                                    <div>⏰ ${job.start_time.substring(0, 5)} - ${job.end_time.substring(0, 5)}</div>
+                                    <div>📍 ${job.address}</div>
+                                    <div>💵 ${parseFloat(job.price).toFixed(2)}</div>
+                                    ${job.staff ? `<div>👤 <span style="color: ${job.staff.color_code}">${job.staff.full_name}</span></div>` : '<div>👤 Unassigned</div>'}
+                                    ${job.photo_urls && job.photo_urls.length > 0 ? `<div>📷 <a href="${job.photo_urls[0]}" target="_blank" class="text-blue-600">View Photos</a></div>` : ''}
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="flex-1 text-blue-600 hover:text-blue-800 font-medium py-2 border border-blue-600 rounded-lg text-sm">Edit</button>
+                                    <button onclick="deleteJob('${job.id}')" class="flex-1 text-red-600 hover:text-red-800 font-medium py-2 border border-red-600 rounded-lg text-sm">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Time</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Time</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount Paid</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                ${jobs.map(job => {
-                const isExpanded = expandedDescriptions.has(job.id);
-                const descText = job.job_description || '';
-                const truncatedDesc = descText.length > 50 ? descText.substring(0, 50) + '...' : descText;
-                const jobJson = JSON.stringify(job).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-                return `
-                                        <tr class="hover:bg-gray-50">
-                                            <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">
-                                                ${new Date(job.date).toLocaleDateString()}
-                                            </td>
-                                            <td id="cell-${job.id}-start_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'start_time', '${job.start_time}', 'time')">
-                                                ${job.start_time.substring(0, 5)}
-                                            </td>
-                                            <td id="cell-${job.id}-end_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'end_time', '${job.end_time}', 'time')">
-                                                ${job.end_time.substring(0, 5)}
-                                            </td>
-                                            <td id="cell-${job.id}-status" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'status', '${job.status}', 'select-status')">
-                                                <span class="px-2 py-1 rounded-full text-xs font-medium ${job.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                            job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
-                                'bg-gray-100 text-gray-800'
-                    }">${job.status}</span>
-                                            </td>
-                                            <td id="cell-${job.id}-address" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'address', \`${(job.address || '').replace(/`/g, '\\`')}\`, 'text')">
-                                                ${job.address || ''}
-                                            </td>
-                                            <td id="cell-${job.id}-client_phone" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_phone', '${job.client_phone}', 'text')">
-                                                ${job.client_phone}
-                                            </td>
-                                            <td id="cell-${job.id}-job_description" class="editable-cell text-sm ${isExpanded ? 'expanded-desc' : 'truncated-desc'}" onclick="${isExpanded ? `makeEditable('${job.id}', 'job_description', \`${descText.replace(/`/g, '\\`')}\`, 'textarea')` : `toggleDescription('${job.id}')`}">
-                                                ${isExpanded ? descText : truncatedDesc}
-                                            </td>
-                                            <td id="cell-${job.id}-price" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'price', '${job.price}', 'number')">
-                                                ${parseFloat(job.price).toFixed(2)}
-                                            </td>
-                                            <td id="cell-${job.id}-client_email" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_email', '${job.client_email || ''}', 'text')">
-                                                ${job.client_email || '-'}
-                                            </td>
-                                            <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">
-                                                ${job.amount_paid ? parseFloat(job.amount_paid).toFixed(2) : '-'}
-                                            </td>
-                                            <td class="px-4 py-2 text-sm">${job.payment_method || '-'}</td>
-                                            <td class="px-4 py-2 text-sm">${job.photo_urls && job.photo_urls.length > 0 ? `${job.photo_urls.length} photo(s)` : 'None'}</td>
-                                            <td id="cell-${job.id}-assigned_to" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'assigned_to', '${job.assigned_to || ''}', 'select-staff')">
-                                                ${job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>'}
-                                            </td>
-                                            <td class="px-4 py-2 text-sm whitespace-nowrap">
-                                                <button onclick='openEditModal(${jobJson})' class="mobile-edit-btn text-blue-600 hover:text-blue-800 mr-2">Edit</button>
-                                                <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
-                                            </td>
-                                        </tr>
-                    `;
-            }).join('')}
+                                ${jobsList.map(job => `
+                                    <tr class="hover:bg-gray-50">
+                                        <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">
+                                            ${new Date(job.date).toLocaleDateString()}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm whitespace-nowrap">
+                                            ${job.start_time.substring(0, 5)} - ${job.end_time.substring(0, 5)}
+                                        </td>
+                                        <td id="cell-${job.id}-status" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'status', '${job.status}', 'select-status')">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                                job.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                                job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                                job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            }">${job.status}</span>
+                                        </td>
+                                        <td id="cell-${job.id}-client_name" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_name', '${job.client_name}', 'text')">
+                                            ${job.client_name}
+                                        </td>
+                                        <td id="cell-${job.id}-client_phone" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_phone', '${job.client_phone}', 'text')">
+                                            ${job.client_phone}
+                                        </td>
+                                        <td id="cell-${job.id}-price" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'price', '${job.price}', 'number')">
+                                            ${parseFloat(job.price).toFixed(2)}
+                                        </td>
+                                        <td id="cell-${job.id}-assigned_to" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'assigned_to', '${job.assigned_to || ''}', 'select-staff')">
+                                            ${job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>'}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm">
+                                            ${job.photo_urls && job.photo_urls.length > 0 ? 
+                                                `<a href="${job.photo_urls[0]}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">View Album</a>` : 
+                                                'None'}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm whitespace-nowrap">
+                                            <button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                                            <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
                             </tbody>
                         </table>
-                    </div>
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p class="text-sm text-blue-800">
-                            <strong class="desktop-only-hint">💡 Desktop:</strong><span class="desktop-only-hint"> Click any cell to edit inline. Press Enter to save, Escape to cancel.</span>
-                            <strong class="md:hidden">📱 Mobile:</strong><span class="md:hidden"> Click "Edit" button to open full edit form.</span>
-                        </p>
                     </div>
                 </div>
             `;
@@ -717,17 +801,19 @@
 
         function renderStaffManagement() {
             return `
-                <div class="space-y-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Staff Management</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="space-y-4 md:space-y-6">
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-900">Staff Management</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         ${staff.map(s => `
-                            <div class="bg-white rounded-lg shadow p-6 border-l-4" style="border-color: ${s.color_code}">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div><h3 class="text-lg font-bold text-gray-900">${s.full_name}</h3>
-                                    <p class="text-sm text-gray-500">@${s.username}</p></div>
-                                    <div class="w-10 h-10 rounded-full" style="background-color: ${s.color_code}"></div>
+                            <div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4" style="border-color: ${s.color_code}">
+                                <div class="flex items-start justify-between mb-3 md:mb-4">
+                                    <div>
+                                        <h3 class="text-base md:text-lg font-bold text-gray-900">${s.full_name}</h3>
+                                        <p class="text-xs md:text-sm text-gray-500">@${s.username}</p>
+                                    </div>
+                                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full" style="background-color: ${s.color_code}"></div>
                                 </div>
-                                <div class="space-y-2 text-sm">
+                                <div class="space-y-2 text-xs md:text-sm">
                                     <div><span class="font-medium">Phone:</span> ${s.phone || 'Not set'}</div>
                                     <div><span class="font-medium">Status:</span> 
                                         <span class="px-2 py-1 rounded-full text-xs ${s.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -738,8 +824,8 @@
                             </div>
                         `).join('')}
                     </div>
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p class="text-sm text-blue-800"><strong>Note:</strong> To add or edit staff, access Supabase Table Editor directly.</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
+                        <p class="text-xs md:text-sm text-blue-800"><strong>Note:</strong> To add or edit staff, access Supabase Table Editor directly.</p>
                     </div>
                 </div>
             `;
@@ -753,7 +839,7 @@
         async function handleJobSubmit(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const photoUrls = formData.get('photo_urls').split('\n').map(url => url.trim()).filter(url => url.length > 0);
+            const photoUrl = formData.get('photo_urls').trim();
             const jobData = {
                 date: formData.get('date'),
                 start_time: formData.get('start_time'),
@@ -767,7 +853,7 @@
                 price_includes_gst: formData.get('price_includes_gst') === 'on',
                 priority: formData.get('priority'),
                 assigned_to: formData.get('assigned_to') || null,
-                photo_urls: photoUrls.length > 0 ? photoUrls : null
+                photo_urls: photoUrl ? [photoUrl] : null
             };
             if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
             await createJob(jobData);
@@ -795,7 +881,7 @@
             if (currentUser) {
                 setInterval(async () => {
                     await loadJobs();
-                    if (currentView === 'dashboard' || currentView === 'all-jobs') renderApp();
+                    if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') renderApp();
                 }, 120000);
             }
         }
@@ -803,6 +889,4 @@
         initialize();
     </script>
 </body>
-
 </html>
-
