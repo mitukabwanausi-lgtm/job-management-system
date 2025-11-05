@@ -177,6 +177,7 @@
         </div>
     </div>
 
+
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -652,6 +653,7 @@
                 const isExpanded = expandedDescriptions.has(job.id);
                 const descText = job.job_description || '';
                 const truncatedDesc = descText.length > 50 ? descText.substring(0, 50) + '...' : descText;
+                const jobJson = JSON.stringify(job).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
                 return `
                                         <tr class="hover:bg-gray-50">
                                             <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">
@@ -686,20 +688,20 @@
                                                 ${job.client_email || '-'}
                                             </td>
                                             <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">
-                                                ${job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : ' - '}
-                                            </td >
+                                                ${job.amount_paid ? parseFloat(job.amount_paid).toFixed(2) : '-'}
+                                            </td>
                                             <td class="px-4 py-2 text-sm">${job.payment_method || '-'}</td>
                                             <td class="px-4 py-2 text-sm">${job.photo_urls && job.photo_urls.length > 0 ? `${job.photo_urls.length} photo(s)` : 'None'}</td>
                                             <td id="cell-${job.id}-assigned_to" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'assigned_to', '${job.assigned_to || ''}', 'select-staff')">
                                                 ${job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>'}
                                             </td>
                                             <td class="px-4 py-2 text-sm whitespace-nowrap">
-                                                <button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="mobile-edit-btn text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                                                <button onclick='openEditModal(${jobJson})' class="mobile-edit-btn text-blue-600 hover:text-blue-800 mr-2">Edit</button>
                                                 <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
-                                            </td >
-                                        </tr >
+                                            </td>
+                                        </tr>
                     `;
-                                }).join('')}
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -711,10 +713,10 @@
                     </div>
                 </div>
             `;
-            }
+        }
 
         function renderStaffManagement() {
-                    return `
+            return `
                 <div class="space-y-6">
                     <h2 class="text-2xl font-bold text-gray-900">Staff Management</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -741,62 +743,62 @@
                     </div>
                 </div>
             `;
-                }
+        }
 
         async function handleLogin(e) {
-                    e.preventDefault();
-                    await login(document.getElementById('username').value, document.getElementById('password').value);
-                }
+            e.preventDefault();
+            await login(document.getElementById('username').value, document.getElementById('password').value);
+        }
 
         async function handleJobSubmit(e) {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    const photoUrls = formData.get('photo_urls').split('\n').map(url => url.trim()).filter(url => url.length > 0);
-                    const jobData = {
-                        date: formData.get('date'),
-                        start_time: formData.get('start_time'),
-                        end_time: formData.get('end_time'),
-                        client_name: formData.get('client_name'),
-                        client_phone: formData.get('client_phone'),
-                        client_email: formData.get('client_email') || null,
-                        address: formData.get('address'),
-                        job_description: formData.get('job_description'),
-                        price: parseFloat(formData.get('price')),
-                        price_includes_gst: formData.get('price_includes_gst') === 'on',
-                        priority: formData.get('priority'),
-                        assigned_to: formData.get('assigned_to') || null,
-                        photo_urls: photoUrls.length > 0 ? photoUrls : null
-                    };
-                    if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
-                    await createJob(jobData);
-                }
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const photoUrls = formData.get('photo_urls').split('\n').map(url => url.trim()).filter(url => url.length > 0);
+            const jobData = {
+                date: formData.get('date'),
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time'),
+                client_name: formData.get('client_name'),
+                client_phone: formData.get('client_phone'),
+                client_email: formData.get('client_email') || null,
+                address: formData.get('address'),
+                job_description: formData.get('job_description'),
+                price: parseFloat(formData.get('price')),
+                price_includes_gst: formData.get('price_includes_gst') === 'on',
+                priority: formData.get('priority'),
+                assigned_to: formData.get('assigned_to') || null,
+                photo_urls: photoUrls.length > 0 ? photoUrls : null
+            };
+            if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
+            await createJob(jobData);
+        }
 
         function changeView(view) {
-                    currentView = view;
-                    editingJob = null;
-                    renderApp();
-                }
+            currentView = view;
+            editingJob = null;
+            renderApp();
+        }
 
         function cancelJobForm() {
-                    editingJob = null;
-                    currentView = 'dashboard';
-                    renderApp();
-                }
+            editingJob = null;
+            currentView = 'dashboard';
+            renderApp();
+        }
 
         async function initialize() {
-                    checkAuth();
-                    if (currentUser) {
-                        await loadStaff();
-                        await loadJobs();
-                    }
-                    renderApp();
-                    if (currentUser) {
-                        setInterval(async () => {
-                            await loadJobs();
-                            if (currentView === 'dashboard' || currentView === 'all-jobs') renderApp();
-                        }, 120000);
-                    }
-                }
+            checkAuth();
+            if (currentUser) {
+                await loadStaff();
+                await loadJobs();
+            }
+            renderApp();
+            if (currentUser) {
+                setInterval(async () => {
+                    await loadJobs();
+                    if (currentView === 'dashboard' || currentView === 'all-jobs') renderApp();
+                }, 120000);
+            }
+        }
 
         initialize();
     </script>
