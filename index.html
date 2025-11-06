@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,56 +15,49 @@
             border: 2px solid transparent;
             transition: all 0.2s;
         }
+
         .editable-cell:hover {
             background-color: #f3f4f6;
             border-color: #3b82f6;
         }
+
         .editing {
             background-color: #fff;
             border-color: #3b82f6;
         }
-        .truncated-desc {
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .expanded-desc {
-            white-space: pre-wrap;
-            max-width: 300px;
-        }
+
         @media (max-width: 768px) {
             .editable-cell {
                 cursor: default;
                 pointer-events: none;
             }
+
             .editable-cell:hover {
                 background-color: transparent;
                 border-color: transparent;
             }
-            .mobile-edit-btn {
-                display: inline-block;
-            }
-            .desktop-only-hint {
-                display: none;
-            }
         }
-        @media (min-width: 769px) {
-            .mobile-edit-btn {
-                display: none;
-            }
-        }
+
         #mobileMenu {
             transition: transform 0.3s ease-in-out;
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
-    <div id="app"></div>
+    <div id="app">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Loading...</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Menu Overlay -->
-    <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()"></div>
-    
+    <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()">
+    </div>
+
     <!-- Mobile Menu Sidebar -->
     <div id="mobileMenu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform -translate-x-full">
         <div class="p-4">
@@ -71,42 +65,52 @@
                 <h2 class="text-lg font-bold text-gray-900">Menu</h2>
                 <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
             <nav class="space-y-2">
-                <button onclick="changeView('dashboard'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                <button onclick="changeView('dashboard'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
                     📊 Dashboard
                 </button>
-                <button onclick="changeView('create-job'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                <button onclick="changeView('create-job'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
                     ➕ Create Job
                 </button>
-                <button onclick="changeView('all-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                <button onclick="changeView('all-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
                     📋 Active Jobs
                 </button>
-                <button onclick="changeView('completed-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                <button onclick="changeView('completed-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
                     ✅ Completed Jobs
                 </button>
-                <button onclick="changeView('staff-management'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+                <button onclick="changeView('staff-management'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
                     👥 Staff
                 </button>
                 <hr class="my-4">
-                <button onclick="logout(); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">
+                <button onclick="logout(); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">
                     🚪 Logout
                 </button>
             </nav>
         </div>
     </div>
 
-    <div id="editJobModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <!-- Edit Job Modal -->
+    <div id="editJobModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Edit Job</h2>
                     <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -149,16 +153,19 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                        <textarea id="edit_address" required rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
+                        <textarea id="edit_address" required rows="2"
+                            class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
-                        <textarea id="edit_job_description" required rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea>
+                        <textarea id="edit_job_description" required rows="4"
+                            class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
-                            <input type="number" step="0.01" id="edit_price" required class="w-full px-4 py-2 border rounded-lg">
+                            <input type="number" step="0.01" id="edit_price" required
+                                class="w-full px-4 py-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">GST</label>
@@ -182,16 +189,22 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Amount Paid ($)</label>
-                        <input type="number" step="0.01" id="edit_amount_paid" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" step="0.01" id="edit_amount_paid"
+                            class="w-full px-4 py-2 border rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos Album)</label>
-                        <input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-4 py-2 border rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos
+                            Album)</label>
+                        <input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..."
+                            class="w-full px-4 py-2 border rounded-lg">
                         <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p>
                     </div>
                     <div class="flex gap-4 pt-4">
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save Changes</button>
-                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
+                        <button type="submit"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save
+                            Changes</button>
+                        <button type="button" onclick="closeEditModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -199,16 +212,32 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        // IMPORTANT: Replace these with your actual Supabase credentials
+        const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
+
+        // Check if credentials are set
+        if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+            document.getElementById('app').innerHTML = `
+                <div class="min-h-screen flex items-center justify-center bg-red-50">
+                    <div class="bg-white rounded-lg shadow-xl p-8 max-w-md">
+                        <h1 class="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
+                        <p class="text-gray-700">Please update the Supabase credentials in the code:</p>
+                        <pre class="bg-gray-100 p-4 rounded mt-4 text-xs overflow-x-auto">const SUPABASE_URL = 'your-project-url';
+const SUPABASE_ANON_KEY = 'your-anon-key';</pre>
+                    </div>
+                </div>
+            `;
+            throw new Error('Supabase credentials not configured');
+        }
+
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
+
         let currentUser = null;
         let currentView = 'dashboard';
         let jobs = [];
         let staff = [];
         let editingJob = null;
-        let expandedDescriptions = new Set();
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -224,15 +253,27 @@
 
         async function login(username, password) {
             try {
-                const {data, error} = await supabase.from('manager_users').select('*').eq('username', username).eq('password', password).single();
-                if (error || !data) {alert('Invalid username or password'); return false;}
+                const {data, error} = await supabase
+                    .from('manager_users')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password)
+                    .single();
+
+                if (error || !data) {
+                    alert('Invalid username or password');
+                    return false;
+                }
+
                 currentUser = data;
                 localStorage.setItem('manager_user', JSON.stringify(data));
+                await loadStaff();
+                await loadJobs();
                 renderApp();
                 return true;
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Login failed');
+                alert('Login failed: ' + error.message);
                 return false;
             }
         }
@@ -245,12 +286,19 @@
 
         function checkAuth() {
             const stored = localStorage.getItem('manager_user');
-            if (stored) currentUser = JSON.parse(stored);
+            if (stored) {
+                currentUser = JSON.parse(stored);
+            }
         }
 
         async function loadJobs() {
             try {
-                const {data, error} = await supabase.from('jobs').select('*, staff:assigned_to (full_name, color_code)').order('date', {ascending: true}).order('start_time', {ascending: true});
+                const {data, error} = await supabase
+                    .from('jobs')
+                    .select('*, staff:assigned_to (full_name, color_code)')
+                    .order('date', {ascending: true})
+                    .order('start_time', {ascending: true});
+
                 if (error) throw error;
                 jobs = data || [];
                 return jobs;
@@ -262,7 +310,12 @@
 
         async function loadStaff() {
             try {
-                const {data, error} = await supabase.from('staff').select('*').eq('active', true).order('full_name');
+                const {data, error} = await supabase
+                    .from('staff')
+                    .select('*')
+                    .eq('active', true)
+                    .order('full_name');
+
                 if (error) throw error;
                 staff = data || [];
                 return staff;
@@ -274,8 +327,13 @@
 
         async function updateJobField(jobId, field, value) {
             if (window.innerWidth <= 768) return;
+
             try {
-                const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
+                const {error} = await supabase
+                    .from('jobs')
+                    .update({[field]: value})
+                    .eq('id', jobId);
+
                 if (error) throw error;
                 await loadJobs();
                 renderApp();
@@ -289,6 +347,7 @@
 
         function makeEditable(jobId, field, currentValue, type = 'text') {
             if (window.innerWidth <= 768) return;
+
             const cellId = `cell-${jobId}-${field}`;
             const cell = document.getElementById(cellId);
             if (!cell || cell.classList.contains('editing')) return;
@@ -302,10 +361,6 @@
                 input.type = 'date';
                 input.value = currentValue || '';
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-            } else if (type === 'time') {
-                input = document.createElement('select');
-                input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-                input.innerHTML = '<option value="">Select...</option>' + generateTimeOptions(currentValue);
             } else if (type === 'select-status') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
@@ -318,17 +373,13 @@
             } else if (type === 'select-staff') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-                input.innerHTML = '<option value="">Unassigned</option>' + staff.map(s => `<option value="${s.id}" ${currentValue === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('');
+                input.innerHTML = '<option value="">Unassigned</option>' +
+                    staff.map(s => `<option value="${s.id}" ${currentValue === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('');
             } else if (type === 'number') {
                 input = document.createElement('input');
                 input.type = 'number';
                 input.step = '0.01';
                 input.value = currentValue || '';
-                input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-            } else if (type === 'textarea') {
-                input = document.createElement('textarea');
-                input.value = currentValue || '';
-                input.rows = 3;
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
             } else {
                 input = document.createElement('input');
@@ -362,25 +413,23 @@
 
             input.addEventListener('blur', save);
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && type !== 'textarea') {e.preventDefault(); save();}
-                else if (e.key === 'Escape') {e.preventDefault(); cancel();}
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    save();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancel();
+                }
             });
 
-            if (type === 'select-status' || type === 'select-staff' || type === 'time') {
+            if (type === 'select-status' || type === 'select-staff') {
                 input.addEventListener('change', save);
             }
         }
 
-        function toggleDescription(jobId) {
-            if (expandedDescriptions.has(jobId)) {
-                expandedDescriptions.delete(jobId);
-            } else {
-                expandedDescriptions.add(jobId);
-            }
-            renderApp();
-        }
+        function openEditModal(jobData) {
+            const job = typeof jobData === 'string' ? JSON.parse(jobData) : jobData;
 
-        function openEditModal(job) {
             document.getElementById('editJobModal').classList.remove('hidden');
             document.getElementById('edit_job_id').value = job.id;
             document.getElementById('edit_date').value = job.date;
@@ -397,7 +446,8 @@
             document.getElementById('edit_priority').value = job.priority;
             document.getElementById('edit_amount_paid').value = job.amount_paid || '';
             document.getElementById('edit_photo_urls').value = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
-            document.getElementById('edit_assigned_to').innerHTML = '<option value="">Unassigned</option>' + staff.map(s => `<option value="${s.id}" ${job.assigned_to === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('');
+            document.getElementById('edit_assigned_to').innerHTML = '<option value="">Unassigned</option>' +
+                staff.map(s => `<option value="${s.id}" ${job.assigned_to === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('');
         }
 
         function closeEditModal() {
@@ -406,8 +456,10 @@
 
         async function handleEditSubmit(e) {
             e.preventDefault();
+
             const jobId = document.getElementById('edit_job_id').value;
             const photoUrl = document.getElementById('edit_photo_urls').value.trim();
+
             const jobData = {
                 date: document.getElementById('edit_date').value,
                 start_time: document.getElementById('edit_start_time').value,
@@ -426,11 +478,19 @@
                 photo_urls: photoUrl ? [photoUrl] : null
             };
 
-            if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
+            if (jobData.end_time <= jobData.start_time) {
+                alert('End time must be after start time.');
+                return;
+            }
 
             try {
-                const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
+                const {error} = await supabase
+                    .from('jobs')
+                    .update(jobData)
+                    .eq('id', jobId);
+
                 if (error) throw error;
+
                 alert('Job updated successfully!');
                 closeEditModal();
                 await loadJobs();
@@ -455,8 +515,13 @@
 
         async function createJob(jobData) {
             try {
-                const {data, error} = await supabase.from('jobs').insert([jobData]).select();
+                const {data, error} = await supabase
+                    .from('jobs')
+                    .insert([jobData])
+                    .select();
+
                 if (error) throw error;
+
                 alert('Job created successfully!');
                 await loadJobs();
                 currentView = 'dashboard';
@@ -471,9 +536,15 @@
 
         async function deleteJob(jobId) {
             if (!confirm('Are you sure you want to delete this job?')) return;
+
             try {
-                const {error} = await supabase.from('jobs').delete().eq('id', jobId);
+                const {error} = await supabase
+                    .from('jobs')
+                    .delete()
+                    .eq('id', jobId);
+
                 if (error) throw error;
+
                 alert('Job deleted successfully!');
                 await loadJobs();
                 renderApp();
@@ -485,8 +556,18 @@
 
         function renderApp() {
             const app = document.getElementById('app');
-            if (!currentUser) {app.innerHTML = renderLogin(); return;}
-            app.innerHTML = `${renderHeader()}<div class="max-w-full mx-auto px-4 py-6">${renderContent()}</div>`;
+
+            if (!currentUser) {
+                app.innerHTML = renderLogin();
+                return;
+            }
+
+            app.innerHTML = `
+                ${renderHeader()}
+                <div class="max-w-full mx-auto px-4 py-6">
+                    ${renderContent()}
+                </div>
+            `;
         }
 
         function renderLogin() {
@@ -495,11 +576,17 @@
                     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
                         <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Manager Login</h1>
                         <form onsubmit="handleLogin(event)" class="space-y-4">
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                            <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                            <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">Login</button>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                <input type="text" id="username" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+                                Login
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -567,7 +654,10 @@
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
 
             const bankTotal = todayRevenue - cashTotal;
-            const workload = staff.map(s => ({...s, activeJobs: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length}));
+            const workload = staff.map(s => ({
+                ...s,
+                activeJobs: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length
+            }));
 
             return `
                 <div class="space-y-4 md:space-y-6">
@@ -594,8 +684,14 @@
                         <h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Today's Revenue</h3>
                         <div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4">${todayRevenue.toFixed(2)}</div>
                         <div class="flex space-x-4 md:space-x-6 text-xs md:text-sm">
-                            <div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold">${cashTotal.toFixed(2)}</div></div>
-                            <div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold">${bankTotal.toFixed(2)}</div></div>
+                            <div>
+                                <div class="opacity-90">Cash</div>
+                                <div class="text-lg md:text-xl font-semibold">${cashTotal.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div class="opacity-90">Bank</div>
+                                <div class="text-lg md:text-xl font-semibold">${bankTotal.toFixed(2)}</div>
+                            </div>
                         </div>
                     </div>
                     <div class="bg-white rounded-lg shadow p-4 md:p-6">
@@ -614,58 +710,89 @@
         }
 
         function renderJobForm() {
-            const job = editingJob || {};
-            const isEditing = !!editingJob;
             return `
                 <div class="max-w-3xl mx-auto">
                     <div class="bg-white rounded-lg shadow p-4 md:p-6">
-                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">${isEditing ? 'Edit Job' : 'Create New Job'}</h2>
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Create New Job</h2>
                         <form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                                <input type="date" name="date" required value="${job.date || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-                                <select name="start_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>${generateTimeOptions(job.start_time || '')}</select></div>
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
-                                <select name="end_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>${generateTimeOptions(job.end_time || '')}</select></div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                                    <input type="date" name="date" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
+                                    <select name="start_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                        <option value="">Select...</option>
+                                        ${generateTimeOptions()}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
+                                    <select name="end_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                        <option value="">Select...</option>
+                                        ${generateTimeOptions()}
+                                    </select>
+                                </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
-                                <input type="text" name="client_name" required value="${job.client_name || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                                <input type="tel" name="client_phone" required value="${job.client_phone || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label>
+                                    <input type="text" name="client_name" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                                    <input type="tel" name="client_phone" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                </div>
                             </div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            <input type="email" name="client_email" value="${job.client_email || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                            <textarea name="address" required rows="2" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">${job.address || ''}</textarea></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
-                            <textarea name="job_description" required rows="3" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">${job.job_description || ''}</textarea></div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" name="client_email" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                                <textarea name="address" required rows="2" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label>
+                                <textarea name="job_description" required rows="3" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea>
+                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
-                                <input type="number" step="0.01" name="price" required value="${job.price || ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>
-                                <div><label class="block text-sm font-medium text-gray-700 mb-2">GST</label>
-                                <label class="flex items-center p-3 border rounded-lg cursor-pointer">
-                                <input type="checkbox" name="price_includes_gst" ${job.price_includes_gst ? 'checked' : ''} class="w-4 h-4 text-blue-600">
-                                <span class="ml-3 text-sm md:text-base">Price includes GST</span></label></div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label>
+                                    <input type="number" step="0.01" name="price" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">GST</label>
+                                    <label class="flex items-center p-3 border rounded-lg cursor-pointer">
+                                        <input type="checkbox" name="price_includes_gst" class="w-4 h-4 text-blue-600">
+                                        <span class="ml-3 text-sm md:text-base">Price includes GST</span>
+                                    </label>
+                                </div>
                             </div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                            <select name="priority" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
-                                <option value="Normal" ${job.priority === 'Normal' ? 'selected' : ''}>Normal</option>
-                                <option value="High" ${job.priority === 'High' ? 'selected' : ''}>High</option>
-                                <option value="Urgent" ${job.priority === 'Urgent' ? 'selected' : ''}>Urgent</option>
-                            </select></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                            <select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
-                                <option value="">-- Leave Unassigned --</option>
-                                ${staff.map(s => `<option value="${s.id}" ${job.assigned_to === s.id ? 'selected' : ''}>${s.full_name}</option>`).join('')}
-                            </select></div>
-                            <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos)</label>
-                            <input type="url" name="photo_urls" placeholder="https://photos.google.com/share/..." value="${(job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : ''}" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
-                            <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                                <select name="priority" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                    <option value="Normal">Normal</option>
+                                    <option value="High">High</option>
+                                    <option value="Urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
+                                <select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                    <option value="">-- Leave Unassigned --</option>
+                                    ${staff.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos)</label>
+                                <input type="url" name="photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base">
+                                <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p>
+                            </div>
                             <div class="flex flex-col md:flex-row gap-3 md:gap-4">
-                                <button type="submit" class="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-sm md:text-base">${isEditing ? 'Update' : 'Create'} Job</button>
-                                <button type="button" onclick="cancelJobForm()" class="w-full md:flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg text-sm md:text-base">Cancel</button>
+                                <button type="submit" class="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-sm md:text-base">Create Job</button>
+                                <button type="button" onclick="changeView('dashboard')" class="w-full md:flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg text-sm md:text-base">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -704,22 +831,22 @@
                     
                     <!-- Mobile Card View -->
                     <div class="md:hidden space-y-3">
-                        ${jobsList.map(job => `
-                            <div class="bg-white rounded-lg shadow p-4 border-l-4 ${
-                                job.priority === 'Urgent' ? 'border-red-500' :
-                                job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300'
-                            }">
+                        ${jobsList.map(job => {
+                const jobJson = JSON.stringify(job).replace(/\\/g, '\\\\').replace(/"/g, '&quot;');
+                return `
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 ${job.priority === 'Urgent' ? 'border-red-500' :
+                        job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300'
+                    }">
                                 <div class="flex justify-between items-start mb-3">
                                     <div>
                                         <div class="font-semibold text-gray-900">${job.client_name}</div>
                                         <div class="text-xs text-gray-500">${new Date(job.date).toLocaleDateString()}</div>
                                     </div>
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                                        job.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                        job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                        job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
-                                        'bg-gray-100 text-gray-800'
-                                    }">${job.status}</span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${job.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                        job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                            job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                    }">${job.status}</span>
                                 </div>
                                 <div class="space-y-1 text-sm text-gray-600 mb-3">
                                     <div>⏰ ${job.start_time.substring(0, 5)} - ${job.end_time.substring(0, 5)}</div>
@@ -729,11 +856,11 @@
                                     ${job.photo_urls && job.photo_urls.length > 0 ? `<div>📷 <a href="${job.photo_urls[0]}" target="_blank" class="text-blue-600">View Photos</a></div>` : ''}
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="flex-1 text-blue-600 hover:text-blue-800 font-medium py-2 border border-blue-600 rounded-lg text-sm">Edit</button>
+                                    <button onclick='openEditModal("${jobJson}")' class="flex-1 text-blue-600 hover:text-blue-800 font-medium py-2 border border-blue-600 rounded-lg text-sm">Edit</button>
                                     <button onclick="deleteJob('${job.id}')" class="flex-1 text-red-600 hover:text-red-800 font-medium py-2 border border-red-600 rounded-lg text-sm">Delete</button>
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                     
                     <!-- Desktop Table View -->
@@ -753,7 +880,9 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                ${jobsList.map(job => `
+                                ${jobsList.map(job => {
+                        const jobJson = JSON.stringify(job).replace(/\\/g, '\\\\').replace(/"/g, '&quot;');
+                        return `
                                     <tr class="hover:bg-gray-50">
                                         <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">
                                             ${new Date(job.date).toLocaleDateString()}
@@ -762,14 +891,13 @@
                                             ${job.start_time.substring(0, 5)} - ${job.end_time.substring(0, 5)}
                                         </td>
                                         <td id="cell-${job.id}-status" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'status', '${job.status}', 'select-status')">
-                                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                                                job.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                                job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                                job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }">${job.status}</span>
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium ${job.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                    job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
+                                        'bg-gray-100 text-gray-800'
+                            }">${job.status}</span>
                                         </td>
-                                        <td id="cell-${job.id}-client_name" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_name', '${job.client_name}', 'text')">
+                                        <td id="cell-${job.id}-client_name" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_name', '${job.client_name.replace(/'/g, "\\'")}', 'text')">
                                             ${job.client_name}
                                         </td>
                                         <td id="cell-${job.id}-client_phone" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_phone', '${job.client_phone}', 'text')">
@@ -782,16 +910,16 @@
                                             ${job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>'}
                                         </td>
                                         <td class="px-4 py-2 text-sm">
-                                            ${job.photo_urls && job.photo_urls.length > 0 ? 
-                                                `<a href="${job.photo_urls[0]}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">View Album</a>` : 
-                                                'None'}
+                                            ${job.photo_urls && job.photo_urls.length > 0 ?
+                                `<a href="${job.photo_urls[0]}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">View Album</a>` :
+                                'None'}
                                         </td>
                                         <td class="px-4 py-2 text-sm whitespace-nowrap">
-                                            <button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                                            <button onclick='openEditModal("${jobJson}")' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
                                             <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `}).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -840,6 +968,7 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const photoUrl = formData.get('photo_urls').trim();
+
             const jobData = {
                 date: formData.get('date'),
                 start_time: formData.get('start_time'),
@@ -853,21 +982,20 @@
                 price_includes_gst: formData.get('price_includes_gst') === 'on',
                 priority: formData.get('priority'),
                 assigned_to: formData.get('assigned_to') || null,
-                photo_urls: photoUrl ? [photoUrl] : null
+                photo_urls: photoUrl ? [photoUrl] : null,
+                status: 'Unassigned'
             };
-            if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
+
+            if (jobData.end_time <= jobData.start_time) {
+                alert('End time must be after start time.');
+                return;
+            }
+
             await createJob(jobData);
         }
 
         function changeView(view) {
             currentView = view;
-            editingJob = null;
-            renderApp();
-        }
-
-        function cancelJobForm() {
-            editingJob = null;
-            currentView = 'dashboard';
             renderApp();
         }
 
@@ -878,10 +1006,13 @@
                 await loadJobs();
             }
             renderApp();
+
             if (currentUser) {
                 setInterval(async () => {
                     await loadJobs();
-                    if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') renderApp();
+                    if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') {
+                        renderApp();
+                    }
                 }, 120000);
             }
         }
@@ -889,4 +1020,5 @@
         initialize();
     </script>
 </body>
+
 </html>
