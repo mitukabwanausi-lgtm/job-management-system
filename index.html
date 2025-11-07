@@ -474,7 +474,10 @@
             }
         }
 
-        function openMobileJobModal(job) {
+        function openMobileJobModal(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+            
             selectedMobileJob = job;
             const modal = document.getElementById('mobileJobModal');
             const content = document.getElementById('mobileJobContent');
@@ -765,12 +768,13 @@
 
             const mobileCards = Object.keys(jobsByDate).sort().map(date => {
                 const dateJobs = jobsByDate[date];
-                return `
+                const dateHeader = `
                     <div class="date-header px-4 py-2 border-b border-gray-300">
                         <h3 class="text-sm font-bold text-gray-700">${new Date(date).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'})}</h3>
                     </div>
-                    ${dateJobs.map(job => renderMobileJobCard(job)).join('')}
                 `;
+                const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
+                return dateHeader + cards;
             }).join('');
 
             return `<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">${title}</h2><div class="flex gap-3 w-full sm:w-auto">${staffFilterDropdown}<button onclick="changeView('create-job')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="md:hidden space-y-0">${mobileCards}</div><div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">${renderDesktopTable(filteredJobs)}</div></div>`;
@@ -781,25 +785,61 @@
                 ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl. GST</span>'
                 : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
 
+            const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
+            const statusBg = job.status === 'Completed' ? 'bg-green-100 text-green-800' : job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
+            const staffDisplay = job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : 'Unassigned';
+
             return `
-                <div class="job-card bg-white border-l-4 ${job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300'} p-4 border-b hover:bg-gray-50" onclick='openMobileJobModal(${JSON.stringify(job).replace(/'/g, "&#39;")})'>
+                <div class="job-card bg-white border-l-4 ${borderColor} p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal('${job.id}')">
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex-1">
                             <div class="font-semibold text-gray-900">${job.client_name}</div>
                             <div class="text-xs text-gray-500 mt-1">⏰ ${formatTime12Hour(job.start_time)} - ${formatTime12Hour(job.end_time)}</div>
                         </div>
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${job.status === 'Completed' ? 'bg-green-100 text-green-800' : job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">${job.status}</span>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusBg}">${job.status}</span>
                     </div>
                     <div class="space-y-1 text-sm text-gray-600">
-                        ${job.staff ? `<div>👤 <span style="color: ${job.staff.color_code}">${job.staff.full_name}</span></div>` : '<div>👤 Unassigned</div>'}
+                        <div>👤 ${staffDisplay}</div>
                         <div class="flex items-center">💵 ${parseFloat(job.price).toFixed(2)}${gstBadge}</div>
-                        ${job.priority !== 'Normal' ? `<div><span class="px-2 py-1 rounded text-xs font-medium ${job.priority === 'Urgent' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${job.priority}</span></div>` : ''}
                     </div>
                 </div>
             `;
         }
 
         function renderDesktopTable(filteredJobs) {
+            const tableRows = filteredJobs.map(job => {
+                const gstBadge = job.price_includes_gst 
+                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
+                    : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
+
+                const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
+                const statusBg = job.status === 'Completed' ? 'bg-green-100 text-green-800' : job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
+                const staffDisplay = job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>';
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">${new Date(job.date).toLocaleDateString()}</td>
+                        <td id="cell-${job.id}-start_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'start_time', '${job.start_time}', 'time')">${formatTime12Hour(job.start_time)}</td>
+                        <td id="cell-${job.id}-end_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'end_time', '${job.end_time}', 'time')">${formatTime12Hour(job.end_time)}</td>
+                        <td id="cell-${job.id}-assigned_to" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'assigned_to', '${job.assigned_to || ''}', 'select-staff')">${staffDisplay}</td>
+                        <td id="cell-${job.id}-status" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'status', '${job.status}', 'select-status')"><span class="px-2 py-1 rounded-full text-xs font-medium ${statusBg}">${job.status}</span></td>
+                        <td id="cell-${job.id}-client_name" class="editable-cell text-sm">${job.client_name}</td>
+                        <td id="cell-${job.id}-address" class="editable-cell text-sm max-w-xs truncate" title="${job.address}">${job.address}</td>
+                        <td id="cell-${job.id}-client_phone" class="editable-cell text-sm">${job.client_phone}</td>
+                        <td id="cell-${job.id}-job_description" class="editable-cell text-sm max-w-xs truncate" title="${job.job_description}">${job.job_description}</td>
+                        <td id="cell-${job.id}-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable('${job.id}', 'price', '${job.price}', 'number')">${parseFloat(job.price).toFixed(2)}${gstBadge}</td>
+                        <td id="cell-${job.id}-client_email" class="editable-cell text-sm">${job.client_email || '<span class="text-gray-400">N/A</span>'}</td>
+                        <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">${job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>'}</td>
+                        <td id="cell-${job.id}-payment_method" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'payment_method', '${job.payment_method || ''}', 'select-payment')">${job.payment_method || '<span class="text-gray-400">N/A</span>'}</td>
+                        <td id="cell-${job.id}-photo_urls" class="editable-cell text-sm">${photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>'}</td>
+                        <td class="px-4 py-2 text-sm whitespace-nowrap">
+                            <button onclick="openEditModalById('${job.id}')" class="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                            <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
             return `
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -822,36 +862,15 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        ${filteredJobs.map(job => {
-                            const gstBadge = job.price_includes_gst 
-                                ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
-                                : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
-
-                            const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
-
-                            return `
-                                <tr class="hover:bg-gray-50">
-                                    <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">${new Date(job.date).toLocaleDateString()}</td>
-                                    <td id="cell-${job.id}-start_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'start_time', '${job.start_time}', 'time')">${formatTime12Hour(job.start_time)}</td>
-                                    <td id="cell-${job.id}-end_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'end_time', '${job.end_time}', 'time')">${formatTime12Hour(job.end_time)}</td>
-                                    <td id="cell-${job.id}-assigned_to" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'assigned_to', '${job.assigned_to || ''}', 'select-staff')">${job.staff ? `<span style="color: ${job.staff.color_code}">${job.staff.full_name}</span>` : '<span class="text-gray-400">Unassigned</span>'}</td>
-                                    <td id="cell-${job.id}-status" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'status', '${job.status}', 'select-status')"><span class="px-2 py-1 rounded-full text-xs font-medium ${job.status === 'Completed' ? 'bg-green-100 text-green-800' : job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : job.status === 'Assigned' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">${job.status}</span></td>
-                                    <td id="cell-${job.id}-client_name" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_name', '${job.client_name.replace(/'/g, "\\'")}', 'text')">${job.client_name}</td>
-                                    <td id="cell-${job.id}-address" class="editable-cell text-sm max-w-xs truncate" onclick="makeEditable('${job.id}', 'address', '${job.address.replace(/'/g, "\\'")}', 'text')" title="${job.address}">${job.address}</td>
-                                    <td id="cell-${job.id}-client_phone" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_phone', '${job.client_phone}', 'text')">${job.client_phone}</td>
-                                    <td id="cell-${job.id}-job_description" class="editable-cell text-sm max-w-xs truncate" onclick="makeEditable('${job.id}', 'job_description', '${job.job_description.replace(/'/g, "\\'")}', 'text')" title="${job.job_description}">${job.job_description}</td>
-                                    <td id="cell-${job.id}-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable('${job.id}', 'price', '${job.price}', 'number')">${parseFloat(job.price).toFixed(2)}${gstBadge}</td>
-                                    <td id="cell-${job.id}-client_email" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_email', '${job.client_email || ''}', 'text')">${job.client_email || '<span class="text-gray-400">N/A</span>'}</td>
-                                    <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">${job.amount_paid ? '                 + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>'}</td>
-                                    <td id="cell-${job.id}-payment_method" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'payment_method', '${job.payment_method || ''}', 'select-payment')">${job.payment_method || '<span class="text-gray-400">N/A</span>'}</td>
-                                    <td id="cell-${job.id}-photo_urls" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'photo_urls', '${photoUrl.replace(/'/g, "\\'")}', 'url')">${photoUrl ? `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>` : '<span class="text-gray-400">None</span>'}</td>
-                                    <td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button></td>
-                                </tr>
-                            `;
-                        }).join('')}
+                        ${tableRows}
                     </tbody>
                 </table>
             `;
+        }
+
+        function openEditModalById(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (job) openEditModal(job);
         }
 
         function renderStaffManagement() {
