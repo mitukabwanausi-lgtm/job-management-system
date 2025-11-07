@@ -479,7 +479,7 @@
             const modal = document.getElementById('mobileJobModal');
             const content = document.getElementById('mobileJobContent');
 
-            const gstBadge = job.price_includes_gst
+            const gstBadge = job.price_includes_gst 
                 ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">incl. GST</span>'
                 : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">+GST</span>';
 
@@ -736,7 +736,7 @@
 
         function renderJobsList(showCompleted) {
             let filteredJobs = showCompleted ? jobs.filter(j => j.status === 'Completed') : jobs.filter(j => j.status !== 'Completed');
-
+            
             if (currentStaffFilter) {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === currentStaffFilter);
             }
@@ -777,7 +777,7 @@
         }
 
         function renderMobileJobCard(job) {
-            const gstBadge = job.price_includes_gst
+            const gstBadge = job.price_includes_gst 
                 ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl. GST</span>'
                 : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
 
@@ -823,13 +823,13 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         ${filteredJobs.map(job => {
-                const gstBadge = job.price_includes_gst
-                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
-                    : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
+                            const gstBadge = job.price_includes_gst 
+                                ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
+                                : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
 
-                const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
+                            const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
 
-                return `
+                            return `
                                 <tr class="hover:bg-gray-50">
                                     <td id="cell-${job.id}-date" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'date', '${job.date}', 'date')">${new Date(job.date).toLocaleDateString()}</td>
                                     <td id="cell-${job.id}-start_time" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'start_time', '${job.start_time}', 'time')">${formatTime12Hour(job.start_time)}</td>
@@ -842,13 +842,12 @@
                                     <td id="cell-${job.id}-job_description" class="editable-cell text-sm max-w-xs truncate" onclick="makeEditable('${job.id}', 'job_description', '${job.job_description.replace(/'/g, "\\'")}', 'text')" title="${job.job_description}">${job.job_description}</td>
                                     <td id="cell-${job.id}-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable('${job.id}', 'price', '${job.price}', 'number')">${parseFloat(job.price).toFixed(2)}${gstBadge}</td>
                                     <td id="cell-${job.id}-client_email" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'client_email', '${job.client_email || ''}', 'text')">${job.client_email || '<span class="text-gray-400">N/A</span>'}</td>
-                                    <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">${job.amount_paid ? '                 + parseFloat(job.amount_paid).toFixed(2) : ' < span class="text-gray-400" > N / A</span > '}</td>
-                    < td id = "cell-${job.id}-payment_method" class="editable-cell text-sm" onclick = "makeEditable('${job.id}', 'payment_method', '${job.payment_method || ''}', 'select-payment')" > ${job.payment_method || '<span class="text-gray-400">N/A</span>'}</td >
-                        <td id="cell-${job.id}-photo_urls" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'photo_urls', '${photoUrl.replace(/'/g, "\\'")}', 'url')">${photoUrl ? `<a href="${photoUrl} " target="_blank" rel="noopener noreferrer" class="text - blue - 600 hover: text - blue - 800" onclick="event.stopPropagation()">View</a>` : '<span class="text - gray - 400">None</span>'}</td>
-                            < td class="px-4 py-2 text-sm whitespace-nowrap" > <button onclick='openEditModal(${JSON.stringify(job).replace(/' /g, "&#39;")
-        }) ' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob('${job.id} ')" class="text-red-600 hover:text-red-800">Delete</button></td>
-                                </tr >
-            `;
+                                    <td id="cell-${job.id}-amount_paid" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'amount_paid', '${job.amount_paid || ''}', 'number')">${job.amount_paid ? '                 + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>'}</td>
+                                    <td id="cell-${job.id}-payment_method" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'payment_method', '${job.payment_method || ''}', 'select-payment')">${job.payment_method || '<span class="text-gray-400">N/A</span>'}</td>
+                                    <td id="cell-${job.id}-photo_urls" class="editable-cell text-sm" onclick="makeEditable('${job.id}', 'photo_urls', '${photoUrl.replace(/'/g, "\\'")}', 'url')">${photoUrl ? `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>` : '<span class="text-gray-400">None</span>'}</td>
+                                    <td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick='openEditModal(${JSON.stringify(job).replace(/'/g, "&#39;")})' class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button></td>
+                                </tr>
+                            `;
                         }).join('')}
                     </tbody>
                 </table>
