@@ -115,8 +115,8 @@
                 <div class="flex gap-3 mt-6">
                     <button onclick="editJobFromMobile()"
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Edit</button>
-                    <button onclick="deleteJobFromMobile()"
-                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg">Delete</button>
+                    <button onclick="closeMobileJobModal()"
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg">Cancel</button>
                 </div>
             </div>
         </div>
@@ -201,6 +201,9 @@
                         <button type="submit"
                             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save
                             Changes</button>
+                        <button type="button"
+                            onclick="deleteJob(document.getElementById('edit_job_id').value); closeEditModal();"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg">Delete</button>
                         <button type="button" onclick="closeEditModal()"
                             class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
                     </div>
@@ -443,8 +446,14 @@
 
         function editJobFromMobile() {
             if (selectedMobileJob) {
+                console.log('Editing job:', selectedMobileJob); // For debugging
                 closeMobileJobModal();
-                openEditModal(selectedMobileJob);
+                // Small delay to ensure modal is closed before opening edit modal
+                setTimeout(() => {
+                    openEditModal(selectedMobileJob);
+                }, 100);
+            } else {
+                console.error('No job selected for editing');
             }
         }
 
