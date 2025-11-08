@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,34 +15,42 @@
             border: 2px solid transparent;
             transition: all 0.2s;
         }
+
         .editable-cell:hover {
             background-color: #f3f4f6;
             border-color: #3b82f6;
         }
+
         .editing {
             background-color: #fff;
             border-color: #3b82f6;
         }
+
         @media (max-width: 768px) {
             .editable-cell {
                 cursor: default;
                 pointer-events: none;
             }
+
             .editable-cell:hover {
                 background-color: transparent;
                 border-color: transparent;
             }
         }
+
         #mobileMenu {
             transition: transform 0.3s ease-in-out;
         }
+
         .job-card {
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
+
         .job-card:active {
             transform: scale(0.98);
         }
+
         .date-header {
             position: sticky;
             top: 64px;
@@ -50,87 +59,150 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <div id="app"></div>
-    <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()"></div>
+    <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()">
+    </div>
     <div id="mobileMenu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform -translate-x-full">
         <div class="p-4">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-gray-900">Menu</h2>
                 <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
             <nav class="space-y-2">
-                <button onclick="changeView('dashboard'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📊 Dashboard</button>
-                <button onclick="changeView('create-job'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">➕ Create Job</button>
-                <button onclick="changeView('all-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📋 Active Jobs</button>
-                <button onclick="changeView('completed-jobs'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">✅ Completed Jobs</button>
-                <button onclick="changeView('staff-management'); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">👥 Staff</button>
+                <button onclick="changeView('dashboard'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📊
+                    Dashboard</button>
+                <button onclick="changeView('create-job'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">➕ Create
+                    Job</button>
+                <button onclick="changeView('all-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📋 Active
+                    Jobs</button>
+                <button onclick="changeView('completed-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">✅
+                    Completed Jobs</button>
+                <button onclick="changeView('staff-management'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">👥
+                    Staff</button>
                 <hr class="my-4">
-                <button onclick="logout(); toggleMobileMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">🚪 Logout</button>
+                <button onclick="logout(); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">🚪
+                    Logout</button>
             </nav>
         </div>
     </div>
-    <div id="mobileJobModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div id="mobileJobModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg my-8">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-gray-900">Job Details</h2>
                     <button onclick="closeMobileJobModal()" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
                 <div id="mobileJobContent" class="space-y-4"></div>
                 <div class="flex gap-3 mt-6">
-                    <button onclick="editJobFromMobile()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Edit</button>
-                    <button onclick="deleteJobFromMobile()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg">Delete</button>
+                    <button onclick="editJobFromMobile()"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Edit</button>
+                    <button onclick="deleteJobFromMobile()"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg">Delete</button>
                 </div>
             </div>
         </div>
     </div>
-    <div id="editJobModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div id="editJobModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Edit Job</h2>
                     <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
                 <form id="editJobForm" onsubmit="handleEditSubmit(event)" class="space-y-4">
                     <input type="hidden" id="edit_job_id">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" id="edit_date" required class="w-full px-4 py-2 border rounded-lg"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select id="edit_start_time" required class="w-full px-4 py-2 border rounded-lg"></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select id="edit_end_time" required class="w-full px-4 py-2 border rounded-lg"></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input
+                                type="date" id="edit_date" required class="w-full px-4 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select
+                                id="edit_start_time" required class="w-full px-4 py-2 border rounded-lg"></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select
+                                id="edit_end_time" required class="w-full px-4 py-2 border rounded-lg"></select></div>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select id="edit_assigned_to" class="w-full px-4 py-2 border rounded-lg"></select></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label><select id="edit_status" class="w-full px-4 py-2 border rounded-lg"><option value="Unassigned">Unassigned</option><option value="Assigned">Assigned</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option></select></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input type="text" id="edit_client_name" required class="w-full px-4 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label><textarea id="edit_address" required rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label><input type="tel" id="edit_client_phone" required class="w-full px-4 py-2 border rounded-lg"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label><textarea id="edit_job_description" required rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select
+                            id="edit_assigned_to" class="w-full px-4 py-2 border rounded-lg"></select></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label><select
+                            id="edit_status" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="Unassigned">Unassigned</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input
+                            type="text" id="edit_client_name" required class="w-full px-4 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label><textarea
+                            id="edit_address" required rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label><input type="tel"
+                            id="edit_client_phone" required class="w-full px-4 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label><textarea
+                            id="edit_job_description" required rows="4"
+                            class="w-full px-4 py-2 border rounded-lg"></textarea></div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label><input type="number" step="0.01" id="edit_price" required class="w-full px-4 py-2 border rounded-lg"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">GST</label><label class="flex items-center p-3 border rounded-lg cursor-pointer"><input type="checkbox" id="edit_price_includes_gst" class="w-4 h-4 text-blue-600"><span class="ml-3">Price includes GST</span></label></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label><input
+                                type="number" step="0.01" id="edit_price" required
+                                class="w-full px-4 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">GST</label><label
+                                class="flex items-center p-3 border rounded-lg cursor-pointer"><input type="checkbox"
+                                    id="edit_price_includes_gst" class="w-4 h-4 text-blue-600"><span class="ml-3">Price
+                                    includes GST</span></label></div>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label><input type="email" id="edit_client_email" class="w-full px-4 py-2 border rounded-lg"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label><input type="email"
+                            id="edit_client_email" class="w-full px-4 py-2 border rounded-lg"></div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Amount Paid ($)</label><input type="number" step="0.01" id="edit_amount_paid" class="w-full px-4 py-2 border rounded-lg"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label><select id="edit_payment_method" class="w-full px-4 py-2 border rounded-lg"><option value="">Not specified</option><option value="Cash">Cash</option><option value="Bank Transfer/Check">Bank Transfer/Check</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Amount Paid ($)</label><input
+                                type="number" step="0.01" id="edit_amount_paid"
+                                class="w-full px-4 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label><select
+                                id="edit_payment_method" class="w-full px-4 py-2 border rounded-lg">
+                                <option value="">Not specified</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer/Check">Bank Transfer/Check</option>
+                            </select></div>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos Album)</label><input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-4 py-2 border rounded-lg"><p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label><select id="edit_priority" class="w-full px-4 py-2 border rounded-lg"><option value="Normal">Normal</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos
+                            Album)</label><input type="url" id="edit_photo_urls"
+                            placeholder="https://photos.google.com/share/..."
+                            class="w-full px-4 py-2 border rounded-lg">
+                        <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label><select
+                            id="edit_priority" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="Normal">Normal</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select></div>
                     <div class="flex gap-4 pt-4">
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save Changes</button>
-                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
+                        <button type="submit"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">Save
+                            Changes</button>
+                        <button type="button" onclick="closeEditModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -565,7 +637,27 @@
                 count: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length
             }));
             const workloadCards = workload.map(w => '<div class="border rounded-lg p-3 md:p-4" style="border-left: 4px solid ' + w.color + '"><div class="text-sm md:text-base font-medium text-gray-900">' + w.name + '</div><div class="text-xl md:text-2xl font-bold mt-1 md:mt-2" style="color: ' + w.color + '">' + w.count + '</div></div>').join('');
-            return '<div class="space-y-4 md:space-y-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Unassigned</div><div class="text-2xl md:text-3xl font-bold text-yellow-600 mt-2">' + unassigned + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Assigned</div><div class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">' + assigned + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">In Progress</div><div class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">' + inProgress + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Done Today</div><div class="text-2xl md:text-3xl font-bold text-green-600 mt-2">' + completedToday + '</div></div></div><div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 md:p-6 text-white"><h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Todays Revenue</h3><div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"> + todayRevenue.toFixed(2) + '</div><div class="flex space-x-4 md:space-x-6 text-xs md:text-sm"><div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold"> + cashTotal.toFixed(2) + '</div></div><div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold"> + bankTotal.toFixed(2) + '</div></div></div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Staff Workload</h3><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">' + workloadCards + '</div></div></div>';
+
+            let html = '<div class="space-y-4 md:space-y-6">';
+            html += '<h2 class="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h2>';
+            html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">';
+            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Unassigned</div><div class="text-2xl md:text-3xl font-bold text-yellow-600 mt-2">' + unassigned + '</div></div>';
+            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Assigned</div><div class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">' + assigned + '</div></div>';
+            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">In Progress</div><div class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">' + inProgress + '</div></div>';
+            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Done Today</div><div class="text-2xl md:text-3xl font-bold text-green-600 mt-2">' + completedToday + '</div></div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 md:p-6 text-white">';
+            html += '<h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Todays Revenue</h3>';
+            html += '<div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4">$' + todayRevenue.toFixed(2) + '</div>';
+            html += '<div class="flex space-x-4 md:space-x-6 text-xs md:text-sm">';
+            html += '<div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold">$' + cashTotal.toFixed(2) + '</div></div>';
+            html += '<div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold">$' + bankTotal.toFixed(2) + '</div></div>';
+            html += '</div></div>';
+            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6">';
+            html += '<h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Staff Workload</h3>';
+            html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">' + workloadCards + '</div>';
+            html += '</div></div>';
+            return html;
         }
 
         function renderJobForm() {
@@ -604,7 +696,7 @@
             const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
             const statusBg = getStatusClass(job.status);
             const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : 'Unassigned';
-            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1">⏰ ' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div>👤 ' + staffDisplay + '</div><div class="flex items-center">💵  + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
+            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1">⏰ ' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div>👤 ' + staffDisplay + '</div><div class="flex items-center">💵  + parseFloat(job.price).toFixed(2) + gstBadge + '</div ></div ></div > ';
         }
 
         function renderDesktopTable(filteredJobs) {
@@ -623,10 +715,10 @@
                     '<td id="cell-' + job.id + '-address" class="editable-cell text-sm max-w-xs truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>' +
                     '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm">' + escapeHtml(job.client_phone) + '</td>' +
                     '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm max-w-xs truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>' +
-                    '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')"> + parseFloat(job.price).toFixed(2) + gstBadge + '</td>' +
-                    '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' +
+                    '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')"> + parseFloat(job.price).toFixed(2) + gstBadge + '</td > ' +
+                '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' +
+                    '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : ' < span class="text-gray-400" > N / A</span > ') + '</td > ' +
+                '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' +
                     '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>' +
                     '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td></tr>';
             }).join('');
@@ -710,6 +802,5 @@
         initialize();
     </script>
 </body>
+
 </html>
-
-
