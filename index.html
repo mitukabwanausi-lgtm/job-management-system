@@ -52,7 +52,9 @@
 </head>
 <body class="bg-gray-50">
     <div id="app"></div>
+    
     <div id="mobileMenuOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="toggleMobileMenu()"></div>
+    
     <div id="mobileMenu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform -translate-x-full">
         <div class="p-4">
             <div class="flex justify-between items-center mb-6">
@@ -137,9 +139,7 @@
                             <option value="Bank Transfer/Check">Bank Transfer/Check</option>
                         </select></div>
                     </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos Album)</label><input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-4 py-2 border rounded-lg">
-                        <p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p>
-                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos Album)</label><input type="url" id="edit_photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-4 py-2 border rounded-lg"><p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label><select id="edit_priority" class="w-full px-4 py-2 border rounded-lg">
                         <option value="Normal">Normal</option>
                         <option value="High">High</option>
@@ -153,7 +153,7 @@
             </div>
         </div>
     </div>
-    
+
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -251,7 +251,6 @@
             try {
                 const job = jobs.find(j => j.id === jobId);
                 if (!job) throw new Error('Job not found');
-                
                 if (field === 'assigned_to' && value) {
                     const conflict = checkSchedulingConflict(job.date, job.start_time, job.end_time, value, jobId);
                     if (conflict) {
@@ -260,7 +259,6 @@
                         return false;
                     }
                 }
-                
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
                 await loadJobs();
@@ -285,14 +283,11 @@
 
         function makeEditable(jobId, field, currentValue, type) {
             if (window.innerWidth <= 768) return;
-            
             const cellId = 'cell-' + jobId + '-' + field;
             const cell = document.getElementById(cellId);
             if (!cell || cell.classList.contains('editing')) return;
-            
             cell.classList.add('editing');
             const originalContent = cell.innerHTML;
-            
             let input;
             if (type === 'date') {
                 input = document.createElement('input');
@@ -323,23 +318,15 @@
                 input.step = '0.01';
                 input.value = currentValue || '';
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-            } else if (type === 'url') {
-                input = document.createElement('input');
-                input.type = 'url';
-                input.value = currentValue || '';
-                input.placeholder = 'https://...';
-                input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
             } else {
                 input = document.createElement('input');
                 input.type = 'text';
                 input.value = currentValue || '';
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
             }
-            
             cell.innerHTML = '';
             cell.appendChild(input);
             input.focus();
-            
             const save = async () => {
                 const newValue = input.value;
                 if (newValue !== currentValue) {
@@ -353,12 +340,10 @@
                     cell.classList.remove('editing');
                 }
             };
-            
             const cancel = () => {
                 cell.innerHTML = originalContent;
                 cell.classList.remove('editing');
             };
-            
             input.addEventListener('blur', save);
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -369,7 +354,6 @@
                     cancel();
                 }
             });
-            
             if (type.startsWith('select-') || type === 'time') {
                 input.addEventListener('change', save);
             }
@@ -378,15 +362,10 @@
         function openMobileJobModal(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
-            
             selectedMobileJob = job;
             const modal = document.getElementById('mobileJobModal');
             const content = document.getElementById('mobileJobContent');
-            
-            const gstBadge = job.price_includes_gst 
-                ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">incl. GST</span>' 
-                : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">+GST</span>';
-            
+            const gstBadge = job.price_includes_gst ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">incl. GST</span>' : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">+GST</span>';
             content.innerHTML = '<div class="space-y-3 text-sm">' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Date:</span><span class="text-gray-900">' + new Date(job.date).toLocaleDateString() + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Start Time:</span><span class="text-gray-900">' + formatTime12Hour(job.start_time) + '</span></div>' +
@@ -403,7 +382,6 @@
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Payment Method:</span><span class="text-gray-900">' + (job.payment_method || 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2"><span class="font-semibold text-gray-600">Photos:</span><span class="text-gray-900">' + (job.photo_urls && job.photo_urls.length > 0 ? '<a href="' + job.photo_urls[0] + '" target="_blank" class="text-blue-600">View</a>' : 'None') + '</span></div>' +
                 '</div>';
-            
             modal.classList.remove('hidden');
         }
 
@@ -456,7 +434,6 @@
             e.preventDefault();
             const jobId = document.getElementById('edit_job_id').value;
             const photoUrl = document.getElementById('edit_photo_urls').value.trim();
-            
             const jobData = {
                 date: document.getElementById('edit_date').value,
                 start_time: document.getElementById('edit_start_time').value,
@@ -475,12 +452,10 @@
                 payment_method: document.getElementById('edit_payment_method').value || null,
                 photo_urls: photoUrl ? [photoUrl] : null
             };
-            
             if (jobData.end_time <= jobData.start_time) {
                 alert('End time must be after start time.');
                 return;
             }
-            
             if (jobData.assigned_to) {
                 const conflict = checkSchedulingConflict(jobData.date, jobData.start_time, jobData.end_time, jobData.assigned_to, jobId);
                 if (conflict) {
@@ -489,7 +464,6 @@
                     return;
                 }
             }
-            
             try {
                 const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
                 if (error) throw error;
@@ -580,7 +554,6 @@
                 {key: 'staff-management', label: 'Staff'}
             ];
             const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-3 py-2 rounded-md text-sm ' + (currentView === v.key ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100') + '">' + v.label + '</button>').join('');
-            
             return '<nav class="bg-white shadow-sm sticky top-0 z-30"><div class="max-w-full mx-auto px-4"><div class="flex justify-between items-center h-16"><div class="flex items-center space-x-4"><button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><h1 class="text-lg md:text-xl font-bold text-gray-900">Job Management</h1><div class="hidden md:flex space-x-2">' + navButtons + '</div></div><div class="flex items-center space-x-2 md:space-x-4"><span class="text-xs md:text-sm text-gray-600 hidden sm:inline">Hi, ' + escapeHtml(currentUser.full_name) + '</span><button onclick="logout()" class="text-xs md:text-sm text-red-600 hover:text-red-700 font-medium">Logout</button></div></div></div></nav>';
         }
 
@@ -601,88 +574,69 @@
                 if (j.status !== 'Completed' || !j.actual_end_time) return false;
                 return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
             }).length;
-            
             const todayRevenue = jobs.filter(j => {
                 if (j.status !== 'Completed' || !j.actual_end_time || !j.amount_paid) return false;
                 return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
-            
             const cashTotal = jobs.filter(j => {
                 if (j.status !== 'Completed' || !j.actual_end_time || j.payment_method !== 'Cash') return false;
                 return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
-            
             const bankTotal = todayRevenue - cashTotal;
-            
             const workload = staff.map(s => ({
                 name: s.full_name,
                 color: s.color_code,
                 count: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length
             }));
-            
             const workloadCards = workload.map(w => '<div class="border rounded-lg p-3 md:p-4" style="border-left: 4px solid ' + w.color + '"><div class="text-sm md:text-base font-medium text-gray-900">' + w.name + '</div><div class="text-xl md:text-2xl font-bold mt-1 md:mt-2" style="color: ' + w.color + '">' + w.count + '</div></div>').join('');
-            
             return '<div class="space-y-4 md:space-y-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Unassigned</div><div class="text-2xl md:text-3xl font-bold text-yellow-600 mt-2">' + unassigned + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Assigned</div><div class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">' + assigned + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">In Progress</div><div class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">' + inProgress + '</div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Done Today</div><div class="text-2xl md:text-3xl font-bold text-green-600 mt-2">' + completedToday + '</div></div></div><div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 md:p-6 text-white"><h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Today\'s Revenue</h3><div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4"> + todayRevenue.toFixed(2) + '</div><div class="flex space-x-4 md:space-x-6 text-xs md:text-sm"><div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold"> + cashTotal.toFixed(2) + '</div></div><div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold"> + bankTotal.toFixed(2) + '</div></div></div></div><div class="bg-white rounded-lg shadow p-4 md:p-6"><h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Staff Workload</h3><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">' + workloadCards + '</div></div></div>';
         }
 
         function renderJobForm() {
             const staffOptions = staff.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
-            
             return '<div class="max-w-3xl mx-auto"><div class="bg-white rounded-lg shadow p-4 md:p-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Create New Job</h2><form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6"><div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" name="date" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select name="start_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div><div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select name="end_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">-- Leave Unassigned --</option>' + staffOptions + '</select></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input type="text" name="client_name" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label><input type="tel" name="client_phone" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label><textarea name="address" required rows="2" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label><textarea name="job_description" required rows="3" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-2">Price ($) *</label><input type="number" step="0.01" name="price" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">GST</label><label class="flex items-center p-3 border rounded-lg cursor-pointer"><input type="checkbox" name="price_includes_gst" class="w-4 h-4 text-blue-600"><span class="ml-3 text-sm md:text-base">Price includes GST</span></label></div></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label><input type="email" name="client_email" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos)</label><input type="url" name="photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label><select name="priority" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="Normal">Normal</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div><div class="flex flex-col md:flex-row gap-3 md:gap-4"><button type="submit" class="w-full md:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-sm md:text-base">Create Job</button><button type="button" onclick="changeView(\'dashboard\')" class="w-full md:flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg text-sm md:text-base">Cancel</button></div></form></div></div>';
         }
 
         function renderJobsList(showCompleted) {
             let filteredJobs = showCompleted ? jobs.filter(j => j.status === 'Completed') : jobs.filter(j => j.status !== 'Completed');
-            
             if (currentStaffFilter) {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === currentStaffFilter);
             }
-            
             const title = showCompleted ? 'Completed Jobs' : 'Active Jobs';
             const emptyMsg = showCompleted ? 'No completed jobs yet.' : 'No active jobs.';
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
-            
             if (filteredJobs.length === 0) {
                 return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3">' + staffFilterDropdown + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
-            
             const jobsByDate = {};
             filteredJobs.forEach(job => {
                 if (!jobsByDate[job.date]) jobsByDate[job.date] = [];
                 jobsByDate[job.date].push(job);
             });
-            
             const mobileCards = Object.keys(jobsByDate).sort().map(date => {
                 const dateJobs = jobsByDate[date];
                 const dateHeader = '<div class="date-header px-4 py-2 border-b border-gray-300"><h3 class="text-sm font-bold text-gray-700">' + new Date(date).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'}) + '</h3></div>';
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto">' + staffFilterDropdown + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="md:hidden space-y-0">' + mobileCards + '</div><div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto">' + staffFilterDropdown + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="md:hidden space-y-0">' + mobileCards + '</div><div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs, showCompleted) + '</div></div>';
         }
 
         function renderMobileJobCard(job) {
-            const gstBadge = job.price_includes_gst 
-                ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl. GST</span>' 
-                : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
+            const gstBadge = job.price_includes_gst ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl. GST</span>' : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
             const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
             const statusBg = getStatusClass(job.status);
             const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : 'Unassigned';
-            
             return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1">⏰ ' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div>👤 ' + staffDisplay + '</div><div class="flex items-center">💵  + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
         }
 
-        function renderDesktopTable(filteredJobs) {
+        function renderDesktopTable(filteredJobs, showCompleted) {
             const tableRows = filteredJobs.map(job => {
-                const gstBadge = job.price_includes_gst 
-                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>' 
-                    : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
+                const gstBadge = job.price_includes_gst ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>' : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
                 const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
                 const statusBg = getStatusClass(job.status);
                 const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : '<span class="text-gray-400">Unassigned</span>';
-                
                 return '<tr class="hover:bg-gray-50">' +
                     '<td id="cell-' + job.id + '-date" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')">' + new Date(job.date).toLocaleDateString() + '</td>' +
                     '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>' +
@@ -695,13 +649,12 @@
                     '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm max-w-xs truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>' +
                     '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')"> + parseFloat(job.price).toFixed(2) + gstBadge + '</td>' +
                     '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' +
+                    (showCompleted ? '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? ' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
+                    (showCompleted ? '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
                     '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>' +
                     '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td></tr>';
             }).join('');
-            
-            return '<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount Paid</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">' + tableRows + '</tbody></table>';
+            return '<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>' + (showCompleted ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount Paid</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th>' : '') + '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">' + tableRows + '</tbody></table>';
         }
 
         function openEditModalById(jobId) {
@@ -711,7 +664,6 @@
 
         function renderStaffManagement() {
             const staffCards = staff.map(s => '<div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4" style="border-color: ' + s.color_code + '"><div class="flex items-start justify-between mb-3 md:mb-4"><div><h3 class="text-base md:text-lg font-bold text-gray-900">' + s.full_name + '</h3><p class="text-xs md:text-sm text-gray-500">@' + s.username + '</p></div><div class="w-8 h-8 md:w-10 md:h-10 rounded-full" style="background-color: ' + s.color_code + '"></div></div><div class="space-y-2 text-xs md:text-sm"><div><span class="font-medium">Phone:</span> ' + (s.phone || 'Not set') + '</div><div><span class="font-medium">Status:</span> <span class="px-2 py-1 rounded-full text-xs ' + (s.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') + '">' + (s.active ? 'Active' : 'Inactive') + '</span></div></div></div>').join('');
-            
             return '<div class="space-y-4 md:space-y-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900">Staff Management</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">' + staffCards + '</div><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4"><p class="text-xs md:text-sm text-blue-800"><strong>Note:</strong> To add or edit staff, access Supabase Table Editor.</p></div></div>';
         }
 
@@ -728,12 +680,10 @@
             const date = formData.get('date');
             const startTime = formData.get('start_time');
             const endTime = formData.get('end_time');
-            
             if (endTime <= startTime) {
                 alert('End time must be after start time.');
                 return;
             }
-            
             if (assignedTo) {
                 const conflict = checkSchedulingConflict(date, startTime, endTime, assignedTo);
                 if (conflict) {
@@ -742,7 +692,6 @@
                     return;
                 }
             }
-            
             const jobData = {
                 date: date,
                 start_time: startTime,
@@ -756,9 +705,9 @@
                 price_includes_gst: formData.get('price_includes_gst') === 'on',
                 priority: formData.get('priority'),
                 assigned_to: assignedTo,
-                photo_urls: photoUrl ? [photoUrl] : null
+                photo_urls: photoUrl ? [photoUrl] : null,
+                status: 'Unassigned'
             };
-            
             await createJob(jobData);
         }
 
@@ -775,13 +724,10 @@
                 await loadJobs();
             }
             renderApp();
-            
             if (currentUser) {
                 setInterval(async () => {
                     await loadJobs();
-                    if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') {
-                        renderApp();
-                    }
+                    if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') renderApp();
                 }, 120000);
             }
         }
