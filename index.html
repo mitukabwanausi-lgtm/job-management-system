@@ -446,22 +446,13 @@
 
         function editJobFromMobile() {
             if (selectedMobileJob) {
-                console.log('Editing job:', selectedMobileJob); // For debugging
+                const jobToEdit = selectedMobileJob; // Store the job before closing modal
                 closeMobileJobModal();
-                // Small delay to ensure modal is closed before opening edit modal
-                setTimeout(() => {
-                    openEditModal(selectedMobileJob);
-                }, 100);
+                // Open edit modal immediately without delay
+                openEditModal(jobToEdit);
             } else {
                 console.error('No job selected for editing');
-            }
-        }
-
-        function deleteJobFromMobile() {
-            if (selectedMobileJob) {
-                const jobId = selectedMobileJob.id;
-                closeMobileJobModal();
-                deleteJob(jobId);
+                alert('No job selected for editing');
             }
         }
 
