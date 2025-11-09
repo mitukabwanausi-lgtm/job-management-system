@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard - Job Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .editable-cell {
@@ -57,6 +58,33 @@
             z-index: 20;
             background: linear-gradient(to bottom, #f9fafb 0%, #f3f4f6 100%);
         }
+
+        .material-icons {
+            vertical-align: middle;
+            font-size: 20px;
+        }
+
+        .material-icons.md-18 {
+            font-size: 18px;
+        }
+
+        .material-icons.md-24 {
+            font-size: 24px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 
@@ -77,24 +105,30 @@
             </div>
             <nav class="space-y-2">
                 <button onclick="changeView('dashboard'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📊
-                    Dashboard</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">dashboard</span> Dashboard
+                </button>
                 <button onclick="changeView('create-job'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">➕ Create
-                    Job</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">add_circle</span> Create Job
+                </button>
                 <button onclick="changeView('all-jobs'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">📋 Active
-                    Jobs</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">assignment</span> Active Jobs
+                </button>
                 <button onclick="changeView('completed-jobs'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">✅
-                    Completed Jobs</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">check_circle</span> Completed Jobs
+                </button>
                 <button onclick="changeView('staff-management'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">👥
-                    Staff</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">group</span> Staff
+                </button>
                 <hr class="my-4">
                 <button onclick="logout(); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium">🚪
-                    Logout</button>
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">logout</span> Logout
+                </button>
             </nav>
         </div>
     </div>
@@ -723,7 +757,7 @@
             const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
             const statusBg = getStatusClass(job.status);
             const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : 'Unassigned';
-            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1">⏰ ' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div>👤 ' + staffDisplay + '</div><div class="flex items-center">💵 $' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
+            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1 flex items-center gap-1"><span class="material-icons md-18">schedule</span>' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div class="flex items-center gap-1"><span class="material-icons md-18">person</span>' + staffDisplay + '</div><div class="flex items-center gap-1"><span class="material-icons md-18">attach_money</span>$' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
         }
 
         function renderDesktopTable(filteredJobs) {
