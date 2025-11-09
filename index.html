@@ -255,6 +255,7 @@
         let staff = [];
         let selectedMobileJob = null;
         let currentStaffFilter = '';
+        let showAllColumns = false;
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -331,6 +332,11 @@
                 return overlap;
             });
             return conflictingJob;
+        }
+
+        function toggleColumns() {
+            showAllColumns = !showAllColumns;
+            renderApp();
         }
 
         async function updateJobField(jobId, field, value) {
@@ -735,8 +741,9 @@
             const emptyMsg = showCompleted ? 'No completed jobs yet.' : 'No active jobs.';
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
+            const columnToggleButton = '<button onclick="toggleColumns()" class="px-4 py-2 border rounded-lg text-sm md:text-base bg-white hover:bg-gray-50 flex items-center gap-2"><span class="material-icons md-18">' + (showAllColumns ? 'visibility_off' : 'visibility') + '</span>' + (showAllColumns ? 'Hide Columns' : 'Show All') + '</button>';
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3">' + staffFilterDropdown + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnToggleButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -749,7 +756,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto">' + staffFilterDropdown + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="md:hidden space-y-0">' + mobileCards + '</div><div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnToggleButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="md:hidden space-y-0">' + mobileCards + '</div><div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
         }
 
         function renderMobileJobCard(job) {
@@ -761,29 +768,55 @@
         }
 
         function renderDesktopTable(filteredJobs) {
+            const optionalColumns = showAllColumns;
+
             const tableRows = filteredJobs.map(job => {
-                const gstBadge = job.price_includes_gst ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>' : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
+                const gstBadge = job.price_includes_gst
+                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
+                    : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
                 const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
                 const statusBg = getStatusClass(job.status);
-                const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : '<span class="text-gray-400">Unassigned</span>';
+                const staffDisplay = job.staff
+                    ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>'
+                    : '<span class="text-gray-400">Unassigned</span>';
+
                 return '<tr class="hover:bg-gray-50">' +
-                    '<td id="cell-' + job.id + '-date" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')">' + new Date(job.date).toLocaleDateString() + '</td>' +
-                    '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>' +
-                    '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>' +
-                    '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>' +
-                    '<td id="cell-' + job.id + '-status" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>' +
-                    '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm">' + escapeHtml(job.client_name) + '</td>' +
-                    '<td id="cell-' + job.id + '-address" class="editable-cell text-sm max-w-xs truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>' +
-                    '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm">' + escapeHtml(job.client_phone) + '</td>' +
-                    '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm max-w-xs truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>' +
+                    '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')">' + new Date(job.date).toLocaleDateString() + '</td>' +
+                    '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>' +
+                    '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>' +
+                    '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>' +
+                    '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>' +
+                    '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]">' + escapeHtml(job.client_name) + '</td>' +
+                    '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>' +
+                    '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap">' + escapeHtml(job.client_phone) + '</td>' +
+                    '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>' +
                     '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>' +
-                    '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' +
-                    '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>' +
+                    (optionalColumns ? '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm min-w-[150px]">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
+                    (optionalColumns ? '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
+                    (optionalColumns ? '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
+                    (optionalColumns ? '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm whitespace-nowrap">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>' : '') +
                     '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-3">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td></tr>';
             }).join('');
-            return '<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Time</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Name</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount Paid</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">' + tableRows + '</tbody></table>';
+
+            return '<table class="min-w-full divide-y divide-gray-200">' +
+                '<thead class="bg-gray-50"><tr>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>' +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>' +
+                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>' : '') +
+                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>' : '') +
+                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>' : '') +
+                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>' : '') +
+                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>' +
+                '</tr></thead>' +
+                '<tbody class="bg-white divide-y divide-gray-200">' + tableRows + '</tbody></table>';
         }
 
         function openEditModalById(jobId) {
