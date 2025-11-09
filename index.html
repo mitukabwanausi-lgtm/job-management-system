@@ -509,30 +509,65 @@
         }
 
         function openEditModal(job) {
+            if (!job) {
+                console.error('No job provided to openEditModal');
+                alert('Error: Could not load job data');
+                return;
+            }
+
+            if (!staff || staff.length === 0) {
+                console.error('Staff array is empty');
+                alert('Error: Staff data not loaded. Please refresh the page.');
+                return;
+            }
+
+            // Show modal first
             document.getElementById('editJobModal').classList.remove('hidden');
-            document.getElementById('edit_job_id').value = job.id;
-            document.getElementById('edit_date').value = job.date;
-            document.getElementById('edit_start_time').innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.start_time);
-            document.getElementById('edit_end_time').innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.end_time);
-            document.getElementById('edit_status').value = job.status;
-            document.getElementById('edit_client_name').value = job.client_name;
-            document.getElementById('edit_client_phone').value = job.client_phone;
+
+            // Set basic fields
+            document.getElementById('edit_job_id').value = job.id || '';
+            document.getElementById('edit_date').value = job.date || '';
+
+            // Set time dropdowns
+            const startTimeSelect = document.getElementById('edit_start_time');
+            const endTimeSelect = document.getElementById('edit_end_time');
+
+            if (startTimeSelect && endTimeSelect) {
+                startTimeSelect.innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.start_time);
+                endTimeSelect.innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.end_time);
+            }
+
+            // Set other fields
+            document.getElementById('edit_status').value = job.status || 'Unassigned';
+            document.getElementById('edit_client_name').value = job.client_name || '';
+            document.getElementById('edit_client_phone').value = job.client_phone || '';
             document.getElementById('edit_client_email').value = job.client_email || '';
-            document.getElementById('edit_address').value = job.address;
-            document.getElementById('edit_job_description').value = job.job_description;
-            document.getElementById('edit_price').value = job.price;
+            document.getElementById('edit_address').value = job.address || '';
+            document.getElementById('edit_job_description').value = job.job_description || '';
+            document.getElementById('edit_price').value = job.price || '';
 
-            // Set GST radio buttons correctly
+            // Set GST radio buttons
             const gstRadios = document.getElementsByName('edit_price_includes_gst');
-            gstRadios.forEach(radio => {
-                radio.checked = (radio.value === String(job.price_includes_gst));
-            });
+            if (gstRadios && gstRadios.length > 0) {
+                gstRadios.forEach(radio => {
+                    radio.checked = (radio.value === String(job.price_includes_gst));
+                });
+            }
 
-            document.getElementById('edit_priority').value = job.priority;
+            document.getElementById('edit_priority').value = job.priority || 'Normal';
             document.getElementById('edit_amount_paid').value = job.amount_paid || '';
             document.getElementById('edit_payment_method').value = job.payment_method || '';
             document.getElementById('edit_photo_urls').value = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
-            document.getElementById('edit_assigned_to').innerHTML = '<option value="">Unassigned</option>' + staff.map(s => '<option value="' + s.id + '"' + (job.assigned_to === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
+
+            // Set assigned to dropdown
+            const assignedToSelect = document.getElementById('edit_assigned_to');
+            if (assignedToSelect) {
+                const staffOptions = staff.map(s =>
+                    '<option value="' + s.id + '"' + (job.assigned_to === s.id ? ' selected' : '') + '>' +
+                    s.full_name + '</option>'
+                ).join('');
+                assignedToSelect.innerHTML = '<option value="">Unassigned</option>' + staffOptions;
+            }
         }
 
         function closeEditModal() {
