@@ -496,10 +496,12 @@
 
         function editJobFromMobile() {
             if (selectedMobileJob) {
-                const jobToEdit = selectedMobileJob; // Store the job before closing modal
+                const jobToEdit = selectedMobileJob;
                 closeMobileJobModal();
-                // Open edit modal immediately without delay
-                openEditModal(jobToEdit);
+                // Add small delay to ensure modal closes before opening edit modal
+                setTimeout(() => {
+                    openEditModal(jobToEdit);
+                }, 100);
             } else {
                 console.error('No job selected for editing');
                 alert('No job selected for editing');
@@ -519,10 +521,13 @@
             document.getElementById('edit_address').value = job.address;
             document.getElementById('edit_job_description').value = job.job_description;
             document.getElementById('edit_price').value = job.price;
+
+            // Set GST radio buttons correctly
             const gstRadios = document.getElementsByName('edit_price_includes_gst');
             gstRadios.forEach(radio => {
                 radio.checked = (radio.value === String(job.price_includes_gst));
             });
+
             document.getElementById('edit_priority').value = job.priority;
             document.getElementById('edit_amount_paid').value = job.amount_paid || '';
             document.getElementById('edit_payment_method').value = job.payment_method || '';
