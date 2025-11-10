@@ -6,7 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Dashboard - Job Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .editable-cell {
@@ -704,8 +718,8 @@
                 {key: 'completed-jobs', label: 'Completed'},
                 {key: 'staff-management', label: 'Staff'}
             ];
-            const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-3 py-2 rounded-md text-sm ' + (currentView === v.key ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100') + '">' + v.label + '</button>').join('');
-            return '<nav class="bg-white shadow-sm sticky top-0 z-30"><div class="max-w-full mx-auto px-4"><div class="flex justify-between items-center h-16"><div class="flex items-center space-x-4"><button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><h1 class="text-lg md:text-xl font-bold text-gray-900">Job Management</h1><div class="hidden md:flex space-x-2">' + navButtons + '</div></div><div class="flex items-center space-x-2 md:space-x-4"><span class="text-xs md:text-sm text-gray-600 hidden sm:inline">Hi, ' + escapeHtml(currentUser.full_name) + '</span><button onclick="logout()" class="text-xs md:text-sm text-red-600 hover:text-red-700 font-medium">Logout</button></div></div></div></nav>';
+            const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (currentView === v.key ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50') + '">' + v.label + '</button>').join('');
+            return '<nav class="bg-white border-b border-gray-200 sticky top-0 z-30"><div class="max-w-full mx-auto px-4"><div class="flex justify-between items-center h-16"><div class="flex items-center space-x-4"><button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><h1 class="text-xl font-semibold text-gray-900">Job Management</h1><div class="hidden md:flex space-x-1">' + navButtons + '</div></div><div class="flex items-center space-x-4"><span class="text-sm text-gray-600 hidden sm:inline">Hi, ' + escapeHtml(currentUser.full_name) + '</span><button onclick="logout()" class="text-sm text-red-600 hover:text-red-700 font-medium">Logout</button></div></div></div></nav>';
         }
 
         function renderContent() {
@@ -739,26 +753,26 @@
                 color: s.color_code,
                 count: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length
             }));
-            const workloadCards = workload.map(w => '<div class="border rounded-lg p-3 md:p-4" style="border-left: 4px solid ' + w.color + '"><div class="text-sm md:text-base font-medium text-gray-900">' + w.name + '</div><div class="text-xl md:text-2xl font-bold mt-1 md:mt-2" style="color: ' + w.color + '">' + w.count + '</div></div>').join('');
+            const workloadCards = workload.map(w => '<div class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow" style="border-left: 3px solid ' + w.color + '"><div class="text-sm font-medium text-gray-600 mb-1">' + w.name + '</div><div class="text-2xl font-semibold mt-2" style="color: ' + w.color + '">' + w.count + '</div></div>').join('');
 
-            let html = '<div class="space-y-4 md:space-y-6">';
-            html += '<h2 class="text-xl md:text-2xl font-bold text-gray-900">Dashboard</h2>';
-            html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">';
-            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Unassigned</div><div class="text-2xl md:text-3xl font-bold text-yellow-600 mt-2">' + unassigned + '</div></div>';
-            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Assigned</div><div class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">' + assigned + '</div></div>';
-            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">In Progress</div><div class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">' + inProgress + '</div></div>';
-            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6"><div class="text-xs md:text-sm font-medium text-gray-500">Done Today</div><div class="text-2xl md:text-3xl font-bold text-green-600 mt-2">' + completedToday + '</div></div>';
+            let html = '<div class="space-y-6">';
+            html += '<h2 class="text-2xl font-semibold text-gray-900">Dashboard</h2>';
+            html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + assigned + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">In Progress</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + inProgress + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
             html += '</div>';
-            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-4 md:p-6 text-white">';
-            html += '<h3 class="text-base md:text-lg font-medium mb-3 md:mb-4">Todays Revenue</h3>';
-            html += '<div class="text-3xl md:text-4xl font-bold mb-3 md:mb-4">$' + todayRevenue.toFixed(2) + '</div>';
-            html += '<div class="flex space-x-4 md:space-x-6 text-xs md:text-sm">';
-            html += '<div><div class="opacity-90">Cash</div><div class="text-lg md:text-xl font-semibold">$' + cashTotal.toFixed(2) + '</div></div>';
-            html += '<div><div class="opacity-90">Bank</div><div class="text-lg md:text-xl font-semibold">$' + bankTotal.toFixed(2) + '</div></div>';
+            html += '<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">';
+            html += '<h3 class="text-sm font-medium mb-3 opacity-90">Today\'s Revenue</h3>';
+            html += '<div class="text-4xl font-semibold mb-4">$' + todayRevenue.toFixed(2) + '</div>';
+            html += '<div class="flex space-x-6 text-sm">';
+            html += '<div><div class="opacity-80 mb-1">Cash</div><div class="text-xl font-medium">$' + cashTotal.toFixed(2) + '</div></div>';
+            html += '<div><div class="opacity-80 mb-1">Bank</div><div class="text-xl font-medium">$' + bankTotal.toFixed(2) + '</div></div>';
             html += '</div></div>';
-            html += '<div class="bg-white rounded-lg shadow p-4 md:p-6">';
-            html += '<h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Staff Workload</h3>';
-            html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">' + workloadCards + '</div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
+            html += '<h3 class="text-lg font-semibold text-gray-900 mb-4">Staff Workload</h3>';
+            html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">' + workloadCards + '</div>';
             html += '</div></div>';
             return html;
         }
