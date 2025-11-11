@@ -342,6 +342,23 @@
         let selectedMobileJob = null;
         let currentStaffFilter = '';
         let showAllColumns = false;
+        let visibleColumns = {
+            date: true,
+            start_time: true,
+            end_time: true,
+            assigned_to: true,
+            status: true,
+            client_name: true,
+            address: true,
+            phone: true,
+            description: true,
+            price: true,
+            email: false,
+            amount_paid: false,
+            payment_method: false,
+            photos: false
+        };
+        let columnSelectorOpen = false;
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -422,6 +439,34 @@
 
         function toggleColumns() {
             showAllColumns = !showAllColumns;
+            renderApp();
+        }
+
+        function toggleColumnSelector() {
+            columnSelectorOpen = !columnSelectorOpen;
+            renderApp();
+        }
+
+        function toggleColumn(columnKey) {
+            visibleColumns[columnKey] = !visibleColumns[columnKey];
+            renderApp();
+        }
+
+        function selectAllColumns() {
+            Object.keys(visibleColumns).forEach(key => {
+                visibleColumns[key] = true;
+            });
+            renderApp();
+        }
+
+        function deselectAllColumns() {
+            Object.keys(visibleColumns).forEach(key => {
+                visibleColumns[key] = false;
+            });
+            // Keep essential columns visible
+            visibleColumns.date = true;
+            visibleColumns.status = true;
+            visibleColumns.client_name = true;
             renderApp();
         }
 
@@ -956,9 +1001,86 @@
             const emptyMsg = showCompleted ? 'No completed jobs yet.' : 'No active jobs.';
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
-            const columnToggleButton = '<button onclick="toggleColumns()" class="px-4 py-2 border rounded-lg text-sm md:text-base bg-white hover:bg-gray-50 flex items-center gap-2"><span class="material-icons md-18">' + (showAllColumns ? 'visibility_off' : 'visibility') + '</span>' + (showAllColumns ? 'Hide Columns' : 'Show All') + '</button>';
+            const columnSelector = `
+                <div class="relative">
+                    <button onclick="toggleColumnSelector()" class="px-4 py-2 border rounded-lg text-sm md:text-base bg-white hover:bg-gray-50 flex items-center gap-2">
+                        <span class="material-icons md-18">view_column</span>
+                        Columns
+                        <span class="material-icons md-18">${columnSelectorOpen ? 'expand_less' : 'expand_more'}</span>
+                    </button>
+                    ${columnSelectorOpen ? `
+                        <div class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b">
+                                <span class="text-sm font-semibold text-gray-700">Select Columns</span>
+                                <div class="flex gap-2">
+                                    <button onclick="event.stopPropagation(); selectAllColumns();" class="text-xs text-blue-600 hover:text-blue-800">All</button>
+                                    <button onclick="event.stopPropagation(); deselectAllColumns();" class="text-xs text-gray-600 hover:text-gray-800">Reset</button>
+                                </div>
+                            </div>
+                            <div class="space-y-2 max-h-80 overflow-y-auto">
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.date ? 'checked' : ''} onchange="toggleColumn('date')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Date</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.start_time ? 'checked' : ''} onchange="toggleColumn('start_time')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Start Time</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.end_time ? 'checked' : ''} onchange="toggleColumn('end_time')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">End Time</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.assigned_to ? 'checked' : ''} onchange="toggleColumn('assigned_to')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Assigned To</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.status ? 'checked' : ''} onchange="toggleColumn('status')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Status</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.client_name ? 'checked' : ''} onchange="toggleColumn('client_name')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Client Name</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.address ? 'checked' : ''} onchange="toggleColumn('address')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Address</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.phone ? 'checked' : ''} onchange="toggleColumn('phone')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Phone</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.description ? 'checked' : ''} onchange="toggleColumn('description')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Description</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.price ? 'checked' : ''} onchange="toggleColumn('price')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Price</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.email ? 'checked' : ''} onchange="toggleColumn('email')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Email</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.amount_paid ? 'checked' : ''} onchange="toggleColumn('amount_paid')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Amount Paid</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.payment_method ? 'checked' : ''} onchange="toggleColumn('payment_method')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Payment Method</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.photos ? 'checked' : ''} onchange="toggleColumn('photos')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Photos</span>
+                                </label>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnToggleButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnSelector + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -971,7 +1093,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnToggleButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';    
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnSelector + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';    
         }
 
         function renderMobileJobCard(job) {
@@ -983,11 +1105,9 @@
         }
 
         function renderDesktopTable(filteredJobs) {
-            const optionalColumns = showAllColumns;
-
             const tableRows = filteredJobs.map(job => {
                 const gstBadge = job.price_includes_gst
-                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">incl</span>'
+                    ? '<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded ml-1">excl</span>'
                     : '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium ml-1">+GST</span>';
                 const photoUrl = (job.photo_urls && job.photo_urls.length > 0) ? job.photo_urls[0] : '';
                 const statusBg = getStatusClass(job.status);
@@ -995,42 +1115,75 @@
                     ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>'
                     : '<span class="text-gray-400">Unassigned</span>';
 
-                return '<tr class="hover:bg-gray-50">' +
-                    '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>' +
-                    '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>' +
-                    '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>' +
-                    '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>' +
-                    '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>' +
-                    '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]">' + escapeHtml(job.client_name) + '</td>' +
-                    '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>' +
-                    '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap">' + escapeHtml(job.client_phone) + '</td>' +
-                    '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>' +
-                    '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>' +
-                    (optionalColumns ? '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm min-w-[150px]">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
-                    (optionalColumns ? '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
-                    (optionalColumns ? '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>' : '') +
-                    (optionalColumns ? '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm whitespace-nowrap">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>' : '') +
-                    '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td></tr>';
+                let row = '<tr class="hover:bg-gray-50">';
+                
+                if (visibleColumns.date) {
+                    row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
+                }
+                if (visibleColumns.start_time) {
+                    row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>';
+                }
+                if (visibleColumns.end_time) {
+                    row += '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>';
+                }
+                if (visibleColumns.assigned_to) {
+                    row += '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>';
+                }
+                if (visibleColumns.status) {
+                    row += '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>';
+                }
+                if (visibleColumns.client_name) {
+                    row += '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]">' + escapeHtml(job.client_name) + '</td>';
+                }
+                if (visibleColumns.address) {
+                    row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>';
+                }
+                if (visibleColumns.phone) {
+                    row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap">' + escapeHtml(job.client_phone) + '</td>';
+                }
+                if (visibleColumns.description) {
+                    row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>';
+                }
+                if (visibleColumns.price) {
+                    row += '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>';
+                }
+                if (visibleColumns.email) {
+                    row += '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm min-w-[150px]">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>';
+                }
+                if (visibleColumns.amount_paid) {
+                    row += '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>';
+                }
+                if (visibleColumns.payment_method) {
+                    row += '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>';
+                }
+                if (visibleColumns.photos) {
+                    row += '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm whitespace-nowrap">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>';
+                }
+                
+                row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td></tr>';
+                
+                return row;
             }).join('');
 
-            return '<div class="overflow-x-auto -mx-4 md:mx-0"><table class="min-w-full divide-y divide-gray-200" style="min-width: 1200px;">' +
-                '<thead class="bg-gray-50"><tr>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 140px;">Date</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>' +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>' +
-                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>' : '') +
-                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>' : '') +
-                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>' : '') +
-                (optionalColumns ? '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>' : '') +
-                '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>' +
-                '</tr></thead>' +
+            let headers = '<thead class="bg-gray-50"><tr>';
+            if (visibleColumns.date) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 140px;">Date</th>';
+            if (visibleColumns.start_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>';
+            if (visibleColumns.end_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>';
+            if (visibleColumns.assigned_to) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>';
+            if (visibleColumns.status) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>';
+            if (visibleColumns.client_name) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>';
+            if (visibleColumns.address) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>';
+            if (visibleColumns.phone) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>';
+            if (visibleColumns.description) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>';
+            if (visibleColumns.price) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>';
+            if (visibleColumns.email) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>';
+            if (visibleColumns.amount_paid) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>';
+            if (visibleColumns.payment_method) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>';
+            if (visibleColumns.photos) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>';
+            headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr></thead>';
+
+            return '<div class="overflow-x-auto -mx-4 md:mx-0"><table class="min-w-full divide-y divide-gray-200">' +
+                headers +
                 '<tbody class="bg-white divide-y divide-gray-200">' + tableRows + '</tbody></table></div>';
         }
 
@@ -1109,6 +1262,14 @@
         }
 
         initialize();
+
+        // Close column selector when clicking outside
+        document.addEventListener('click', function(event) {
+            if (columnSelectorOpen && !event.target.closest('.relative')) {
+                columnSelectorOpen = false;
+                renderApp();
+            }
+        });
     </script>
 </body>
 
