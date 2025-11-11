@@ -853,10 +853,6 @@
         }
 
         function renderContent() {
-            console.log('=== RENDERING DASHBOARD ===');
-            console.log('Total jobs loaded:', jobs.length);
-            console.log('Jobs array:', jobs);
-            console.log('Today is:', new Date().toDateString());
             if (currentView === 'dashboard') return renderDashboard();
             if (currentView === 'create-job') return renderJobForm();
             if (currentView === 'all-jobs') return renderJobsList(false);
@@ -870,16 +866,24 @@
             const assigned = jobs.filter(j => j.status === 'Assigned').length;
             const inProgress = jobs.filter(j => j.status === 'In Progress').length;
             const completedToday = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.actual_end_time) return false;
-                return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
+                if (j.status !== 'Completed') return false;
+                // Use job date OR actual_end_time (whichever exists)
+                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
+                return dateToCheck.toDateString() === new Date().toDateString();
             }).length;
+
             const todayRevenue = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.actual_end_time || !j.amount_paid) return false;
-                return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
+                if (j.status !== 'Completed' || !j.amount_paid) return false;
+                // Use job date OR actual_end_time (whichever exists)
+                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
+                return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
+
             const cashTotal = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.actual_end_time || j.payment_method !== 'Cash') return false;
-                return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
+                if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
+                // Use job date OR actual_end_time (whichever exists)
+                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
+                return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
             const bankTotal = todayRevenue - cashTotal;
             const workload = staff.map(s => ({
