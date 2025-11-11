@@ -870,12 +870,15 @@
                 return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
             }).length;
             const todayRevenue = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.actual_end_time || !j.amount_paid) return false;
-                return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
+                if (j.status !== 'Completed' || !j.amount_paid) return false;
+                // Use job date instead of actual_end_time
+                return new Date(j.date).toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
+            
             const cashTotal = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.actual_end_time || j.payment_method !== 'Cash') return false;
-                return new Date(j.actual_end_time).toDateString() === new Date().toDateString();
+                if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
+                // Use job date instead of actual_end_time
+                return new Date(j.date).toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
             const bankTotal = todayRevenue - cashTotal;
             const workload = staff.map(s => ({
@@ -1105,3 +1108,4 @@
 </body>
 
 </html>
+
