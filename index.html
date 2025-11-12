@@ -152,6 +152,10 @@
                 font-size: 13px;
             }
         }
+
+        .in-progress-row {
+            background-color: #ff9966 !important;
+        }
     </style>
 </head>
 
@@ -1333,7 +1337,8 @@
                     ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>'
                     : '<span class="text-gray-400">Unassigned</span>';
 
-                let row = '<tr class="' + (job.status === 'In Progress' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50') + '">';
+                let row = '<tr class="' + (job.status === 'In Progress' ? 'in-progress-row' : 'hover:bg-gray-50') + '">';
+
 
                 if (visibleColumns.date) {
                     row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
