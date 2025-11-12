@@ -359,6 +359,7 @@
             photos: false
         };
         let columnSelectorOpen = false;
+        let exportMenuOpen = false;
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -468,6 +469,179 @@
             visibleColumns.status = true;
             visibleColumns.client_name = true;
             renderApp();
+        }
+
+        function toggleExportMenu() {
+            exportMenuOpen = !exportMenuOpen;
+            renderApp();
+        }
+
+        function exportJobs(filterType) {
+            let jobsToExport = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            switch (filterType) {
+                case 'current':
+                    // Export currently visible jobs (respects current filters)
+                    if (currentView === 'all-jobs') {
+                        jobsToExport = jobs.filter(j => j.status !== 'Completed');
+                    } else if (currentView === 'completed-jobs') {
+                        jobsToExport = jobs.filter(j => j.status === 'Completed');
+                    } else {
+                        jobsToExport = jobs;
+                    }
+                    if (currentStaffFilter) {
+                        jobsToExport = jobsToExport.filter(j => j.assigned_to === currentStaffFilter);
+                    }
+                    break;
+
+                case 'today':
+                    const todayStr = today.toISOString().split('T')[0];
+                    jobsToExport = jobs.filter(j => j.date === todayStr);
+                    break;
+
+                case 'week':
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    jobsToExport = jobs.filter(j => {
+                        const jobDate = new Date(j.date);
+                        return jobDate >= weekStart && jobDate <= weekEnd;
+                    });
+                    break;
+
+                case 'month':
+                    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    jobsToExport = jobs.filter(j => {
+                        const jobDate = new Date(j.date);
+                        return jobDate >= monthStart && jobDate <= monthEnd;
+                    });
+                    break;
+
+                case 'all':
+                    jobsToExport = jobs;
+                    break;
+            }
+
+            if (jobsToExport.length === 0) {
+                alert('No jobs to export for this selection.');
+                return;
+            }
+
+            generateCSV(jobsToExport, filterType);
+            exportMenuOpen = false;
+            renderApp();
+        }
+
+        function generateCSV(jobsData, filterType) {
+            // CSV Headers
+            const headers = [
+                'Job Number',
+                'Date',
+                'Day',
+                'Start Time',
+                'End Time',
+                'Client Name',
+                'Phone',
+                'Email',
+                'Address',
+                'Job Description',
+                'Assigned To',
+                'Status',
+                'Priority',
+                'Price',
+                'GST',
+                'Amount Paid',
+                'Payment Method',
+                'Actual Start',
+                'Actual End',
+                'Photo URL'
+            ];
+
+            // Convert jobs to CSV rows
+            const rows = jobsData.map(job => {
+                const jobDate = new Date(job.date);
+                const dayName = jobDate.toLocaleDateString('en-US', { weekday: 'long' });
+                
+                return [
+                    job.job_number || '',
+                    job.date || '',
+                    dayName,
+                    job.start_time ? formatTime12Hour(job.start_time) : '',
+                    job.end_time ? formatTime12Hour(job.end_time) : '',
+                    job.client_name || '',
+                    job.client_phone || '',
+                    job.client_email || '',
+                    job.address || '',
+                    job.job_description || '',
+                    job.staff ? job.staff.full_name : 'Unassigned',
+                    job.status || '',
+                    job.priority || '',
+                    job.price || '',
+                    job.price_includes_gst ? 'Excl GST' : '+GST',
+                    job.amount_paid || '',
+                    job.payment_method || '',
+                    job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
+                    job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
+                ];
+            });
+
+            // Escape CSV values (handle commas and quotes)
+            const escapeCSV = (value) => {
+                if (value === null || value === undefined) return '';
+                const stringValue = String(value);
+                if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                    return '"' + stringValue.replace(/"/g, '""') + '"';
+                }
+                return stringValue;
+            };
+
+            // Build CSV content
+            let csv = headers.map(escapeCSV).join(',') + '\n';
+            rows.forEach(row => {
+                csv += row.map(escapeCSV).join(',') + '\n';
+            });
+
+            // Create download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `jobs_export_${filterType}_${timestamp}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function openCustomExport() {
+            exportMenuOpen = false;
+            renderApp();
+            
+            const startDate = prompt('Enter start date (YYYY-MM-DD):');
+            if (!startDate) return;
+            
+            const endDate = prompt('Enter end date (YYYY-MM-DD):');
+            if (!endDate) return;
+            
+            const jobsToExport = jobs.filter(j => {
+                return j.date >= startDate && j.date <= endDate;
+            });
+            
+            if (jobsToExport.length === 0) {
+                alert('No jobs found in this date range.');
+                return;
+            }
+            
+            generateCSV(jobsToExport, `custom_${startDate}_to_${endDate}`);
         }
 
         function formatDateWithDay(dateString) {
@@ -1079,8 +1253,51 @@
                     ` : ''}
                 </div>
             `;
+            const exportButton = `
+                <div class="relative">
+                    <button onclick="toggleExportMenu()" class="px-4 py-2 border border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2">
+                        <span class="material-icons md-18">download</span>
+                        Export
+                    </button>
+                    ${exportMenuOpen ? `
+                        <div class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
+                            <div class="mb-3 pb-2 border-b">
+                                <span class="text-sm font-semibold text-gray-700">Export Jobs</span>
+                            </div>
+                            <div class="space-y-2">
+                                <button onclick="exportJobs('current')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
+                                    <span class="material-icons md-18">table_rows</span>
+                                    Current View
+                                </button>
+                                <button onclick="exportJobs('today')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
+                                    <span class="material-icons md-18">today</span>
+                                    Today
+                                </button>
+                                <button onclick="exportJobs('week')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
+                                    <span class="material-icons md-18">date_range</span>
+                                    This Week
+                                </button>
+                                <button onclick="exportJobs('month')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
+                                    <span class="material-icons md-18">calendar_month</span>
+                                    This Month
+                                </button>
+                                <button onclick="openCustomExport()" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
+                                    <span class="material-icons md-18">tune</span>
+                                    Custom Range...
+                                </button>
+                                <div class="pt-2 mt-2 border-t">
+                                    <button onclick="exportJobs('all')" class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded flex items-center gap-2">
+                                        <span class="material-icons md-18">download</span>
+                                        All Jobs
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnSelector + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -1093,7 +1310,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnSelector + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';    
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';    
         }
 
         function renderMobileJobCard(job) {
@@ -1263,13 +1480,21 @@
 
         initialize();
 
-        // Close column selector when clicking outside
+        // Close dropdowns when clicking outside
         document.addEventListener('click', function(event) {
-            if (columnSelectorOpen && !event.target.closest('.relative')) {
+            const clickedElement = event.target;
+            const isColumnSelector = clickedElement.closest('.relative');
+            
+            if (columnSelectorOpen && !isColumnSelector) {
                 columnSelectorOpen = false;
                 renderApp();
             }
-        });
+            
+            if (exportMenuOpen && !isColumnSelector) {
+                exportMenuOpen = false;
+                renderApp();
+            }
+        })
     </script>
 </body>
 
