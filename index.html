@@ -805,6 +805,11 @@
                 input.value = currentValue || '';
                 input.placeholder = 'https://...';
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
+            } else if (type === 'textarea') {
+                input = document.createElement('textarea');
+                input.value = currentValue || '';
+                input.rows = 3;
+                input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
             } else {
                 input = document.createElement('input');
                 input.type = 'text';
@@ -1356,16 +1361,16 @@
                     row += '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>';
                 }
                 if (visibleColumns.client_name) {
-                    row += '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]">' + escapeHtml(job.client_name) + '</td>';
+                    row += '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]" onclick="makeEditable(\'' + job.id + '\', \'client_name\', \'' + escapeHtml(job.client_name).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_name) + '</td>';
                 }
                 if (visibleColumns.address) {
-                    row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '">' + escapeHtml(job.address) + '</td>';
+                    row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '" onclick="makeEditable(\'' + job.id + '\', \'address\', \'' + escapeHtml(job.address).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.address) + '</td>';
                 }
                 if (visibleColumns.phone) {
-                    row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap">' + escapeHtml(job.client_phone) + '</td>';
+                    row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'client_phone\', \'' + escapeHtml(job.client_phone).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_phone) + '</td>';
                 }
                 if (visibleColumns.description) {
-                    row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '">' + escapeHtml(job.job_description) + '</td>';
+                    row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '" onclick="makeEditable(\'' + job.id + '\', \'job_description\', \'' + escapeHtml(job.job_description).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.job_description) + '</td>';
                 }
                 if (visibleColumns.price) {
                     row += '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>';
