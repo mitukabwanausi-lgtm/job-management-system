@@ -1097,6 +1097,7 @@
         }
 
         function renderDashboard() {
+            console.log('Today is:', new Date().toDateString());
             const unassigned = jobs.filter(j => j.status === 'Unassigned').length;
             const assigned = jobs.filter(j => j.status === 'Assigned').length;
             const inProgress = jobs.filter(j => j.status === 'In Progress').length;
@@ -1120,6 +1121,15 @@
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
+
+            // Add this debug line:
+            console.log('Cash jobs today:', jobs.filter(j => {
+                if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
+                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
+                console.log('Job:', j.client_name, 'Amount:', j.amount_paid, 'Date:', dateToCheck.toDateString());
+                return dateToCheck.toDateString() === new Date().toDateString();
+            }));
+
             const bankTotal = todayRevenue - cashTotal;
             const workload = staff.map(s => ({
                 name: s.full_name,
