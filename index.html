@@ -1097,13 +1097,11 @@
         }
 
         function renderDashboard() {
-            console.log('Today is:', new Date().toDateString());
+            const activeJobs = jobs.filter(j => j.status !== 'Completed').length;
             const unassigned = jobs.filter(j => j.status === 'Unassigned').length;
             const assigned = jobs.filter(j => j.status === 'Assigned').length;
-            const inProgress = jobs.filter(j => j.status === 'In Progress').length;
             const completedToday = jobs.filter(j => {
                 if (j.status !== 'Completed') return false;
-                // Use job date OR actual_end_time (whichever exists)
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).length;
@@ -1121,15 +1119,6 @@
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
-
-            // Add this debug line:
-            console.log('Cash jobs today:', jobs.filter(j => {
-                if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
-                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
-                console.log('Job:', j.client_name, 'Amount:', j.amount_paid, 'Date:', dateToCheck.toDateString());
-                return dateToCheck.toDateString() === new Date().toDateString();
-            }));
-
             const bankTotal = todayRevenue - cashTotal;
             const workload = staff.map(s => ({
                 name: s.full_name,
@@ -1141,9 +1130,9 @@
             let html = '<div class="space-y-6">';
             html += '<h2 class="text-2xl font-semibold text-gray-900">Dashboard</h2>';
             html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Jobs</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + activeJobs + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
-            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + assigned + '</div></div>';
-            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">In Progress</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + inProgress + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">';
