@@ -1112,14 +1112,14 @@
                 // Use job date OR actual_end_time (whichever exists)
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
-            }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
+            }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
 
             const cashTotal = jobs.filter(j => {
                 if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
                 // Use job date OR actual_end_time (whichever exists)
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
-            }).reduce((sum, j) => sum + parseFloat(j.amount_paid || 0), 0);
+            }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
             const bankTotal = todayRevenue - cashTotal;
             const workload = staff.map(s => ({
                 name: s.full_name,
