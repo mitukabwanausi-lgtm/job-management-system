@@ -289,13 +289,15 @@
                         </div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select
                                 id="edit_assigned_to" class="w-full px-4 py-2 border rounded-lg"></select></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label><select
-                                id="edit_status" class="w-full px-4 py-2 border rounded-lg">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="edit_status" class="w-full px-4 py-2 border rounded-lg">
                                 <option value="Unassigned">Unassigned</option>
                                 <option value="Assigned">Assigned</option>
                                 <option value="In Progress">In Progress</option>
+                                <option value="Reschedule">Reschedule</option>
                                 <option value="Completed">Completed</option>
-                            </select></div>
+                            </select>
+                        </div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input
                                 type="text" id="edit_client_name" required class="w-full px-4 py-2 border rounded-lg">
                         </div>
@@ -795,7 +797,7 @@
             } else if (type === 'select-status') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-                const statuses = ['Unassigned', 'Assigned', 'In Progress', 'Completed'];
+                const statuses = ['Unassigned', 'Assigned', 'In Progress', 'Reschedule', 'Completed'];
                 input.innerHTML = statuses.map(s => '<option value="' + s + '"' + (currentValue === s ? ' selected' : '') + '>' + s + '</option>').join('');
             } else if (type === 'select-staff') {
                 input = document.createElement('select');
@@ -1069,6 +1071,7 @@
             if (status === 'Completed') return 'bg-green-100 text-green-800';
             if (status === 'In Progress') return 'bg-blue-100 text-blue-800';
             if (status === 'Assigned') return 'bg-purple-100 text-purple-800';
+            if (status === 'Reschedule') return 'bg-orange-100 text-orange-800';
             return 'bg-gray-100 text-gray-800';
         }
 
