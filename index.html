@@ -463,19 +463,6 @@
             }
         }
 
-        function checkSchedulingConflict(date, startTime, endTime, assignedTo, excludeJobId = null) {
-            if (!assignedTo || !date || !startTime || !endTime) return null;
-            const conflictingJob = jobs.find(job => {
-                if (job.id === excludeJobId) return false;
-                if (job.assigned_to !== assignedTo) return false;
-                if (job.date !== date) return false;
-                if (job.status === 'Completed') return false;
-                const overlap = (startTime < job.end_time && endTime > job.start_time);
-                return overlap;
-            });
-            return conflictingJob;
-        }
-
         function toggleColumns() {
             showAllColumns = !showAllColumns;
             renderApp();
@@ -766,14 +753,7 @@
             try {
                 const job = jobs.find(j => j.id === jobId);
                 if (!job) throw new Error('Job not found');
-                if (field === 'assigned_to' && value) {
-                    const conflict = checkSchedulingConflict(job.date, job.start_time, job.end_time, value, jobId);
-                    if (conflict) {
-                        const staffMember = staff.find(s => s.id === value);
-                        alert('Scheduling Conflict!\\n\\n' + (staffMember ? staffMember.full_name : 'This staff member') + ' is already assigned to:\\n\\nClient: ' + conflict.client_name + '\\nDate: ' + new Date(conflict.date).toLocaleDateString() + '\\nTime: ' + formatTime12Hour(conflict.start_time) + ' - ' + formatTime12Hour(conflict.end_time) + '\\n\\nPlease choose a different staff member or time slot.');
-                        return false;
-                    }
-                }
+
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
                 await loadJobs();
@@ -1013,14 +993,7 @@
                 photo_urls: photoUrl ? [photoUrl] : null
             };
             if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
-            if (jobData.assigned_to) {
-                const conflict = checkSchedulingConflict(jobData.date, jobData.start_time, jobData.end_time, jobData.assigned_to, jobId);
-                if (conflict) {
-                    const staffMember = staff.find(s => s.id === jobData.assigned_to);
-                    alert('Scheduling Conflict!\\n\\n' + (staffMember ? staffMember.full_name : 'This staff member') + ' is already assigned to:\\n\\nClient: ' + conflict.client_name + '\\nDate: ' + new Date(conflict.date).toLocaleDateString() + '\\nTime: ' + formatTime12Hour(conflict.start_time) + ' - ' + formatTime12Hour(conflict.end_time) + '\\n\\nPlease choose a different staff member or time slot.');
-                    return;
-                }
-            }
+
             try {
                 const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
                 if (error) throw error;
@@ -1475,14 +1448,7 @@
                 alert('End time must be after start time.');
                 return;
             }
-            if (assignedTo) {
-                const conflict = checkSchedulingConflict(date, startTime, endTime, assignedTo);
-                if (conflict) {
-                    const staffMember = staff.find(s => s.id === assignedTo);
-                    alert('Scheduling Conflict!\\n\\n' + (staffMember ? staffMember.full_name : 'This staff member') + ' is already assigned to:\\n\\nClient: ' + conflict.client_name + '\\nDate: ' + new Date(conflict.date).toLocaleDateString() + '\\nTime: ' + formatTime12Hour(conflict.start_time) + ' - ' + formatTime12Hour(conflict.end_time) + '\\n\\nPlease choose a different staff member or time slot.');
-                    return;
-                }
-            }
+
             const jobData = {
                 date: date,
                 start_time: startTime,
@@ -1543,4 +1509,3 @@
 </body>
 
 </html>
-
