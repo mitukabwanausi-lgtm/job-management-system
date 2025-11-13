@@ -1010,10 +1010,20 @@
         function generateTimeOptions(selectedTime) {
             const times = [];
             for (let hour = 0; hour < 24; hour++) {
-                for (let min = 0; min < 60; min += 30) {
-                    const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
-                    const displayTime = formatTime12Hour(timeStr);
-                    times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
+                // 15-minute increments for 7am-10am (hours 7, 8, 9)
+                if (hour >= 7 && hour < 10) {
+                    for (let min = 0; min < 60; min += 15) {
+                        const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
+                        const displayTime = formatTime12Hour(timeStr);
+                        times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
+                    }
+                } else {
+                    // 30-minute increments for all other hours
+                    for (let min = 0; min < 60; min += 30) {
+                        const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
+                        const displayTime = formatTime12Hour(timeStr);
+                        times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
+                    }
                 }
             }
             return times.join('');
