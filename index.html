@@ -787,8 +787,18 @@
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
+
+                // Save scroll position before reload
+                const scrollPosition = window.scrollY;
+
                 await loadJobs();
                 renderApp();
+
+                // Restore scroll position after render
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                }, 0);
+
                 return true;
             } catch (error) {
                 console.error('Error updating job:', error);
