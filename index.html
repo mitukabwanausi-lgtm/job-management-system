@@ -389,6 +389,194 @@
             </div>
         </div>
     </div>
+    <div id="advancedExportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-900">Advanced Export</h2>
+                        <button onclick="closeAdvancedExportModal()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6 max-h-[70vh] overflow-y-auto">
+                    <form id="advancedExportForm" class="space-y-6">
+                        <!-- Date Range -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Date Range</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                                    <input type="date" id="export_from_date" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                                    <input type="date" id="export_to_date" class="w-full px-4 py-2 border rounded-lg">
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Leave blank to export all dates</p>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Status</h3>
+                            <select id="export_status" class="w-full px-4 py-2 border rounded-lg">
+                                <option value="all">All Statuses</option>
+                                <option value="Unassigned">Unassigned</option>
+                                <option value="Assigned">Assigned</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Reschedule">Reschedule</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                        </div>
+
+                        <!-- Staff Filter -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Staff Member</h3>
+                            <select id="export_staff" class="w-full px-4 py-2 border rounded-lg">
+                                <option value="all">All Staff</option>
+                            </select>
+                        </div>
+
+                        <!-- Column Selection -->
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Select Columns</h3>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="selectAllExportColumns()"
+                                        class="text-sm text-blue-600 hover:text-blue-800">Select All</button>
+                                    <button type="button" onclick="deselectAllExportColumns()"
+                                        class="text-sm text-gray-600 hover:text-gray-800">Deselect All</button>
+                                </div>
+                            </div>
+                            <div
+                                class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_job_number" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Job Number</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_date" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Date</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_day" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Day</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_start_time" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Start Time</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_end_time" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">End Time</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_client_name" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Client Name</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_phone" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Phone</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_email" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Email</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_address" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Address</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_suburb" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Suburb</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_description" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Description</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_assigned_to" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Assigned To</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_status" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Status</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_priority"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Priority</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_price" checked
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Price</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_gst" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">GST</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_amount_paid"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Amount Paid</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_payment_method"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Payment Method</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_actual_start"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Actual Start</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_actual_end"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Actual End</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_photo_url"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Photo URL</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-6 border-t">
+                    <div class="flex gap-3">
+                        <button onclick="executeAdvancedExport()"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg">
+                            Export CSV
+                        </button>
+                        <button onclick="closeAdvancedExportModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -418,7 +606,6 @@
             photos: false
         };
         let columnSelectorOpen = false;
-        let exportMenuOpen = false;
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -526,71 +713,6 @@
             renderApp();
         }
 
-        function toggleExportMenu() {
-            exportMenuOpen = !exportMenuOpen;
-            renderApp();
-        }
-
-        function exportJobs(filterType) {
-            let jobsToExport = [];
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            switch (filterType) {
-                case 'current':
-                    // Export currently visible jobs (respects current filters)
-                    if (currentView === 'all-jobs') {
-                        jobsToExport = jobs.filter(j => j.status !== 'Completed');
-                    } else if (currentView === 'completed-jobs') {
-                        jobsToExport = jobs.filter(j => j.status === 'Completed');
-                    } else {
-                        jobsToExport = jobs;
-                    }
-                    if (currentStaffFilter) {
-                        jobsToExport = jobsToExport.filter(j => j.assigned_to === currentStaffFilter);
-                    }
-                    break;
-
-                case 'today':
-                    const todayStr = today.toISOString().split('T')[0];
-                    jobsToExport = jobs.filter(j => j.date === todayStr);
-                    break;
-
-                case 'week':
-                    const weekStart = new Date(today);
-                    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-                    const weekEnd = new Date(weekStart);
-                    weekEnd.setDate(weekStart.getDate() + 6);
-                    jobsToExport = jobs.filter(j => {
-                        const jobDate = new Date(j.date);
-                        return jobDate >= weekStart && jobDate <= weekEnd;
-                    });
-                    break;
-
-                case 'month':
-                    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                    jobsToExport = jobs.filter(j => {
-                        const jobDate = new Date(j.date);
-                        return jobDate >= monthStart && jobDate <= monthEnd;
-                    });
-                    break;
-
-                case 'all':
-                    jobsToExport = jobs;
-                    break;
-            }
-
-            if (jobsToExport.length === 0) {
-                alert('No jobs to export for this selection.');
-                return;
-            }
-
-            generateCSV(jobsToExport, filterType);
-            exportMenuOpen = false;
-            renderApp();
-        }
-
         function generateCSV(jobsData, filterType) {
             // CSV Headers
             const headers = [
@@ -679,26 +801,190 @@
             document.body.removeChild(link);
         }
 
-        function openCustomExport() {
-            exportMenuOpen = false;
-            renderApp();
+        function openAdvancedExportModal() {
+            // Populate staff dropdown
+            const staffSelect = document.getElementById('export_staff');
+            if (staffSelect) {
+                const staffOptions = staff.map(s => '<option value="' + s.id + '">' + s.full_name + '</option>').join('');
+                staffSelect.innerHTML = '<option value="all">All Staff</option>' + staffOptions;
+            }
 
-            const startDate = prompt('Enter start date (YYYY-MM-DD):');
-            if (!startDate) return;
+            // Set default dates (last 30 days to today)
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
 
-            const endDate = prompt('Enter end date (YYYY-MM-DD):');
-            if (!endDate) return;
+            document.getElementById('export_to_date').value = today.toISOString().split('T')[0];
+            document.getElementById('export_from_date').value = thirtyDaysAgo.toISOString().split('T')[0];
 
-            const jobsToExport = jobs.filter(j => {
-                return j.date >= startDate && j.date <= endDate;
+            document.getElementById('advancedExportModal').classList.remove('hidden');
+        }
+
+        function closeAdvancedExportModal() {
+            document.getElementById('advancedExportModal').classList.add('hidden');
+        }
+
+        function selectAllExportColumns() {
+            document.querySelectorAll('[id^="export_col_"]').forEach(checkbox => {
+                checkbox.checked = true;
             });
+        }
 
-            if (jobsToExport.length === 0) {
-                alert('No jobs found in this date range.');
+        function deselectAllExportColumns() {
+            document.querySelectorAll('[id^="export_col_"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        function executeAdvancedExport() {
+            // Get filter values
+            const fromDate = document.getElementById('export_from_date').value;
+            const toDate = document.getElementById('export_to_date').value;
+            const status = document.getElementById('export_status').value;
+            const staffId = document.getElementById('export_staff').value;
+
+            // Get selected columns
+            const selectedColumns = {
+                job_number: document.getElementById('export_col_job_number').checked,
+                date: document.getElementById('export_col_date').checked,
+                day: document.getElementById('export_col_day').checked,
+                start_time: document.getElementById('export_col_start_time').checked,
+                end_time: document.getElementById('export_col_end_time').checked,
+                client_name: document.getElementById('export_col_client_name').checked,
+                phone: document.getElementById('export_col_phone').checked,
+                email: document.getElementById('export_col_email').checked,
+                address: document.getElementById('export_col_address').checked,
+                suburb: document.getElementById('export_col_suburb').checked,
+                description: document.getElementById('export_col_description').checked,
+                assigned_to: document.getElementById('export_col_assigned_to').checked,
+                status: document.getElementById('export_col_status').checked,
+                priority: document.getElementById('export_col_priority').checked,
+                price: document.getElementById('export_col_price').checked,
+                gst: document.getElementById('export_col_gst').checked,
+                amount_paid: document.getElementById('export_col_amount_paid').checked,
+                payment_method: document.getElementById('export_col_payment_method').checked,
+                actual_start: document.getElementById('export_col_actual_start').checked,
+                actual_end: document.getElementById('export_col_actual_end').checked,
+                photo_url: document.getElementById('export_col_photo_url').checked
+            };
+
+            // Filter jobs
+            let filteredJobs = jobs;
+
+            // Filter by date range
+            if (fromDate) {
+                filteredJobs = filteredJobs.filter(j => j.date >= fromDate);
+            }
+            if (toDate) {
+                filteredJobs = filteredJobs.filter(j => j.date <= toDate);
+            }
+
+            // Filter by status
+            if (status !== 'all') {
+                filteredJobs = filteredJobs.filter(j => j.status === status);
+            }
+
+            // Filter by staff
+            if (staffId !== 'all') {
+                filteredJobs = filteredJobs.filter(j => j.assigned_to === staffId);
+            }
+
+            if (filteredJobs.length === 0) {
+                alert('No jobs match your selected filters.');
                 return;
             }
 
-            generateCSV(jobsToExport, `custom_${startDate}_to_${endDate}`);
+            // Generate CSV with selected columns
+            generateAdvancedCSV(filteredJobs, selectedColumns);
+            closeAdvancedExportModal();
+        }
+
+        function generateAdvancedCSV(jobsData, selectedColumns) {
+            // Build headers based on selected columns
+            const headers = [];
+            if (selectedColumns.job_number) headers.push('Job Number');
+            if (selectedColumns.date) headers.push('Date');
+            if (selectedColumns.day) headers.push('Day');
+            if (selectedColumns.start_time) headers.push('Start Time');
+            if (selectedColumns.end_time) headers.push('End Time');
+            if (selectedColumns.client_name) headers.push('Client Name');
+            if (selectedColumns.phone) headers.push('Phone');
+            if (selectedColumns.email) headers.push('Email');
+            if (selectedColumns.address) headers.push('Address');
+            if (selectedColumns.suburb) headers.push('Suburb');
+            if (selectedColumns.description) headers.push('Job Description');
+            if (selectedColumns.assigned_to) headers.push('Assigned To');
+            if (selectedColumns.status) headers.push('Status');
+            if (selectedColumns.priority) headers.push('Priority');
+            if (selectedColumns.price) headers.push('Price');
+            if (selectedColumns.gst) headers.push('GST');
+            if (selectedColumns.amount_paid) headers.push('Amount Paid');
+            if (selectedColumns.payment_method) headers.push('Payment Method');
+            if (selectedColumns.actual_start) headers.push('Actual Start');
+            if (selectedColumns.actual_end) headers.push('Actual End');
+            if (selectedColumns.photo_url) headers.push('Photo URL');
+
+            // Build rows based on selected columns
+            const rows = jobsData.map(job => {
+                const row = [];
+                const jobDate = new Date(job.date);
+                const dayName = jobDate.toLocaleDateString('en-US', {weekday: 'long'});
+
+                if (selectedColumns.job_number) row.push(job.job_number || '');
+                if (selectedColumns.date) row.push(job.date || '');
+                if (selectedColumns.day) row.push(dayName);
+                if (selectedColumns.start_time) row.push(job.start_time ? formatTime12Hour(job.start_time) : '');
+                if (selectedColumns.end_time) row.push(job.end_time ? formatTime12Hour(job.end_time) : '');
+                if (selectedColumns.client_name) row.push(job.client_name || '');
+                if (selectedColumns.phone) row.push(job.client_phone || '');
+                if (selectedColumns.email) row.push(job.client_email || '');
+                if (selectedColumns.address) row.push(job.address || '');
+                if (selectedColumns.suburb) row.push(job.suburb || '');
+                if (selectedColumns.description) row.push(job.job_description || '');
+                if (selectedColumns.assigned_to) row.push(job.staff ? job.staff.full_name : 'Unassigned');
+                if (selectedColumns.status) row.push(job.status || '');
+                if (selectedColumns.priority) row.push(job.priority || '');
+                if (selectedColumns.price) row.push(job.price || '');
+                if (selectedColumns.gst) row.push(job.price_includes_gst ? 'Excl GST' : '+GST');
+                if (selectedColumns.amount_paid) row.push(job.amount_paid || '');
+                if (selectedColumns.payment_method) row.push(job.payment_method || '');
+                if (selectedColumns.actual_start) row.push(job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '');
+                if (selectedColumns.actual_end) row.push(job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '');
+                if (selectedColumns.photo_url) row.push(job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : '');
+
+                return row;
+            });
+
+            // Escape CSV values
+            const escapeCSV = (value) => {
+                if (value === null || value === undefined) return '';
+                const stringValue = String(value);
+                if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                    return '"' + stringValue.replace(/"/g, '""') + '"';
+                }
+                return stringValue;
+            };
+
+            // Build CSV content
+            let csv = headers.map(escapeCSV).join(',') + '\n';
+            rows.forEach(row => {
+                csv += row.map(escapeCSV).join(',') + '\n';
+            });
+
+            // Create download
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `jobs_export_advanced_${timestamp}.csv`;
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function formatDateWithDay(dateString) {
@@ -1329,47 +1615,10 @@
                 </div>
             `;
             const exportButton = `
-                <div class="relative">
-                    <button onclick="toggleExportMenu()" class="px-4 py-2 border border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2">
-                        <span class="material-icons md-18">download</span>
-                        Export
-                    </button>
-                    ${exportMenuOpen ? `
-                        <div class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
-                            <div class="mb-3 pb-2 border-b">
-                                <span class="text-sm font-semibold text-gray-700">Export Jobs</span>
-                            </div>
-                            <div class="space-y-2">
-                                <button onclick="exportJobs('current')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
-                                    <span class="material-icons md-18">table_rows</span>
-                                    Current View
-                                </button>
-                                <button onclick="exportJobs('today')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
-                                    <span class="material-icons md-18">today</span>
-                                    Today
-                                </button>
-                                <button onclick="exportJobs('week')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
-                                    <span class="material-icons md-18">date_range</span>
-                                    This Week
-                                </button>
-                                <button onclick="exportJobs('month')" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
-                                    <span class="material-icons md-18">calendar_month</span>
-                                    This Month
-                                </button>
-                                <button onclick="openCustomExport()" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded flex items-center gap-2">
-                                    <span class="material-icons md-18">tune</span>
-                                    Custom Range...
-                                </button>
-                                <div class="pt-2 mt-2 border-t">
-                                    <button onclick="exportJobs('all')" class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded flex items-center gap-2">
-                                        <span class="material-icons md-18">download</span>
-                                        All Jobs
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
+                <button onclick="openAdvancedExportModal()" class="px-4 py-2 border border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2">
+                    <span class="material-icons md-18">download</span>
+                    Export
+                </button>
             `;
             if (filteredJobs.length === 0) {
                 return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
