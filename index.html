@@ -1067,7 +1067,7 @@
         }
 
         async function updateJobField(jobId, field, value) {
-            if (window.innerWidth <= 768) return;
+            //if (window.innerWidth <= 768) return;
             try {
                 const job = jobs.find(j => j.id === jobId);
                 if (!job) throw new Error('Job not found');
