@@ -1094,14 +1094,6 @@
             }
         }
 
-        async function quickUpdateStatus(jobId, newStatus) {
-            const success = await updateJobField(jobId, 'status', newStatus);
-            if (success) {
-                closeMobileJobModal();
-                alert('Status updated successfully!');
-            }
-        }
-
         function formatTime12Hour(time24) {
             if (!time24) return '';
             const parts = time24.split(':');
@@ -1207,7 +1199,7 @@
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Start Time:</span><span class="text-gray-900">' + formatTime12Hour(job.start_time) + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">End Time:</span><span class="text-gray-900">' + formatTime12Hour(job.end_time) + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Assigned To:</span><span class="text-gray-900">' + (job.staff ? job.staff.full_name : 'Unassigned') + '</span></div>' +
-                '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Status:</span><select id="mobile_status_' + job.id + '" onchange="quickUpdateStatus(\'' + job.id + '\', this.value)" class="px-2 py-1 rounded text-xs font-medium border border-gray-300"><option value="Unassigned"' + (job.status === 'Unassigned' ? ' selected' : '') + '>Unassigned</option><option value="Assigned"' + (job.status === 'Assigned' ? ' selected' : '') + '>Assigned</option><option value="In Progress"' + (job.status === 'In Progress' ? ' selected' : '') + '>In Progress</option><option value="Reschedule"' + (job.status === 'Reschedule' ? ' selected' : '') + '>Reschedule</option><option value="Completed"' + (job.status === 'Completed' ? ' selected' : '') + '>Completed</option></select></div>' +
+                '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Status:</span><span class="px-2 py-1 rounded-full text-xs font-medium ' + getStatusClass(job.status) + '">' + job.status + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Client Name:</span><span class="text-gray-900">' + escapeHtml(job.client_name) + '</span></div>' +
                 '<div class="py-2 border-b"><span class="font-semibold text-gray-600 block mb-1">Address:</span><span class="text-gray-900">' + escapeHtml(job.address) + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Phone:</span><span class="text-gray-900">' + escapeHtml(job.client_phone) + '</span></div>' +
