@@ -1105,7 +1105,6 @@
         }
 
         function makeEditable(jobId, field, currentValue, type) {
-            if (window.innerWidth <= 768) return;
             const cellId = 'cell-' + jobId + '-' + field;
             const cell = document.getElementById(cellId);
             if (!cell || cell.classList.contains('editing')) return;
