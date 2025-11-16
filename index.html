@@ -971,6 +971,54 @@
                 csv += row.map(escapeCSV).join(',') + '\n';
             });
 
+            // Add summary rows if amount_paid column is selected
+            if (selectedColumns.amount_paid) {
+                // Add blank row for separation
+                csv += '\n';
+
+                // Calculate totals
+                const totalJobs = jobsData.length;
+                const totalRevenue = jobsData.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+                const cashTotal = jobsData.filter(j => j.payment_method === 'Cash').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Check').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+
+                // Find which column index has amount_paid
+                let amountPaidIndex = 0;
+                let currentIndex = 0;
+                if (selectedColumns.job_number) currentIndex++;
+                if (selectedColumns.date) currentIndex++;
+                if (selectedColumns.day) currentIndex++;
+                if (selectedColumns.start_time) currentIndex++;
+                if (selectedColumns.end_time) currentIndex++;
+                if (selectedColumns.client_name) currentIndex++;
+                if (selectedColumns.phone) currentIndex++;
+                if (selectedColumns.email) currentIndex++;
+                if (selectedColumns.address) currentIndex++;
+                if (selectedColumns.suburb) currentIndex++;
+                if (selectedColumns.description) currentIndex++;
+                if (selectedColumns.assigned_to) currentIndex++;
+                if (selectedColumns.status) currentIndex++;
+                if (selectedColumns.priority) currentIndex++;
+                if (selectedColumns.price) currentIndex++;
+                if (selectedColumns.gst) currentIndex++;
+                amountPaidIndex = currentIndex;
+
+                // Create summary rows
+                const emptyColumns = new Array(amountPaidIndex).fill('');
+
+                // Total Jobs row
+                csv += [...emptyColumns, 'TOTAL JOBS:', totalJobs].map(escapeCSV).join(',') + '\n';
+
+                // Total Revenue row
+                csv += [...emptyColumns, 'TOTAL REVENUE:', '$' + totalRevenue.toFixed(2)].map(escapeCSV).join(',') + '\n';
+
+                // Cash Total row
+                csv += [...emptyColumns, 'CASH TOTAL:', '$' + cashTotal.toFixed(2)].map(escapeCSV).join(',') + '\n';
+
+                // Bank Total row
+                csv += [...emptyColumns, 'BANK TOTAL:', '$' + bankTotal.toFixed(2)].map(escapeCSV).join(',') + '\n';
+            }
+
             // Create download
             const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
             const link = document.createElement('a');
