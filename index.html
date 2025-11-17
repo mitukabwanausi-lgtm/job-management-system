@@ -1159,11 +1159,22 @@
             cell.classList.add('editing');
             const originalContent = cell.innerHTML;
             let input;
+
             if (type === 'date') {
                 input = document.createElement('input');
                 input.type = 'date';
                 input.value = currentValue || '';
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
+                // Add change event for immediate save on mobile
+                input.addEventListener('change', async () => {
+                    const newValue = input.value;
+                    if (newValue !== currentValue) {
+                        await updateJobField(jobId, field, newValue || null);
+                    } else {
+                        cell.innerHTML = originalContent;
+                        cell.classList.remove('editing');
+                    }
+                });
             } else if (type === 'time') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
