@@ -1215,12 +1215,10 @@
                     return true;
                 }
 
-                // Lock body scroll and save position
-                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-                document.body.style.overflow = 'hidden';
-                document.body.style.position = 'fixed';
-                document.body.style.top = `-${scrollPosition}px`;
-                document.body.style.width = '100%';
+                // Find the scrollable table container and save its scroll position
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                const tableScrollPosition = tableContainer ? tableContainer.scrollTop : 0;
+                const windowScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
@@ -1228,24 +1226,19 @@
                 await loadJobs();
                 renderApp();
 
-                // Unlock body scroll and restore position
-                document.body.style.overflow = '';
-                document.body.style.position = '';
-                document.body.style.top = '';
-                document.body.style.width = '';
-                window.scrollTo(0, scrollPosition);
+                // Restore BOTH window and table scroll positions after render
+                setTimeout(() => {
+                    const newTableContainer = document.querySelector('.overflow-x-auto');
+                    if (newTableContainer) {
+                        newTableContainer.scrollTop = tableScrollPosition;
+                    }
+                    window.scrollTo(0, windowScrollPosition);
+                }, 0);
 
                 return true;
             } catch (error) {
                 console.error('Error updating job:', error);
                 alert('Failed to update: ' + error.message);
-
-                // Make sure to unlock scroll even on error
-                document.body.style.overflow = '';
-                document.body.style.position = '';
-                document.body.style.top = '';
-                document.body.style.width = '';
-
                 return false;
             }
         }
