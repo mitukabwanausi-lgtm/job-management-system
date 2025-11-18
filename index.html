@@ -1204,7 +1204,7 @@
             return textColors[index];
         }
 
-        async function updateJobField(jobId, field, value) {
+        async function updateJobField(jobId, field, value, savedScrollPosition) {
             try {
                 const job = jobs.find(j => j.id === jobId);
                 if (!job) throw new Error('Job not found');
@@ -1215,31 +1215,29 @@
                     return true;
                 }
 
-                // Save ONLY window scroll position
-                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
-                console.log('SAVED scroll position:', scrollPosition);
+                // Use the scroll position passed from makeEditable
+                const scrollPosition = savedScrollPosition || window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+                console.log('Using scroll position:', scrollPosition);
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
                 await loadJobs();
-
-                console.log('BEFORE renderApp - current scroll:', window.pageYOffset);
                 renderApp();
-                console.log('AFTER renderApp - current scroll:', window.pageYOffset);
 
-                // Restore immediately
+                // Restore scroll position
                 window.scrollTo(0, scrollPosition);
-                console.log('RESTORED to:', scrollPosition, '- actual position now:', window.pageYOffset);
+                document.documentElement.scrollTop = scrollPosition;
 
-                // Check after 100ms if something reset it
                 setTimeout(() => {
-                    console.log('After 100ms - scroll position:', window.pageYOffset);
-                    if (window.pageYOffset !== scrollPosition) {
-                        console.log('SCROLL WAS RESET! Restoring again...');
-                        window.scrollTo(0, scrollPosition);
-                    }
-                }, 100);
+                    window.scrollTo(0, scrollPosition);
+                    document.documentElement.scrollTop = scrollPosition;
+                }, 10);
+
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                    document.documentElement.scrollTop = scrollPosition;
+                }, 50);
 
                 return true;
             } catch (error) {
@@ -1327,9 +1325,12 @@
             cell.appendChild(input);
             input.focus();
             const save = async () => {
+                // Save scroll position HERE, before any updates
+                const savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+
                 const newValue = input.value;
                 if (newValue !== currentValue) {
-                    const success = await updateJobField(jobId, field, newValue || null);
+                    const success = await updateJobField(jobId, field, newValue || null, savedScrollPosition);
                     if (!success) {
                         cell.innerHTML = originalContent;
                         cell.classList.remove('editing');
