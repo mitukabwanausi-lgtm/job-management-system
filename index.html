@@ -1215,31 +1215,31 @@
                     return true;
                 }
 
-                // Save ONLY window scroll position (not table container)
+                // Save ONLY window scroll position
                 const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+                console.log('SAVED scroll position:', scrollPosition);
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
                 await loadJobs();
+
+                console.log('BEFORE renderApp - current scroll:', window.pageYOffset);
                 renderApp();
+                console.log('AFTER renderApp - current scroll:', window.pageYOffset);
 
-                // Restore window scroll position multiple times to ensure it sticks
+                // Restore immediately
                 window.scrollTo(0, scrollPosition);
-                document.documentElement.scrollTop = scrollPosition;
-                document.body.scrollTop = scrollPosition;
+                console.log('RESTORED to:', scrollPosition, '- actual position now:', window.pageYOffset);
 
+                // Check after 100ms if something reset it
                 setTimeout(() => {
-                    window.scrollTo(0, scrollPosition);
-                    document.documentElement.scrollTop = scrollPosition;
-                    document.body.scrollTop = scrollPosition;
-                }, 10);
-
-                setTimeout(() => {
-                    window.scrollTo(0, scrollPosition);
-                    document.documentElement.scrollTop = scrollPosition;
-                    document.body.scrollTop = scrollPosition;
-                }, 50);
+                    console.log('After 100ms - scroll position:', window.pageYOffset);
+                    if (window.pageYOffset !== scrollPosition) {
+                        console.log('SCROLL WAS RESET! Restoring again...');
+                        window.scrollTo(0, scrollPosition);
+                    }
+                }, 100);
 
                 return true;
             } catch (error) {
