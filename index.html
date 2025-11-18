@@ -1215,9 +1215,12 @@
                     return true;
                 }
 
-                // Save scroll position BEFORE any updates
-                const scrollPosition = window.scrollY || window.pageYOffset;
-                const scrollElement = document.documentElement || document.body;
+                // Lock body scroll and save position
+                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${scrollPosition}px`;
+                document.body.style.width = '100%';
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
@@ -1225,21 +1228,24 @@
                 await loadJobs();
                 renderApp();
 
-                // Restore scroll position AFTER render completes
-                // Use multiple methods to ensure it works
+                // Unlock body scroll and restore position
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
                 window.scrollTo(0, scrollPosition);
-                scrollElement.scrollTop = scrollPosition;
-
-                // Backup: Force scroll again after a tiny delay
-                setTimeout(() => {
-                    window.scrollTo(0, scrollPosition);
-                    scrollElement.scrollTop = scrollPosition;
-                }, 10);
 
                 return true;
             } catch (error) {
                 console.error('Error updating job:', error);
                 alert('Failed to update: ' + error.message);
+
+                // Make sure to unlock scroll even on error
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+
                 return false;
             }
         }
