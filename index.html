@@ -1226,14 +1226,31 @@
                 await loadJobs();
                 renderApp();
 
-                // Restore BOTH window and table scroll positions after render
+                // Multiple attempts to restore scroll position
+                // Attempt 1: Immediate
+                const newTableContainer = document.querySelector('.overflow-x-auto');
+                if (newTableContainer) {
+                    newTableContainer.scrollTop = tableScrollPosition;
+                }
+                window.scrollTo(0, windowScrollPosition);
+
+                // Attempt 2: After 10ms
                 setTimeout(() => {
-                    const newTableContainer = document.querySelector('.overflow-x-auto');
-                    if (newTableContainer) {
-                        newTableContainer.scrollTop = tableScrollPosition;
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = tableScrollPosition;
                     }
                     window.scrollTo(0, windowScrollPosition);
-                }, 0);
+                }, 10);
+
+                // Attempt 3: After 50ms (final backup)
+                setTimeout(() => {
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = tableScrollPosition;
+                    }
+                    window.scrollTo(0, windowScrollPosition);
+                }, 50);
 
                 return true;
             } catch (error) {
