@@ -1220,37 +1220,28 @@
                 const tableScrollPosition = tableContainer ? tableContainer.scrollTop : 0;
                 const windowScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
+                console.log('=== BEFORE UPDATE ===');
+                console.log('Table scroll position:', tableScrollPosition);
+                console.log('Window scroll position:', windowScrollPosition);
+                console.log('Table container found:', !!tableContainer);
+
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
                 await loadJobs();
                 renderApp();
 
-                // Multiple attempts to restore scroll position
-                // Attempt 1: Immediate
+                console.log('=== AFTER RENDER ===');
                 const newTableContainer = document.querySelector('.overflow-x-auto');
+                console.log('New table container found:', !!newTableContainer);
+                console.log('New table scroll position:', newTableContainer ? newTableContainer.scrollTop : 'N/A');
+
+                // Restore scroll
                 if (newTableContainer) {
                     newTableContainer.scrollTop = tableScrollPosition;
+                    console.log('SET table scroll to:', tableScrollPosition);
+                    console.log('ACTUAL table scroll after set:', newTableContainer.scrollTop);
                 }
-                window.scrollTo(0, windowScrollPosition);
-
-                // Attempt 2: After 10ms
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = tableScrollPosition;
-                    }
-                    window.scrollTo(0, windowScrollPosition);
-                }, 10);
-
-                // Attempt 3: After 50ms (final backup)
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = tableScrollPosition;
-                    }
-                    window.scrollTo(0, windowScrollPosition);
-                }, 50);
 
                 return true;
             } catch (error) {
