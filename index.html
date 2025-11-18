@@ -1215,21 +1215,26 @@
                     return true;
                 }
 
+                // Save scroll position BEFORE any updates
+                const scrollPosition = window.scrollY || window.pageYOffset;
+                const scrollElement = document.documentElement || document.body;
+
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
-
-                // Save scroll position before reload
-                const scrollPosition = window.scrollY;
 
                 await loadJobs();
                 renderApp();
 
-                // Restore scroll position after render
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        window.scrollTo(0, scrollPosition);
-                    });
-                });
+                // Restore scroll position AFTER render completes
+                // Use multiple methods to ensure it works
+                window.scrollTo(0, scrollPosition);
+                scrollElement.scrollTop = scrollPosition;
+
+                // Backup: Force scroll again after a tiny delay
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                    scrollElement.scrollTop = scrollPosition;
+                }, 10);
 
                 return true;
             } catch (error) {
