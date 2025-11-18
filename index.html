@@ -1215,15 +1215,8 @@
                     return true;
                 }
 
-                // Find the scrollable table container and save its scroll position
-                const tableContainer = document.querySelector('.overflow-x-auto');
-                const tableScrollPosition = tableContainer ? tableContainer.scrollTop : 0;
-                const windowScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-                console.log('=== BEFORE UPDATE ===');
-                console.log('Table scroll position:', tableScrollPosition);
-                console.log('Window scroll position:', windowScrollPosition);
-                console.log('Table container found:', !!tableContainer);
+                // Save ONLY window scroll position (not table container)
+                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
@@ -1231,17 +1224,22 @@
                 await loadJobs();
                 renderApp();
 
-                console.log('=== AFTER RENDER ===');
-                const newTableContainer = document.querySelector('.overflow-x-auto');
-                console.log('New table container found:', !!newTableContainer);
-                console.log('New table scroll position:', newTableContainer ? newTableContainer.scrollTop : 'N/A');
+                // Restore window scroll position multiple times to ensure it sticks
+                window.scrollTo(0, scrollPosition);
+                document.documentElement.scrollTop = scrollPosition;
+                document.body.scrollTop = scrollPosition;
 
-                // Restore scroll
-                if (newTableContainer) {
-                    newTableContainer.scrollTop = tableScrollPosition;
-                    console.log('SET table scroll to:', tableScrollPosition);
-                    console.log('ACTUAL table scroll after set:', newTableContainer.scrollTop);
-                }
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                    document.documentElement.scrollTop = scrollPosition;
+                    document.body.scrollTop = scrollPosition;
+                }, 10);
+
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                    document.documentElement.scrollTop = scrollPosition;
+                    document.body.scrollTop = scrollPosition;
+                }, 50);
 
                 return true;
             } catch (error) {
