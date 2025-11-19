@@ -1215,9 +1215,8 @@
                     return true;
                 }
 
-                // Use the scroll position captured when cell was clicked
+                // Use the TABLE scroll position captured on hover
                 const scrollPosition = window.lastScrollPosition || 0;
-                console.log('Restoring to scroll position:', scrollPosition);
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
@@ -1225,29 +1224,25 @@
                 await loadJobs();
                 renderApp();
 
-                console.log('After renderApp, scroll is:', window.pageYOffset);
-
-                // Restore scroll position aggressively
-                window.scrollTo(0, scrollPosition);
-                console.log('After first restore, scroll is:', window.pageYOffset);
+                // Restore TABLE container scroll (not window scroll!)
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                if (tableContainer) {
+                    tableContainer.scrollTop = scrollPosition;
+                }
 
                 setTimeout(() => {
-                    console.log('After 10ms, scroll is:', window.pageYOffset);
-                    window.scrollTo(0, scrollPosition);
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = scrollPosition;
+                    }
                 }, 10);
 
                 setTimeout(() => {
-                    console.log('After 50ms, scroll is:', window.pageYOffset);
-                    window.scrollTo(0, scrollPosition);
-                }, 50);
-
-                setTimeout(() => {
-                    console.log('After 200ms (final check), scroll is:', window.pageYOffset);
-                    if (window.pageYOffset !== scrollPosition) {
-                        console.log('SOMETHING IS RESETTING SCROLL! Force restoring...');
-                        window.scrollTo(0, scrollPosition);
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = scrollPosition;
                     }
-                }, 200);
+                }, 50);
 
                 // Clear it
                 window.lastScrollPosition = null;
@@ -1373,14 +1368,11 @@
             }
         }
 
-        function makeEditableWithScroll(jobId, field, currentValue, type) {
-            // Use scroll position captured on hover (don't capture here)
-            console.log('Using scroll from hover:', window.lastScrollPosition);
-            makeEditable(jobId, field, currentValue, type);
-        }
-
         function captureScrollOnHover() {
-            window.lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+            const tableContainer = document.querySelector('.overflow-x-auto');
+            if (tableContainer) {
+                window.lastScrollPosition = tableContainer.scrollTop;
+            }
         }
 
         function openMobileJobModal(jobId) {
@@ -1864,46 +1856,46 @@
 
 
                 if (visibleColumns.date) {
-                    row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
+                    row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
                 }
                 if (visibleColumns.start_time) {
-                    row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>';
+                    row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>';
                 }
                 if (visibleColumns.end_time) {
-                    row += '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>';
+                    row += '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>';
                 }
                 if (visibleColumns.assigned_to) {
-                    row += '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>';
+                    row += '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>';
                 }
                 if (visibleColumns.status) {
-                    row += '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>';
+                    row += '<td id="cell-' + job.id + '-status" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'status\', \'' + job.status + '\', \'select-status\')"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></td>';
                 }
                 if (visibleColumns.client_name) {
-                    row += '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]" onclick="makeEditableWithScroll(\'' + job.id + '\', \'client_name\', \'' + escapeHtml(job.client_name).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_name) + '</td>';
+                    row += '<td id="cell-' + job.id + '-client_name" class="editable-cell text-sm min-w-[120px]" onclick="makeEditable(\'' + job.id + '\', \'client_name\', \'' + escapeHtml(job.client_name).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_name) + '</td>';
                 }
                 if (visibleColumns.address) {
-                    row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '" onclick="makeEditableWithScroll(\'' + job.id + '\', \'address\', \'' + escapeHtml(job.address).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.address) + '</td>';
+                    row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '" onclick="makeEditable(\'' + job.id + '\', \'address\', \'' + escapeHtml(job.address).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.address) + '</td>';
                 }
                 if (visibleColumns.suburb) {
-                    row += '<td id="cell-' + job.id + '-suburb" class="editable-cell text-sm min-w-[120px]" onclick="makeEditableWithScroll(\'' + job.id + '\', \'suburb\', \'' + escapeHtml(job.suburb || '').replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.suburb || 'N/A') + '</td>';
+                    row += '<td id="cell-' + job.id + '-suburb" class="editable-cell text-sm min-w-[120px]" onclick="makeEditable(\'' + job.id + '\', \'suburb\', \'' + escapeHtml(job.suburb || '').replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.suburb || 'N/A') + '</td>';
                 }
                 if (visibleColumns.phone) {
-                    row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'client_phone\', \'' + escapeHtml(job.client_phone).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_phone) + '</td>';
+                    row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'client_phone\', \'' + escapeHtml(job.client_phone).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_phone) + '</td>';
                 }
                 if (visibleColumns.description) {
-                    row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '" onclick="makeEditableWithScroll(\'' + job.id + '\', \'job_description\', \'' + escapeHtml(job.job_description).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.job_description) + '</td>';
+                    row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '" onclick="makeEditable(\'' + job.id + '\', \'job_description\', \'' + escapeHtml(job.job_description).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.job_description) + '</td>';
                 }
                 if (visibleColumns.price) {
-                    row += '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>';
+                    row += '<td id="cell-' + job.id + '-price" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'price\', \'' + job.price + '\', \'number\')">$' + parseFloat(job.price).toFixed(2) + gstBadge + '</td>';
                 }
                 if (visibleColumns.email) {
                     row += '<td id="cell-' + job.id + '-client_email" class="editable-cell text-sm min-w-[150px]">' + (job.client_email || '<span class="text-gray-400">N/A</span>') + '</td>';
                 }
                 if (visibleColumns.amount_paid) {
-                    row += '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>';
+                    row += '<td id="cell-' + job.id + '-amount_paid" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'amount_paid\', \'' + (job.amount_paid || '') + '\', \'number\')">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : '<span class="text-gray-400">N/A</span>') + '</td>';
                 }
                 if (visibleColumns.payment_method) {
-                    row += '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditableWithScroll(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>';
+                    row += '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>';
                 }
                 if (visibleColumns.photos) {
                     row += '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm whitespace-nowrap">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>';
