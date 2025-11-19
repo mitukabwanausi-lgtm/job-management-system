@@ -1225,22 +1225,29 @@
                 await loadJobs();
                 renderApp();
 
+                console.log('After renderApp, scroll is:', window.pageYOffset);
+
                 // Restore scroll position aggressively
                 window.scrollTo(0, scrollPosition);
-                document.documentElement.scrollTop = scrollPosition;
-                document.body.scrollTop = scrollPosition;
+                console.log('After first restore, scroll is:', window.pageYOffset);
 
                 setTimeout(() => {
+                    console.log('After 10ms, scroll is:', window.pageYOffset);
                     window.scrollTo(0, scrollPosition);
-                    document.documentElement.scrollTop = scrollPosition;
-                    document.body.scrollTop = scrollPosition;
                 }, 10);
 
                 setTimeout(() => {
+                    console.log('After 50ms, scroll is:', window.pageYOffset);
                     window.scrollTo(0, scrollPosition);
-                    document.documentElement.scrollTop = scrollPosition;
-                    document.body.scrollTop = scrollPosition;
                 }, 50);
+
+                setTimeout(() => {
+                    console.log('After 200ms (final check), scroll is:', window.pageYOffset);
+                    if (window.pageYOffset !== scrollPosition) {
+                        console.log('SOMETHING IS RESETTING SCROLL! Force restoring...');
+                        window.scrollTo(0, scrollPosition);
+                    }
+                }, 200);
 
                 // Clear it
                 window.lastScrollPosition = null;
