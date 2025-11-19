@@ -1336,7 +1336,13 @@
             }
             cell.innerHTML = '';
             cell.appendChild(input);
-            input.focus();
+
+            // Prevent browser from auto-scrolling when input is focused
+            const currentScroll = window.lastScrollPosition || window.pageYOffset;
+            input.focus({preventScroll: true});
+
+            // Restore scroll immediately after focus
+            window.scrollTo(0, currentScroll);
             const save = async () => {
                 // Save scroll position HERE, before any updates
                 const savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
