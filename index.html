@@ -1374,10 +1374,13 @@
         }
 
         function makeEditableWithScroll(jobId, field, currentValue, type) {
-            // Capture scroll position RIGHT NOW before anything happens
-            window.lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
-            console.log('Captured scroll at click:', window.lastScrollPosition);
+            // Use scroll position captured on hover (don't capture here)
+            console.log('Using scroll from hover:', window.lastScrollPosition);
             makeEditable(jobId, field, currentValue, type);
+        }
+
+        function captureScrollOnHover() {
+            window.lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
         }
 
         function openMobileJobModal(jobId) {
@@ -2014,6 +2017,13 @@
                 renderApp();
             }
         })
+
+        // ADD THIS NEW EVENT LISTENER HERE
+        document.addEventListener('mouseover', function (event) {
+            if (event.target.classList.contains('editable-cell') || event.target.closest('.editable-cell')) {
+                captureScrollOnHover();
+            }
+        });
     </script>
 </body>
 
