@@ -1215,8 +1215,9 @@
                     return true;
                 }
 
-                // Use the TABLE scroll position captured on hover
-                const scrollPosition = window.lastScrollPosition || 0;
+                // CAPTURE the table container's scroll position BEFORE any updates
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                const savedScrollTop = tableContainer ? tableContainer.scrollTop : 0;
 
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
@@ -1224,28 +1225,28 @@
                 await loadJobs();
                 renderApp();
 
-                // Restore TABLE container scroll (not window scroll!)
-                const tableContainer = document.querySelector('.overflow-x-auto');
-                if (tableContainer) {
-                    tableContainer.scrollTop = scrollPosition;
-                }
+                // RESTORE scroll position after rendering completes
+                // Use multiple attempts to ensure it sticks
+                requestAnimationFrame(() => {
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = savedScrollTop;
+                    }
+                });
 
                 setTimeout(() => {
                     const container = document.querySelector('.overflow-x-auto');
                     if (container) {
-                        container.scrollTop = scrollPosition;
+                        container.scrollTop = savedScrollTop;
                     }
                 }, 10);
 
                 setTimeout(() => {
                     const container = document.querySelector('.overflow-x-auto');
                     if (container) {
-                        container.scrollTop = scrollPosition;
+                        container.scrollTop = savedScrollTop;
                     }
-                }, 50);
-
-                // Clear it
-                window.lastScrollPosition = null;
+                }, 100);
 
                 return true;
             } catch (error) {
@@ -1365,13 +1366,6 @@
             });
             if (type.startsWith('select-') || type === 'time') {
                 input.addEventListener('change', save);
-            }
-        }
-
-        function captureScrollOnHover() {
-            const tableContainer = document.querySelector('.overflow-x-auto');
-            if (tableContainer) {
-                window.lastScrollPosition = tableContainer.scrollTop;
             }
         }
 
@@ -2009,13 +2003,6 @@
                 renderApp();
             }
         })
-
-        // ADD THIS NEW EVENT LISTENER HERE
-        document.addEventListener('mouseover', function (event) {
-            if (event.target.classList.contains('editable-cell') || event.target.closest('.editable-cell')) {
-                captureScrollOnHover();
-            }
-        });
     </script>
 </body>
 
