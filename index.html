@@ -1219,25 +1219,22 @@
                 const tableContainer = document.querySelector('.overflow-x-auto');
                 const savedScrollTop = tableContainer ? tableContainer.scrollTop : 0;
 
+                console.log('Saved scroll position:', savedScrollTop);
+
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
                 await loadJobs();
+
+                // CRITICAL: Render first, THEN restore scroll
                 renderApp();
 
-                // RESTORE scroll position after rendering completes
-                // Use multiple attempts to ensure it sticks
-                requestAnimationFrame(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = savedScrollTop;
-                    }
-                });
-
+                // Wait for DOM to be ready, then restore scroll multiple times
                 setTimeout(() => {
                     const container = document.querySelector('.overflow-x-auto');
                     if (container) {
                         container.scrollTop = savedScrollTop;
+                        console.log('Restored scroll (10ms):', container.scrollTop);
                     }
                 }, 10);
 
@@ -1245,8 +1242,25 @@
                     const container = document.querySelector('.overflow-x-auto');
                     if (container) {
                         container.scrollTop = savedScrollTop;
+                        console.log('Restored scroll (50ms):', container.scrollTop);
+                    }
+                }, 50);
+
+                setTimeout(() => {
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = savedScrollTop;
+                        console.log('Restored scroll (100ms):', container.scrollTop);
                     }
                 }, 100);
+
+                setTimeout(() => {
+                    const container = document.querySelector('.overflow-x-auto');
+                    if (container) {
+                        container.scrollTop = savedScrollTop;
+                        console.log('Restored scroll (200ms):', container.scrollTop);
+                    }
+                }, 200);
 
                 return true;
             } catch (error) {
