@@ -195,7 +195,7 @@
         /* Sticky table header */
         table thead {
             position: sticky;
-            top: 0;
+            top: 64px;
             z-index: 30;
             background: #f9fafb;
         }
@@ -1215,52 +1215,11 @@
                     return true;
                 }
 
-                // CAPTURE the table container's scroll position BEFORE any updates
-                const tableContainer = document.querySelector('.overflow-x-auto');
-                const savedScrollTop = tableContainer ? tableContainer.scrollTop : 0;
-
-                console.log('Saved scroll position:', savedScrollTop);
-
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
                 await loadJobs();
-
-                // CRITICAL: Render first, THEN restore scroll
                 renderApp();
-
-                // Wait for DOM to be ready, then restore scroll multiple times
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = savedScrollTop;
-                        console.log('Restored scroll (10ms):', container.scrollTop);
-                    }
-                }, 10);
-
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = savedScrollTop;
-                        console.log('Restored scroll (50ms):', container.scrollTop);
-                    }
-                }, 50);
-
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = savedScrollTop;
-                        console.log('Restored scroll (100ms):', container.scrollTop);
-                    }
-                }, 100);
-
-                setTimeout(() => {
-                    const container = document.querySelector('.overflow-x-auto');
-                    if (container) {
-                        container.scrollTop = savedScrollTop;
-                        console.log('Restored scroll (200ms):', container.scrollTop);
-                    }
-                }, 200);
 
                 return true;
             } catch (error) {
@@ -1932,7 +1891,7 @@
             if (visibleColumns.photos) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>';
             headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr></thead>';
 
-            return '<div class="overflow-x-auto -mx-4 md:mx-0" style="max-height: calc(100vh - 180px); overflow-y: auto;"><table class="min-w-full border-collapse">' +
+            return '<div class="overflow-x-auto -mx-4 md:mx-0"><table class="min-w-full border-collapse">' +
                 headers +
                 '<tbody class="bg-white">' + tableRows + '</tbody></table></div>';
         }
