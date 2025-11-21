@@ -1827,10 +1827,10 @@
                     row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
                 } row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
                 if (visibleColumns.start_time) {
-                    row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')">' + formatTime12Hour(job.start_time) + '</td>';
+                    row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.start_time) + '</span></td>';
                 }
                 if (visibleColumns.end_time) {
-                    row += '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')">' + formatTime12Hour(job.end_time) + '</td>';
+                    row += '<td id="cell-' + job.id + '-end_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'end_time\', \'' + job.end_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.end_time) + '</span></td>';
                 }
                 if (visibleColumns.assigned_to) {
                     row += '<td id="cell-' + job.id + '-assigned_to" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'assigned_to\', \'' + (job.assigned_to || '') + '\', \'select-staff\')">' + staffDisplay + '</td>';
