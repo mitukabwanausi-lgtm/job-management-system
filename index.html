@@ -1890,7 +1890,7 @@
             if (visibleColumns.photos) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>';
             headers += '</tr></thead>';
 
-            return '<div class="overflow-x-auto -mx-4 md:mx-0"><table class="min-w-full border-collapse">' +
+            return '<div class="overflow-x-auto -mx-4 md:mx-0" style="max-height: calc(100vh - 200px); overflow-y: auto;"><table class="min-w-full border-collapse">' +
                 headers +
                 '<tbody class="bg-white">' + tableRows + '</tbody></table></div>';
         }
