@@ -1872,8 +1872,8 @@
             }).join('');
 
             let headers = '<thead class="bg-gray-50"><tr>';
-            if (visibleColumns.date) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 140px;">Date</th>'; headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>';
-            headers += '</tr></thead>';
+            if (visibleColumns.date) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 140px;">Date</th>';
+            headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>';
             if (visibleColumns.start_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>';
             if (visibleColumns.end_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>';
             if (visibleColumns.assigned_to) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>';
@@ -1888,6 +1888,7 @@
             if (visibleColumns.amount_paid) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>';
             if (visibleColumns.payment_method) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>';
             if (visibleColumns.photos) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>';
+            headers += '</tr></thead>';
 
             return '<div class="overflow-x-auto -mx-4 md:mx-0"><table class="min-w-full border-collapse">' +
                 headers +
