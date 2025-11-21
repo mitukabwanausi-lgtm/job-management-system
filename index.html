@@ -801,7 +801,7 @@
                     job.status || '',
                     job.priority || '',
                     job.price || '',
-                    job.price_includes_gst ? 'Excl GST' : '+GST',
+                    job.price_includes_gst ? 'Incl GST' : '+GST',
                     job.amount_paid || '',
                     job.payment_method || '',
                     job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
@@ -1067,8 +1067,33 @@
                 csv += '\n';
 
                 // Calculate totals
+                // Calculate totals with GST breakdown
                 const totalJobs = jobsData.length;
-                const totalRevenue = jobsData.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+
+                // Calculate base amounts and GST
+                let totalBaseAmount = 0;
+                let totalGSTAmount = 0;
+
+                jobsData.forEach(j => {
+                    const amountPaid = parseFloat(j.amount_paid) || 0;
+                    if (amountPaid > 0) {
+                        if (j.price_includes_gst) {
+                            // Price includes GST - extract GST from total (GST = Total / 11)
+                            const gst = amountPaid / 11;
+                            const base = amountPaid - gst;
+                            totalBaseAmount += base;
+                            totalGSTAmount += gst;
+                        } else {
+                            // Price +GST - calculate GST to add (GST = Base * 0.1)
+                            const base = amountPaid;
+                            const gst = amountPaid * 0.1;
+                            totalBaseAmount += base;
+                            totalGSTAmount += gst;
+                        }
+                    }
+                });
+
+                const totalRevenue = totalBaseAmount + totalGSTAmount;
                 const cashTotal = jobsData.filter(j => j.payment_method === 'Cash').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
                 const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
 
@@ -1099,8 +1124,17 @@
                 // Total Jobs row
                 csv += [...emptyColumns, 'TOTAL JOBS:', totalJobs].map(escapeCSV).join(',') + '\n';
 
-                // Total Revenue row
-                csv += [...emptyColumns, 'TOTAL REVENUE:', '$' + totalRevenue.toFixed(2)].map(escapeCSV).join(',') + '\n';
+                // Base Amount row
+                csv += [...emptyColumns, 'TOTAL AMOUNT (minus GST):', '$' + totalBaseAmount.toFixed(2)].map(escapeCSV).join(',') + '\n';
+
+                // GST Amount row
+                csv += [...emptyColumns, 'GST AMOUNT:', '$' + totalGSTAmount.toFixed(2)].map(escapeCSV).join(',') + '\n';
+
+                // Final Total row
+                csv += [...emptyColumns, 'FINAL TOTAL (incl GST):', '$' + totalRevenue.toFixed(2)].map(escapeCSV).join(',') + '\n';
+
+                // Blank row
+                csv += '\n';
 
                 // Cash Total row
                 csv += [...emptyColumns, 'CASH TOTAL:', '$' + cashTotal.toFixed(2)].map(escapeCSV).join(',') + '\n';
