@@ -1638,6 +1638,7 @@
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
+            html += '<div onclick="changeView(\'create-job\')" class="bg-blue-600 rounded-xl border border-blue-700 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-blue-100 uppercase tracking-wide">Quick Action</div><div class="text-2xl font-semibold text-white mt-2 flex items-center gap-2"><span class="material-icons">add_circle</span>Create Job</div></div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">';
             html += '<h3 class="text-sm font-medium mb-3 opacity-90">Today\'s Revenue</h3>';
