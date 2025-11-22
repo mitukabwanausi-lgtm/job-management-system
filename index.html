@@ -1095,7 +1095,7 @@
 
                 const totalRevenue = totalBaseAmount + totalGSTAmount;
                 const cashTotal = jobsData.filter(j => j.payment_method === 'Cash').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
-                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card' || j.payment_method === 'Bank Transfer/Check').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
 
                 // Find which column index has amount_paid
                 let amountPaidIndex = 0;
