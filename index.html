@@ -230,11 +230,15 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">add_circle</span> Create Job
                 </button>
-                <button onclick="changeView('all-jobs'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <span class="material-icons md-18">assignment</span> Active Jobs
-                </button>
                 <button onclick="changeView('completed-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">check_circle</span> Completed Jobs
+                </button>
+                <button onclick="changeView('archived-jobs'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">archive</span> Archived Jobs
+                </button>
+                <button onclick="changeView('staff-management'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">check_circle</span> Completed Jobs
                 </button>
@@ -310,6 +314,7 @@
                                 <option value="In Progress">In Progress</option>
                                 <option value="Reschedule">Reschedule</option>
                                 <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
                             </select>
                         </div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input
@@ -431,6 +436,7 @@
                                 <option value="In Progress">In Progress</option>
                                 <option value="Reschedule">Reschedule</option>
                                 <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
                             </select>
                         </div>
 
@@ -1303,7 +1309,7 @@
             } else if (type === 'select-status') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-                const statuses = ['Unassigned', 'Assigned', 'In Progress', 'Reschedule', 'Completed'];
+                const statuses = ['Unassigned', 'Assigned', 'In Progress', 'Reschedule', 'Cancelled', 'Completed'];
                 input.innerHTML = statuses.map(s => '<option value="' + s + '"' + (currentValue === s ? ' selected' : '') + '>' + s + '</option>').join('');
             } else if (type === 'select-staff') {
                 input = document.createElement('select');
@@ -1597,6 +1603,7 @@
             if (status === 'In Progress') return 'bg-blue-100 text-blue-800';
             if (status === 'Assigned') return 'bg-purple-100 text-purple-800';
             if (status === 'Reschedule') return 'bg-orange-100 text-orange-800';
+            if (status === 'Cancelled') return 'bg-red-100 text-red-800';
             return 'bg-gray-100 text-gray-800';
         }
 
@@ -1619,6 +1626,7 @@
                 {key: 'create-job', label: 'Create'},
                 {key: 'all-jobs', label: 'Active'},
                 {key: 'completed-jobs', label: 'Completed'},
+                {key: 'archived-jobs', label: 'Archived'},
                 {key: 'staff-management', label: 'Staff'}
             ];
             const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (currentView === v.key ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50') + '">' + v.label + '</button>').join('');
@@ -1630,6 +1638,7 @@
             if (currentView === 'create-job') return renderJobForm();
             if (currentView === 'all-jobs') return renderJobsList(false);
             if (currentView === 'completed-jobs') return renderJobsList(true);
+            if (currentView === 'archived-jobs') return renderJobsList('archived');
             if (currentView === 'staff-management') return renderStaffManagement();
             return renderDashboard();
         }
@@ -1722,12 +1731,27 @@
         }
 
         function renderJobsList(showCompleted) {
-            let filteredJobs = showCompleted ? jobs.filter(j => j.status === 'Completed') : jobs.filter(j => j.status !== 'Completed');
+            let filteredJobs;
+            let title;
+            let emptyMsg;
+
+            if (showCompleted === 'archived') {
+                filteredJobs = jobs.filter(j => j.status === 'Cancelled');
+                title = 'Archived Jobs';
+                emptyMsg = 'No archived jobs yet.';
+            } else if (showCompleted) {
+                filteredJobs = jobs.filter(j => j.status === 'Completed');
+                title = 'Completed Jobs';
+                emptyMsg = 'No completed jobs yet.';
+            } else {
+                filteredJobs = jobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled');
+                title = 'Active Jobs';
+                emptyMsg = 'No active jobs.';
+            }
+
             if (currentStaffFilter) {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === currentStaffFilter);
             }
-            const title = showCompleted ? 'Completed Jobs' : 'Active Jobs';
-            const emptyMsg = showCompleted ? 'No completed jobs yet.' : 'No active jobs.';
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
             const columnSelector = `
