@@ -1903,7 +1903,7 @@
                     row += '<td id="cell-' + job.id + '-address" class="editable-cell text-sm min-w-[150px] max-w-[200px] truncate" title="' + escapeHtml(job.address) + '" onclick="makeEditable(\'' + job.id + '\', \'address\', \'' + escapeHtml(job.address).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.address) + '</td>';
                 }
                 if (visibleColumns.suburb) {
-                    row += '<td id="cell-' + job.id + '-suburb" class="editable-cell text-sm min-w-[120px]" onclick="makeEditable(\'' + job.id + '\', \'suburb\', \'' + escapeHtml(job.suburb || '').replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.suburb || 'N/A') + '</td>';
+                    row += '<td id="cell-' + job.id + '-suburb" class="editable-cell text-sm min-w-[120px]" onclick="makeEditable(\'' + job.id + '\', \'suburb\', \'' + escapeHtml(job.suburb || '').replace(/'/g, "\\'") + '\', \'text\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + escapeHtml(job.suburb || 'N/A') + '</span></td>';
                 }
                 if (visibleColumns.phone) {
                     row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'client_phone\', \'' + escapeHtml(job.client_phone).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_phone) + '</td>';
