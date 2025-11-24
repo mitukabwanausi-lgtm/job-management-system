@@ -1091,15 +1091,15 @@
                     const amountPaid = parseFloat(j.amount_paid) || 0;
                     if (amountPaid > 0) {
                         if (j.price_includes_gst) {
-                            // Price includes GST - extract GST from total (GST = Total / 11)
-                            const gst = amountPaid / 11;
-                            const base = amountPaid - gst;
+                            // "Excl GST" - Amount paid has NO GST in it
+                            const base = amountPaid;
+                            const gst = 0;
                             totalBaseAmount += base;
                             totalGSTAmount += gst;
                         } else {
-                            // Price +GST - calculate GST to add (GST = Base * 0.1)
-                            const base = amountPaid;
-                            const gst = amountPaid * 0.1;
+                            // "+GST" - Amount paid INCLUDES GST, extract it (GST = Total / 11)
+                            const gst = amountPaid / 11;
+                            const base = amountPaid - gst;
                             totalBaseAmount += base;
                             totalGSTAmount += gst;
                         }
