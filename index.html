@@ -1463,6 +1463,14 @@
             // Show modal first
             document.getElementById('editJobModal').classList.remove('hidden');
 
+            // Update modal title
+            const modalTitle = document.querySelector('#editJobModal h2');
+            if (job.id === 'DUPLICATE') {
+                modalTitle.textContent = 'Duplicate Job';
+            } else {
+                modalTitle.textContent = 'Edit Job';
+            }
+
             // Set basic fields
             document.getElementById('edit_job_id').value = job.id || '';
             document.getElementById('edit_date').value = job.date || '';
@@ -1519,6 +1527,7 @@
             const jobId = document.getElementById('edit_job_id').value;
             const photoUrl = document.getElementById('edit_photo_urls').value.trim();
             const job = jobs.find(j => j.id === jobId);
+            const isDuplicate = jobId === 'DUPLICATE';
             const jobData = {
                 date: document.getElementById('edit_date').value,
                 start_time: document.getElementById('edit_start_time').value,
@@ -1548,15 +1557,27 @@
             }
 
             try {
-                const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
-                if (error) throw error;
-                alert('Job updated successfully!');
-                closeEditModal();
-                await loadJobs();
-                renderApp();
+                if (isDuplicate) {
+                    // Create new job
+                    const {error} = await supabase.from('jobs').insert([jobData]).select();
+                    if (error) throw error;
+                    alert('Job duplicated and created successfully!');
+                    closeEditModal();
+                    await loadJobs();
+                    currentView = 'all-jobs';
+                    renderApp();
+                } else {
+                    // Update existing job
+                    const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
+                    if (error) throw error;
+                    alert('Job updated successfully!');
+                    closeEditModal();
+                    await loadJobs();
+                    renderApp();
+                }
             } catch (error) {
-                console.error('Error updating job:', error);
-                alert('Failed to update job: ' + error.message);
+                console.error('Error saving job:', error);
+                alert('Failed to save job: ' + error.message);
             }
         }
 
@@ -1612,47 +1633,37 @@
             }
         }
 
-        async function duplicateJob(jobId) {
-            if (!confirm('Duplicate this job as a new active job?')) return;
-
-            try {
-                const job = jobs.find(j => j.id === jobId);
-                if (!job) throw new Error('Job not found');
-
-                // Create new job with same details but reset status and payment info
-                const newJobData = {
-                    date: job.date,
-                    start_time: job.start_time,
-                    end_time: job.end_time,
-                    client_name: job.client_name,
-                    client_phone: job.client_phone,
-                    client_email: job.client_email,
-                    address: job.address,
-                    suburb: job.suburb,
-                    job_description: job.job_description,
-                    price: job.price,
-                    price_includes_gst: job.price_includes_gst,
-                    priority: job.priority,
-                    assigned_to: job.assigned_to,
-                    status: 'Unassigned', // Reset to Unassigned
-                    amount_paid: null, // Clear payment info
-                    payment_method: null,
-                    actual_start_time: null,
-                    actual_end_time: null,
-                    photo_urls: null // Clear photos
-                };
-
-                const {error} = await supabase.from('jobs').insert([newJobData]).select();
-                if (error) throw error;
-
-                alert('Job duplicated successfully! It has been added to Active Jobs.');
-                await loadJobs();
-                currentView = 'all-jobs'; // Switch to Active Jobs view
-                renderApp();
-            } catch (error) {
-                console.error('Error duplicating job:', error);
-                alert('Failed to duplicate job: ' + error.message);
+        function duplicateJob(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) {
+                alert('Job not found');
+                return;
             }
+
+            // Create a duplicate job object with reset fields
+            const duplicateJobData = {
+                id: 'DUPLICATE', // Special ID to indicate this is a new job being created
+                date: job.date,
+                start_time: job.start_time,
+                end_time: job.end_time,
+                client_name: job.client_name,
+                client_phone: job.client_phone,
+                client_email: job.client_email,
+                address: job.address,
+                suburb: job.suburb,
+                job_description: job.job_description,
+                price: job.price,
+                price_includes_gst: job.price_includes_gst,
+                priority: job.priority,
+                assigned_to: job.assigned_to,
+                status: 'Unassigned',
+                amount_paid: null,
+                payment_method: null,
+                photo_urls: job.photo_urls ? job.photo_urls : null
+            };
+
+            // Open edit modal with duplicate data
+            openEditModal(duplicateJobData);
         }
 
         function escapeHtml(text) {
