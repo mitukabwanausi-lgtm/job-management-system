@@ -2140,6 +2140,49 @@
             currentView = view;
             currentStaffFilter = '';
             currentDateFilter = '';
+
+            // Set default columns for Completed Jobs
+            if (view === 'completed-jobs') {
+                visibleColumns = {
+                    date: true,
+                    start_time: false,
+                    end_time: false,
+                    assigned_to: true,
+                    status: false,
+                    client_name: false,
+                    address: false,
+                    suburb: true,
+                    phone: false,
+                    description: false,
+                    price: true,
+                    email: false,
+                    amount_paid: true,
+                    payment_method: true,
+                    photos: false,
+                    notes: false
+                };
+            } else {
+                // Reset to default columns for other views
+                visibleColumns = {
+                    date: true,
+                    start_time: true,
+                    end_time: true,
+                    assigned_to: true,
+                    status: true,
+                    client_name: true,
+                    address: true,
+                    suburb: true,
+                    phone: true,
+                    description: true,
+                    price: true,
+                    email: false,
+                    amount_paid: false,
+                    payment_method: false,
+                    photos: false,
+                    notes: false
+                };
+            }
+
             renderApp();
         }
 
