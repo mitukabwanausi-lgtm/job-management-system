@@ -639,6 +639,7 @@
         let staff = [];
         let selectedMobileJob = null;
         let currentStaffFilter = '';
+        let currentDateFilter = '';
         let showAllColumns = false;
         let visibleColumns = {
             date: true,
@@ -1836,11 +1837,45 @@
                 emptyMsg = 'No active jobs.';
             }
 
+            if (currentDateFilter) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                filteredJobs = filteredJobs.filter(j => {
+                    const jobDate = new Date(j.date);
+                    jobDate.setHours(0, 0, 0, 0);
+
+                    if (currentDateFilter === 'today') {
+                        return jobDate.getTime() === today.getTime();
+                    } else if (currentDateFilter === 'tomorrow') {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        return jobDate.getTime() === tomorrow.getTime();
+                    } else if (currentDateFilter === 'this_week') {
+                        const weekStart = new Date(today);
+                        weekStart.setDate(today.getDate() - today.getDay());
+                        const weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        return jobDate >= weekStart && jobDate <= weekEnd;
+                    } else if (currentDateFilter === 'next_week') {
+                        const nextWeekStart = new Date(today);
+                        nextWeekStart.setDate(today.getDate() - today.getDay() + 7);
+                        const nextWeekEnd = new Date(nextWeekStart);
+                        nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+                        return jobDate >= nextWeekStart && jobDate <= nextWeekEnd;
+                    } else if (currentDateFilter === 'this_month') {
+                        return jobDate.getMonth() === today.getMonth() && jobDate.getFullYear() === today.getFullYear();
+                    }
+                    return true;
+                });
+            }
+
             if (currentStaffFilter) {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === currentStaffFilter);
             }
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
+            const dateFilterDropdown = '<select onchange="currentDateFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Dates</option><option value="today"' + (currentDateFilter === 'today' ? ' selected' : '') + '>Today</option><option value="tomorrow"' + (currentDateFilter === 'tomorrow' ? ' selected' : '') + '>Tomorrow</option><option value="this_week"' + (currentDateFilter === 'this_week' ? ' selected' : '') + '>This Week</option><option value="next_week"' + (currentDateFilter === 'next_week' ? ' selected' : '') + '>Next Week</option><option value="this_month"' + (currentDateFilter === 'this_month' ? ' selected' : '') + '>This Month</option></select>';
             const columnSelector = `
                 <div class="relative">
                     <button onclick="toggleColumnSelector()" class="px-4 py-2 border rounded-lg text-sm md:text-base bg-white hover:bg-gray-50 flex items-center gap-2">
@@ -1934,7 +1969,7 @@
                 </button>
             `;
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -1947,7 +1982,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
         }
 
         function renderMobileJobCard(job) {
@@ -2104,6 +2139,7 @@
         function changeView(view) {
             currentView = view;
             currentStaffFilter = '';
+            currentDateFilter = '';
             renderApp();
         }
 
