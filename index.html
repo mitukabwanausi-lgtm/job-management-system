@@ -311,6 +311,7 @@
                             <select id="edit_status" class="w-full px-4 py-2 border rounded-lg">
                                 <option value="Unassigned">Unassigned</option>
                                 <option value="Assigned">Assigned</option>
+                                <option value="Assigned/Fix">Assigned/Fix</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Reschedule">Reschedule</option>
                                 <option value="Completed">Completed</option>
@@ -440,6 +441,7 @@
                                 <option value="Unassigned">Unassigned</option>
                                 <option value="Assigned">Assigned</option>
                                 <option value="In Progress">In Progress</option>
+                                <option value="Assigned/Fix">Assigned/Fix</option>
                                 <option value="Reschedule">Reschedule</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
@@ -1314,7 +1316,7 @@
             } else if (type === 'select-status') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
-                const statuses = ['Unassigned', 'Assigned', 'In Progress', 'Reschedule', 'Cancelled', 'Completed'];
+                const statuses = ['Unassigned', 'Assigned', 'Assigned/Fix', 'In Progress', 'Reschedule', 'Cancelled', 'Completed'];
                 input.innerHTML = statuses.map(s => '<option value="' + s + '"' + (currentValue === s ? ' selected' : '') + '>' + s + '</option>').join('');
             } else if (type === 'select-staff') {
                 input = document.createElement('select');
@@ -1685,6 +1687,7 @@
             if (status === 'Completed') return 'bg-green-100 text-green-800';
             if (status === 'In Progress') return 'bg-blue-100 text-blue-800';
             if (status === 'Assigned') return 'bg-purple-100 text-purple-800';
+            if (status === 'Assigned/Fix') return 'bg-indigo-100 text-indigo-800';
             if (status === 'Reschedule') return 'bg-orange-100 text-orange-800';
             if (status === 'Cancelled') return 'bg-red-100 text-red-800';
             return 'bg-gray-100 text-gray-800';
@@ -1792,6 +1795,7 @@
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select name="end_time" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
             html += '</div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">-- Leave Unassigned --</option>' + staffOptions + '</select></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label><select name="status" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="Unassigned">Unassigned</option><option value="Assigned">Assigned</option><option value="Assigned/Fix">Assigned/Fix</option><option value="In Progress">In Progress</option><option value="Reschedule">Reschedule</option></select></div>';
             html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input type="text" name="client_name" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label><input type="tel" name="client_phone" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
@@ -2090,6 +2094,7 @@
                 price: parseFloat(formData.get('price')),
                 price_includes_gst: formData.get('price_includes_gst') === 'true',
                 priority: formData.get('priority'),
+                status: formData.get('status') || 'Unassigned',
                 assigned_to: assignedTo,
                 photo_urls: photoUrl ? [photoUrl] : null
             };
