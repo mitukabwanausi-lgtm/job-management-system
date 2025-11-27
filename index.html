@@ -1964,11 +1964,11 @@
                 </div >
             `;
             const exportButton = `
-            < button onclick = "openAdvancedExportModal()" class="px-4 py-2 border border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2" >
-                <span class="material-icons md-18">download</span>
-        Export
-                </button >
-            `;
+                <button onclick="openAdvancedExportModal()" class="px-4 py-2 border border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2">
+                    <span class="material-icons md-18">download</span>
+                    Export
+                </button>
+                `;
             if (filteredJobs.length === 0) {
                 return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
