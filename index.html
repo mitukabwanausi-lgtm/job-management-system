@@ -920,49 +920,141 @@
 
             // CASH TRANSACTIONS
             csv += '=== CASH TRANSACTIONS ===\n';
-            csv += 'Date,Client Name,Suburb,Staff,Amount Paid\n';
+            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL\n';
+
+            let cashGSTTotal = 0;
 
             cashJobs.forEach(job => {
+                const jobDate = new Date(job.date);
+                const dayName = jobDate.toLocaleDateString('en-US', {weekday: 'long'});
+
+                // Calculate GST amount
+                let gstAmount = 0;
+                const amountPaid = parseFloat(job.amount_paid) || 0;
+                if (amountPaid > 0) {
+                    if (job.price_includes_gst) {
+                        // "Excl GST" - Amount paid has NO GST in it
+                        gstAmount = 0;
+                    } else {
+                        // "+GST" - Amount paid INCLUDES GST, extract it (GST = Total / 11)
+                        gstAmount = amountPaid / 11;
+                    }
+                }
+                cashGSTTotal += gstAmount;
+
                 csv += [
-                    job.date,
-                    job.client_name,
+                    job.job_number || '',
+                    job.date || '',
+                    dayName,
+                    job.start_time ? formatTime12Hour(job.start_time) : '',
+                    job.end_time ? formatTime12Hour(job.end_time) : '',
+                    job.client_name || '',
+                    job.client_phone || '',
+                    job.client_email || '',
+                    job.address || '',
                     job.suburb || '',
+                    job.job_description || '',
                     job.staff ? job.staff.full_name : 'Unassigned',
-                    job.amount_paid
+                    job.status || '',
+                    job.priority || '',
+                    job.price || '',
+                    job.price_includes_gst ? 'Excl GST' : '+GST',
+                    '$' + gstAmount.toFixed(2),
+                    job.amount_paid || '',
+                    job.payment_method || '',
+                    job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
+                    job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
                 ].map(escapeCSV).join(',') + '\n';
             });
 
             const cashTotal = cashJobs.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+            const cashBaseAmount = cashTotal - cashGSTTotal;
+
             csv += '\n';
-            csv += ',,,CASH TOTAL:,$' + cashTotal.toFixed(2) + '\n';
-            csv += ',,,Number of Cash Jobs:,' + cashJobs.length + '\n';
+            csv += ',,,,,,,,,,,,,,,,SUBTOTAL (excl GST):,$' + cashBaseAmount.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,GST AMOUNT:,$' + cashGSTTotal.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,CASH TOTAL (incl GST):,$' + cashTotal.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,Number of Cash Jobs:,' + cashJobs.length + '\n';
             csv += '\n\n';
 
             // BANK TRANSACTIONS
             csv += '=== BANK TRANSACTIONS ===\n';
-            csv += 'Date,Client Name,Suburb,Staff,Amount Paid\n';
+            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL\n';
+
+            let bankGSTTotal = 0;
 
             bankJobs.forEach(job => {
+                const jobDate = new Date(job.date);
+                const dayName = jobDate.toLocaleDateString('en-US', {weekday: 'long'});
+
+                // Calculate GST amount
+                let gstAmount = 0;
+                const amountPaid = parseFloat(job.amount_paid) || 0;
+                if (amountPaid > 0) {
+                    if (job.price_includes_gst) {
+                        // "Excl GST" - Amount paid has NO GST in it
+                        gstAmount = 0;
+                    } else {
+                        // "+GST" - Amount paid INCLUDES GST, extract it (GST = Total / 11)
+                        gstAmount = amountPaid / 11;
+                    }
+                }
+                bankGSTTotal += gstAmount;
+
                 csv += [
-                    job.date,
-                    job.client_name,
+                    job.job_number || '',
+                    job.date || '',
+                    dayName,
+                    job.start_time ? formatTime12Hour(job.start_time) : '',
+                    job.end_time ? formatTime12Hour(job.end_time) : '',
+                    job.client_name || '',
+                    job.client_phone || '',
+                    job.client_email || '',
+                    job.address || '',
                     job.suburb || '',
+                    job.job_description || '',
                     job.staff ? job.staff.full_name : 'Unassigned',
-                    job.amount_paid
+                    job.status || '',
+                    job.priority || '',
+                    job.price || '',
+                    job.price_includes_gst ? 'Excl GST' : '+GST',
+                    '$' + gstAmount.toFixed(2),
+                    job.amount_paid || '',
+                    job.payment_method || '',
+                    job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
+                    job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
                 ].map(escapeCSV).join(',') + '\n';
             });
 
             const bankTotal = bankJobs.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+            const bankBaseAmount = bankTotal - bankGSTTotal;
+
             csv += '\n';
-            csv += ',,,BANK TOTAL:,$' + bankTotal.toFixed(2) + '\n';
-            csv += ',,,Number of Bank Jobs:,' + bankJobs.length + '\n';
+            csv += ',,,,,,,,,,,,,,,,SUBTOTAL (excl GST):,$' + bankBaseAmount.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,GST AMOUNT:,$' + bankGSTTotal.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,BANK TOTAL (incl GST):,$' + bankTotal.toFixed(2) + '\n';
+            csv += ',,,,,,,,,,,,,,,,Number of Bank Jobs:,' + bankJobs.length + '\n';
             csv += '\n\n';
 
             // OVERALL SUMMARY
+            const grandTotal = cashTotal + bankTotal;
+            const grandGSTTotal = cashGSTTotal + bankGSTTotal;
+            const grandBaseAmount = cashBaseAmount + bankBaseAmount;
+
             csv += '=== OVERALL SUMMARY ===\n';
-            csv += 'Total Cash:,$' + cashTotal.toFixed(2) + '\n';
-            csv += 'Total Bank:,$' + bankTotal.toFixed(2) + '\n';
-            csv += 'GRAND TOTAL:,$' + (cashTotal + bankTotal).toFixed(2) + '\n';
+            csv += 'Cash Subtotal (excl GST):,$' + cashBaseAmount.toFixed(2) + '\n';
+            csv += 'Cash GST:,$' + cashGSTTotal.toFixed(2) + '\n';
+            csv += 'Cash Total (incl GST):,$' + cashTotal.toFixed(2) + '\n';
+            csv += '\n';
+            csv += 'Bank Subtotal (excl GST):,$' + bankBaseAmount.toFixed(2) + '\n';
+            csv += 'Bank GST:,$' + bankGSTTotal.toFixed(2) + '\n';
+            csv += 'Bank Total (incl GST):,$' + bankTotal.toFixed(2) + '\n';
+            csv += '\n';
+            csv += 'GRAND SUBTOTAL (excl GST):,$' + grandBaseAmount.toFixed(2) + '\n';
+            csv += 'GRAND GST AMOUNT:,$' + grandGSTTotal.toFixed(2) + '\n';
+            csv += 'GRAND TOTAL (incl GST):,$' + grandTotal.toFixed(2) + '\n';
             csv += 'Total Jobs:,' + (cashJobs.length + bankJobs.length) + '\n';
 
             // Download the CSV
