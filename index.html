@@ -902,7 +902,7 @@
 
             // Separate by payment method
             const cashJobs = completedJobs.filter(j => j.payment_method === 'Cash' && j.amount_paid);
-            const bankJobs = completedJobs.filter(j => (j.payment_method === 'Bank Transfer/Card' || j.payment_method === 'Bank Transfer/Check') && j.amount_paid);
+            const bankJobs = completedJobs.filter(j => (j.payment_method === 'Bank Transfer/Card') && j.amount_paid);
 
             // Helper function for CSV escaping
             const escapeCSV = (value) => {
