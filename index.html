@@ -857,6 +857,129 @@
             document.body.removeChild(link);
         }
 
+        function generateSummaryReport() {
+            // Get completed jobs based on current filters
+            let completedJobs = jobs.filter(j => j.status === 'Completed');
+
+            // Apply date filter if active
+            if (currentDateFilter) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                completedJobs = completedJobs.filter(j => {
+                    const jobDate = new Date(j.date);
+                    jobDate.setHours(0, 0, 0, 0);
+
+                    if (currentDateFilter === 'today') {
+                        return jobDate.getTime() === today.getTime();
+                    } else if (currentDateFilter === 'tomorrow') {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        return jobDate.getTime() === tomorrow.getTime();
+                    } else if (currentDateFilter === 'this_week') {
+                        const weekStart = new Date(today);
+                        weekStart.setDate(today.getDate() - today.getDay());
+                        const weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        return jobDate >= weekStart && jobDate <= weekEnd;
+                    } else if (currentDateFilter === 'next_week') {
+                        const nextWeekStart = new Date(today);
+                        nextWeekStart.setDate(today.getDate() - today.getDay() + 7);
+                        const nextWeekEnd = new Date(nextWeekStart);
+                        nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+                        return jobDate >= nextWeekStart && jobDate <= nextWeekEnd;
+                    } else if (currentDateFilter === 'this_month') {
+                        return jobDate.getMonth() === today.getMonth() && jobDate.getFullYear() === today.getFullYear();
+                    }
+                    return true;
+                });
+            }
+
+            // Apply staff filter if active
+            if (currentStaffFilter) {
+                completedJobs = completedJobs.filter(j => j.assigned_to === currentStaffFilter);
+            }
+
+            // Separate by payment method
+            const cashJobs = completedJobs.filter(j => j.payment_method === 'Cash' && j.amount_paid);
+            const bankJobs = completedJobs.filter(j => (j.payment_method === 'Bank Transfer/Card' || j.payment_method === 'Bank Transfer/Check') && j.amount_paid);
+
+            // Helper function for CSV escaping
+            const escapeCSV = (value) => {
+                if (value === null || value === undefined) return '';
+                const stringValue = String(value);
+                if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                    return '"' + stringValue.replace(/"/g, '""') + '"';
+                }
+                return stringValue;
+            };
+
+            // Build CSV content
+            let csv = 'COMPLETED JOBS SUMMARY REPORT\n';
+            csv += 'Generated: ' + new Date().toLocaleString() + '\n\n';
+
+            // CASH TRANSACTIONS
+            csv += '=== CASH TRANSACTIONS ===\n';
+            csv += 'Date,Client Name,Suburb,Staff,Amount Paid\n';
+
+            cashJobs.forEach(job => {
+                csv += [
+                    job.date,
+                    job.client_name,
+                    job.suburb || '',
+                    job.staff ? job.staff.full_name : 'Unassigned',
+                    job.amount_paid
+                ].map(escapeCSV).join(',') + '\n';
+            });
+
+            const cashTotal = cashJobs.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+            csv += '\n';
+            csv += ',,,CASH TOTAL:,$' + cashTotal.toFixed(2) + '\n';
+            csv += ',,,Number of Cash Jobs:,' + cashJobs.length + '\n';
+            csv += '\n\n';
+
+            // BANK TRANSACTIONS
+            csv += '=== BANK TRANSACTIONS ===\n';
+            csv += 'Date,Client Name,Suburb,Staff,Amount Paid\n';
+
+            bankJobs.forEach(job => {
+                csv += [
+                    job.date,
+                    job.client_name,
+                    job.suburb || '',
+                    job.staff ? job.staff.full_name : 'Unassigned',
+                    job.amount_paid
+                ].map(escapeCSV).join(',') + '\n';
+            });
+
+            const bankTotal = bankJobs.reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+            csv += '\n';
+            csv += ',,,BANK TOTAL:,$' + bankTotal.toFixed(2) + '\n';
+            csv += ',,,Number of Bank Jobs:,' + bankJobs.length + '\n';
+            csv += '\n\n';
+
+            // OVERALL SUMMARY
+            csv += '=== OVERALL SUMMARY ===\n';
+            csv += 'Total Cash:,$' + cashTotal.toFixed(2) + '\n';
+            csv += 'Total Bank:,$' + bankTotal.toFixed(2) + '\n';
+            csv += 'GRAND TOTAL:,$' + (cashTotal + bankTotal).toFixed(2) + '\n';
+            csv += 'Total Jobs:,' + (cashJobs.length + bankJobs.length) + '\n';
+
+            // Download the CSV
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `summary_report_${timestamp}.csv`;
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function openAdvancedExportModal() {
             // Populate staff dropdown
             const staffSelect = document.getElementById('export_staff');
@@ -2197,8 +2320,14 @@
                     Export
                 </button>
                 `;
+            const summaryButton = `
+                <button onclick="generateSummaryReport()" class="px-4 py-2 border border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg text-sm md:text-base font-medium flex items-center gap-2">
+                    <span class="material-icons md-18">summarize</span>
+                    Summary
+                </button>
+            `;
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -2211,7 +2340,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
         }
 
         function renderMobileJobCard(job) {
