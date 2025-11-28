@@ -2238,11 +2238,7 @@
 
                 if (visibleColumns.date) {
                     row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
-                } if (job.status === 'Completed') {
-                    row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-2">Duplicate</button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
-                } else {
-                    row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
-                }
+                } row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-2">Duplicate</button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
                 if (visibleColumns.start_time) {
                     row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.start_time) + '</span></td>';
                 }
