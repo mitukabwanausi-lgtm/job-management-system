@@ -1923,6 +1923,7 @@
             html += '<option value="this_year"' + (dashboardTimePeriod === 'this_year' ? ' selected' : '') + '>This Year</option>';
             html += '<option value="all_time"' + (dashboardTimePeriod === 'all_time' ? ' selected' : '') + '>All Time</option>';
             html += '</select>';
+            html += '</div>'; // Close flex container
 
             // Summary Cards
             html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">';
