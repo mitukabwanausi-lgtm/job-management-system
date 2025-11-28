@@ -1900,7 +1900,8 @@
             html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
             html += '<h3 class="text-lg font-semibold text-gray-900 mb-4">Staff Workload</h3>';
             html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">' + workloadCards + '</div>';
-            html += '</div></div>';
+            html += '</div>';
+
             // Profitability Analysis Section
             const completedJobs = getCompletedJobsForPeriod(dashboardTimePeriod);
             const suburbAnalysis = analyzeSuburbProfitability(completedJobs);
