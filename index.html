@@ -354,6 +354,18 @@
                         </div>
                         <div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label><input
                                 type="email" id="edit_client_email" class="w-full px-4 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-2">Contact Method</label>
+                            <select id="edit_contact_method" class="w-full px-4 py-2 border rounded-lg">
+                                <option value="">Not specified</option>
+                                <option value="Phone Call">Phone Call</option>
+                                <option value="Email">Email</option>
+                                <option value="Website">Website</option>
+                                <option value="Social Media">Social Media</option>
+                                <option value="Referral">Referral</option>
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Amount Paid
                                     ($)</label><input type="number" step="0.01" id="edit_amount_paid"
@@ -570,6 +582,11 @@
                                         class="w-4 h-4 text-blue-600 rounded">
                                     <span class="ml-3 text-sm text-gray-700">Photo URL</span>
                                 </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" id="export_col_contact_method"
+                                        class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Contact Method</span>
+                                </label>
                             </div>
                         </div>
                     </form>
@@ -658,7 +675,8 @@
             amount_paid: false,
             payment_method: false,
             photos: false,
-            notes: false
+            notes: false,
+            contact_method: false
         };
         let columnSelectorOpen = false;
         let pendingCompletionJobId = null;
@@ -792,7 +810,8 @@
                 'Payment Method',
                 'Actual Start',
                 'Actual End',
-                'Photo URL'
+                'Photo URL',
+                'Contact Method'
             ];
 
             // Convert jobs to CSV rows
@@ -821,7 +840,8 @@
                     job.payment_method || '',
                     job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
                     job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
-                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : '',
+                    job.contact_method || ''
                 ];
             });
 
@@ -920,7 +940,7 @@
 
             // CASH TRANSACTIONS
             csv += '=== CASH TRANSACTIONS ===\n';
-            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL\n';
+            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL,Contact Method\n';
 
             let cashGSTTotal = 0;
 
@@ -964,7 +984,8 @@
                     job.payment_method || '',
                     job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
                     job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
-                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : '',
+                    job.contact_method || ''
                 ].map(escapeCSV).join(',') + '\n';
             });
 
@@ -980,7 +1001,7 @@
 
             // BANK TRANSACTIONS
             csv += '=== BANK TRANSACTIONS ===\n';
-            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL\n';
+            csv += 'Job Number,Date,Day,Start Time,End Time,Client Name,Phone,Email,Address,Suburb,Job Description,Assigned To,Status,Priority,Price,GST Status,GST Amount,Amount Paid,Payment Method,Actual Start,Actual End,Photo URL,Contact Method\n';
 
             let bankGSTTotal = 0;
 
@@ -1024,7 +1045,8 @@
                     job.payment_method || '',
                     job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '',
                     job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '',
-                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : ''
+                    job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : '',
+                    job.contact_method || ''
                 ].map(escapeCSV).join(',') + '\n';
             });
 
@@ -1185,7 +1207,8 @@
                 payment_method: document.getElementById('export_col_payment_method').checked,
                 actual_start: document.getElementById('export_col_actual_start').checked,
                 actual_end: document.getElementById('export_col_actual_end').checked,
-                photo_url: document.getElementById('export_col_photo_url').checked
+                photo_url: document.getElementById('export_col_photo_url').checked,
+                contact_method: document.getElementById('export_col_contact_method').checked
             };
 
             // Filter jobs
@@ -1243,6 +1266,7 @@
             if (selectedColumns.actual_start) headers.push('Actual Start');
             if (selectedColumns.actual_end) headers.push('Actual End');
             if (selectedColumns.photo_url) headers.push('Photo URL');
+            if (selectedColumns.contact_method) headers.push('Contact Method');
 
             // Build rows based on selected columns
             const rows = jobsData.map(job => {
@@ -1271,6 +1295,7 @@
                 if (selectedColumns.actual_start) row.push(job.actual_start_time ? new Date(job.actual_start_time).toLocaleString() : '');
                 if (selectedColumns.actual_end) row.push(job.actual_end_time ? new Date(job.actual_end_time).toLocaleString() : '');
                 if (selectedColumns.photo_url) row.push(job.photo_urls && job.photo_urls.length > 0 ? job.photo_urls[0] : '');
+                if (selectedColumns.contact_method) row.push(job.contact_method || '');
 
                 return row;
             });
@@ -1625,6 +1650,7 @@
                 '<div class="py-2 border-b"><span class="font-semibold text-gray-600 block mb-1">Description:</span><span class="text-gray-900 whitespace-pre-wrap">' + escapeHtml(job.job_description) + '</span></div>' +
                 '<div class="flex justify-between items-center py-2 border-b"><span class="font-semibold text-gray-600">Price:</span><span class="text-gray-900 flex items-center gap-2">$' + parseFloat(job.price).toFixed(2) + ' ' + gstBadge + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Email:</span><span class="text-gray-900">' + (job.client_email || 'N/A') + '</span></div>' +
+                '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Contact Method:</span><span class="text-gray-900">' + (job.contact_method || 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Amount Paid:</span><span class="text-gray-900">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Payment Method:</span><span class="text-gray-900">' + (job.payment_method || 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2"><span class="font-semibold text-gray-600">Photos:</span><span class="text-gray-900">' + (job.photo_urls && job.photo_urls.length > 0 ? '<a href="' + job.photo_urls[0] + '" target="_blank" class="text-blue-600">View</a>' : 'None') + '</span></div>' +
@@ -1714,6 +1740,7 @@
             document.getElementById('edit_client_name').value = job.client_name || '';
             document.getElementById('edit_client_phone').value = job.client_phone || '';
             document.getElementById('edit_client_email').value = job.client_email || '';
+            document.getElementById('edit_contact_method').value = job.contact_method || '';
             document.getElementById('edit_address').value = job.address || '';
             document.getElementById('edit_suburb').value = job.suburb || '';
             document.getElementById('edit_job_description').value = job.job_description || '';
@@ -1772,7 +1799,8 @@
                 amount_paid: document.getElementById('edit_amount_paid').value ? parseFloat(document.getElementById('edit_amount_paid').value) : null,
                 payment_method: document.getElementById('edit_payment_method').value || null,
                 photo_urls: photoUrl ? [photoUrl] : null,
-                notes: document.getElementById('edit_notes').value || null
+                notes: document.getElementById('edit_notes').value || null,
+                contact_method: document.getElementById('edit_contact_method').value || null
             };
             if (jobData.end_time <= jobData.start_time) {alert('End time must be after start time.'); return;}
 
@@ -2252,6 +2280,7 @@
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">GST *</label><div class="space-y-2"><label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="price_includes_gst" value="false" checked class="w-4 h-4 text-green-600"><span class="ml-3 text-sm md:text-base">Price +GST</span></label><label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="price_includes_gst" value="true" class="w-4 h-4 text-gray-600"><span class="ml-3 text-sm md:text-base">Price excl GST</span></label></div></div>';
             html += '</div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Email</label><input type="email" name="client_email" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Contact Method</label><select name="contact_method" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Not specified</option><option value="Phone Call">Phone Call</option><option value="Email">Email</option><option value="Website">Website</option><option value="Social Media">Social Media</option><option value="Referral">Referral</option><option value="Walk-in">Walk-in</option><option value="Other">Other</option></select></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Photo URL (Google Photos)</label><input type="url" name="photo_urls" placeholder="https://photos.google.com/share/..." class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><p class="text-xs text-gray-500 mt-1">Paste one Google Photos album link</p></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Priority</label><select name="priority" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="Normal">Normal</option><option value="High">High</option><option value="Urgent">Urgent</option></select></div>';
             html += '<div class="flex flex-col md:flex-row gap-3 md:gap-4">';
@@ -2400,6 +2429,10 @@
                                     <input type="checkbox" ${visibleColumns.notes ? 'checked' : ''} onchange="toggleColumn('notes')" class="w-4 h-4 text-blue-600 rounded">
                                     <span class="ml-3 text-sm text-gray-700">Notes</span>
                                 </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.contact_method ? 'checked' : ''} onchange="toggleColumn('contact_method')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Contact Method</span>
+                                </label>
                             </div>
                         </div>
                     ` : ''
@@ -2506,6 +2539,9 @@
                 if (visibleColumns.notes) {
                     row += '<td id="cell-' + job.id + '-notes" class="editable-cell text-sm min-w-[150px] max-w-[250px]" onclick="makeEditable(\'' + job.id + '\', \'notes\', \'' + escapeHtml(job.notes || '').replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + (job.notes ? '<span class="bg-yellow-50 px-2 py-1 rounded text-xs">' + escapeHtml(job.notes.substring(0, 50)) + (job.notes.length > 50 ? '...' : '') + '</span>' : '<span class="text-gray-400">No notes</span>') + '</td>';
                 }
+                if (visibleColumns.contact_method) {
+                    row += '<td id="cell-' + job.id + '-contact_method" class="editable-cell text-sm whitespace-nowrap">' + (job.contact_method || '<span class="text-gray-400">N/A</span>') + '</td>';
+                }
 
                 return row;
             }).join('');
@@ -2529,6 +2565,7 @@
             if (visibleColumns.photos) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photos</th>';
             if (visibleColumns.notes) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>';
             headers += '</tr></thead>';
+            if (visibleColumns.contact_method) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Method</th>';
 
             return '<div class="overflow-x-auto -mx-4 md:mx-0" style="max-height: calc(100vh - 200px); overflow-y: auto;"><table class="min-w-full border-collapse">' +
                 headers +
@@ -2578,7 +2615,8 @@
                 priority: formData.get('priority'),
                 status: formData.get('status') || 'Unassigned',
                 assigned_to: assignedTo,
-                photo_urls: photoUrl ? [photoUrl] : null
+                photo_urls: photoUrl ? [photoUrl] : null,
+                contact_method: formData.get('contact_method') || null
             };
             await createJob(jobData);
         }
@@ -2606,7 +2644,8 @@
                     amount_paid: true,
                     payment_method: true,
                     photos: false,
-                    notes: false
+                    notes: false,
+                    contact_method: false
                 };
             } else {
                 // Reset to default columns for other views
@@ -2626,7 +2665,8 @@
                     amount_paid: false,
                     payment_method: false,
                     photos: false,
-                    notes: false
+                    notes: false,
+                    contact_method: false
                 };
             }
 
