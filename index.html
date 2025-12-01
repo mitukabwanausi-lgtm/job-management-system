@@ -633,6 +633,13 @@
                         </label>
                     </div>
                 </div>
+                <div>
+                    <label
+                        class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" id="manager_request_review" class="w-4 h-4 text-blue-600 rounded">
+                        <span class="ml-3 text-gray-900">😊 Happy customer - Request review</span>
+                    </label>
+                </div>
             </div>
             <div class="flex gap-3 mt-6">
                 <button onclick="closeManagerPaymentModal()"
@@ -1132,6 +1139,7 @@
         async function submitManagerCompletion() {
             const amountPaid = document.getElementById('manager_amount_paid').value;
             const paymentMethod = document.querySelector('input[name="manager_payment_method"]:checked').value;
+            const requestReview = document.getElementById('manager_request_review').checked;
 
             if (!amountPaid || amountPaid <= 0) {
                 alert('Please enter a valid amount paid.');
@@ -1151,6 +1159,7 @@
                         status: 'Completed',
                         amount_paid: Number(parseFloat(amountPaid).toFixed(2)),
                         payment_method: paymentMethod,
+                        request_review: requestReview,
                         actual_end_time: new Date().toISOString()
                     })
                     .eq('id', pendingCompletionJobId);
@@ -2499,7 +2508,8 @@
                 if (visibleColumns.date) {
                     row += '<td id="cell-' + job.id + '-date" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'date\', \'' + job.date + '\', \'date\')"><span class="px-2 py-1 rounded font-medium" style="background-color: ' + getDateColor(job.date) + '; color: ' + getDateTextColor(job.date) + '">' + formatDateWithDay(job.date) + '</span></td>';
                 }
-                row += '<td class="px-4 py-2 text-sm whitespace-nowrap"><button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-2">Duplicate</button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
+                const reviewBadge = job.request_review ? '<span class="text-yellow-500 text-lg mr-2" title="Review requested">⭐</span>' : '';
+                row += '<td class="px-4 py-2 text-sm whitespace-nowrap">' + reviewBadge + '<button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-2">Duplicate</button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800">Delete</button></td>';
                 if (visibleColumns.start_time) {
                     row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.start_time) + '</span></td>';
                 }
