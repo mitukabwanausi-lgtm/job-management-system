@@ -2126,7 +2126,7 @@
                 id: s.id,
                 name: s.full_name,
                 color: s.color_code,
-                count: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed').length
+                count: jobs.filter(j => j.assigned_to === s.id && j.status !== 'Completed' && j.status !== 'Cancelled').length
             }));
             const workloadCards = workload.map(w => '<div onclick="filterByStaff(\'' + w.id + '\')" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer transform hover:scale-105" style="border-left: 3px solid ' + w.color + '"><div class="text-sm font-medium text-gray-600 mb-1">' + w.name + '</div><div class="text-2xl font-semibold mt-2" style="color: ' + w.color + '">' + w.count + '</div></div>').join('');
 
