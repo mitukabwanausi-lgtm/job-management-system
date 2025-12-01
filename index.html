@@ -669,6 +669,7 @@
         let currentStaffFilter = '';
         let currentDateFilter = '';
         let dashboardTimePeriod = 'this_month';
+        let currentReviewTab = 'pending';
         let showAllColumns = false;
         let visibleColumns = {
             date: true,
@@ -1925,6 +1926,28 @@
             }
         }
 
+        async function markReviewReceived(jobId) {
+            if (!confirm('Mark this review as received?')) return;
+
+            try {
+                const {error} = await supabase
+                    .from('jobs')
+                    .update({
+                        review_received: true,
+                        review_received_date: new Date().toISOString()
+                    })
+                    .eq('id', jobId);
+
+                if (error) throw error;
+
+                await loadJobs();
+                renderApp();
+            } catch (error) {
+                console.error('Error marking review as received:', error);
+                alert('Failed to update: ' + error.message);
+            }
+        }
+
         function duplicateJob(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) {
@@ -2626,22 +2649,60 @@
         }
 
         function renderReviewRequests() {
-            const reviewJobs = jobs.filter(j =>
+            // Filter jobs by status
+            const pendingJobs = jobs.filter(j =>
                 j.status === 'Completed' &&
                 j.request_review === true &&
                 j.review_sent !== true
             );
 
+            const sentJobs = jobs.filter(j =>
+                j.status === 'Completed' &&
+                j.review_sent === true &&
+                j.review_received !== true
+            );
+
+            const receivedJobs = jobs.filter(j =>
+                j.status === 'Completed' &&
+                j.review_received === true
+            );
+
             let html = '<div class="space-y-6">';
-            html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">';
-            html += '<h2 class="text-2xl font-bold text-gray-900">Review Requests</h2>';
-            html += '<div class="text-sm text-gray-600">Pending: <span class="font-bold text-yellow-600">' + reviewJobs.length + '</span></div>';
+
+            // Header with tabs
+            html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">';
+            html += '<h2 class="text-2xl font-bold text-gray-900">Review Management</h2>';
             html += '</div>';
 
-            if (reviewJobs.length === 0) {
+            // Tab buttons
+            html += '<div class="bg-white rounded-lg shadow p-2 flex gap-2 mb-4">';
+            html += '<button onclick="currentReviewTab = \'pending\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (typeof currentReviewTab === 'undefined' || currentReviewTab === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Pending (' + pendingJobs.length + ')</button>';
+            html += '<button onclick="currentReviewTab = \'sent\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentReviewTab === 'sent' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Sent (' + sentJobs.length + ')</button>';
+            html += '<button onclick="currentReviewTab = \'received\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentReviewTab === 'received' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Received (' + receivedJobs.length + ')</button>';
+            html += '</div>';
+
+            // Determine which jobs to show based on tab
+            let displayJobs = pendingJobs;
+            let emptyMessage = 'No pending review requests';
+            let showSentButton = true;
+            let showReceivedButton = false;
+
+            if (currentReviewTab === 'sent') {
+                displayJobs = sentJobs;
+                emptyMessage = 'No sent review requests awaiting response';
+                showSentButton = false;
+                showReceivedButton = true;
+            } else if (currentReviewTab === 'received') {
+                displayJobs = receivedJobs;
+                emptyMessage = 'No reviews received yet';
+                showSentButton = false;
+                showReceivedButton = false;
+            }
+
+            if (displayJobs.length === 0) {
                 html += '<div class="bg-white rounded-lg shadow p-12 text-center">';
                 html += '<span class="material-icons text-gray-300" style="font-size: 64px;">rate_review</span>';
-                html += '<p class="text-gray-500 mt-4">No pending review requests</p>';
+                html += '<p class="text-gray-500 mt-4">' + emptyMessage + '</p>';
                 html += '</div>';
                 html += '</div>';
                 return html;
@@ -2657,12 +2718,17 @@
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
+            if (currentReviewTab === 'received') {
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Received</th>';
+            }
+            if (showSentButton || showReceivedButton) {
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
+            }
             html += '</tr>';
             html += '</thead>';
             html += '<tbody class="bg-white divide-y divide-gray-200">';
 
-            reviewJobs.forEach(job => {
+            displayJobs.forEach(job => {
                 const staffName = job.staff ? job.staff.full_name : 'Unassigned';
                 const staffColor = job.staff ? job.staff.color_code : '#666';
 
@@ -2673,9 +2739,23 @@
                 html += '<td class="px-4 py-3 text-sm">' + escapeHtml(job.client_phone) + '</td>';
                 html += '<td class="px-4 py-3 text-sm">' + (job.client_email ? escapeHtml(job.client_email) : '<span class="text-gray-400">No email</span>') + '</td>';
                 html += '<td class="px-4 py-3 text-sm"><span style="color: ' + staffColor + '">' + staffName + '</span></td>';
-                html += '<td class="px-4 py-3 text-sm whitespace-nowrap">';
-                html += '<button onclick="markReviewSent(\'' + job.id + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">Mark as Sent</button>';
-                html += '</td>';
+
+                if (currentReviewTab === 'received') {
+                    const receivedDate = job.review_received_date ? new Date(job.review_received_date).toLocaleDateString() : 'N/A';
+                    html += '<td class="px-4 py-3 text-sm">' + receivedDate + '</td>';
+                }
+
+                if (showSentButton || showReceivedButton) {
+                    html += '<td class="px-4 py-3 text-sm whitespace-nowrap">';
+                    if (showSentButton) {
+                        html += '<button onclick="markReviewSent(\'' + job.id + '\')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">Mark as Sent</button>';
+                    }
+                    if (showReceivedButton) {
+                        html += '<button onclick="markReviewReceived(\'' + job.id + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">Review Received</button>';
+                    }
+                    html += '</td>';
+                }
+
                 html += '</tr>';
             });
 
@@ -2737,6 +2817,7 @@
             currentView = view;
             currentStaffFilter = '';
             currentDateFilter = '';
+            currentReviewTab = 'pending';
 
             // Set default columns for Completed Jobs
             if (view === 'completed-jobs') {
