@@ -238,6 +238,10 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">archive</span> Archived Jobs
                 </button>
+                <button onclick="changeView('review-requests'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">rate_review</span> Review Requests
+                </button>
                 <button onclick="changeView('staff-management'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">check_circle</span> Completed Jobs
@@ -1902,6 +1906,25 @@
             }
         }
 
+        async function markReviewSent(jobId) {
+            if (!confirm('Mark this review request as sent?')) return;
+
+            try {
+                const {error} = await supabase
+                    .from('jobs')
+                    .update({review_sent: true})
+                    .eq('id', jobId);
+
+                if (error) throw error;
+
+                await loadJobs();
+                renderApp();
+            } catch (error) {
+                console.error('Error marking review as sent:', error);
+                alert('Failed to update: ' + error.message);
+            }
+        }
+
         function duplicateJob(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) {
@@ -1972,6 +1995,7 @@
                 {key: 'all-jobs', label: 'Active'},
                 {key: 'completed-jobs', label: 'Completed'},
                 {key: 'archived-jobs', label: 'Archived'},
+                {key: 'review-requests', label: 'Reviews'},
                 {key: 'staff-management', label: 'Staff'}
             ];
             const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (currentView === v.key ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50') + '">' + v.label + '</button>').join('');
@@ -1985,6 +2009,7 @@
             if (currentView === 'completed-jobs') return renderJobsList(true);
             if (currentView === 'archived-jobs') return renderJobsList('archived');
             if (currentView === 'staff-management') return renderStaffManagement();
+            if (currentView === 'review-requests') return renderReviewRequests();
             return renderDashboard();
         }
 
@@ -2146,6 +2171,8 @@
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
+            const reviewRequestsCount = jobs.filter(j => j.status === 'Completed' && j.request_review === true && j.review_sent !== true).length;
+            html += '<div onclick="changeView(\'review-requests\')" class="bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl border border-yellow-600 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-yellow-900 uppercase tracking-wide">Review Requests</div><div class="text-3xl font-semibold text-white mt-2">' + reviewRequestsCount + '</div></div>';
             html += '<div onclick="changeView(\'create-job\')" class="bg-blue-600 rounded-xl border border-blue-700 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-blue-100 uppercase tracking-wide">Quick Action</div><div class="text-2xl font-semibold text-white mt-2 flex items-center gap-2"><span class="material-icons">add_circle</span>Create Job</div></div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">';
@@ -2596,6 +2623,68 @@
         function renderStaffManagement() {
             const staffCards = staff.map(s => '<div class="bg-white rounded-lg shadow p-4 md:p-6 border-l-4" style="border-color: ' + s.color_code + '"><div class="flex items-start justify-between mb-3 md:mb-4"><div><h3 class="text-base md:text-lg font-bold text-gray-900">' + s.full_name + '</h3><p class="text-xs md:text-sm text-gray-500">@' + s.username + '</p></div><div class="w-8 h-8 md:w-10 md:h-10 rounded-full" style="background-color: ' + s.color_code + '"></div></div><div class="space-y-2 text-xs md:text-sm"><div><span class="font-medium">Phone:</span> ' + (s.phone || 'Not set') + '</div><div><span class="font-medium">Status:</span> <span class="px-2 py-1 rounded-full text-xs ' + (s.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') + '">' + (s.active ? 'Active' : 'Inactive') + '</span></div></div></div>').join('');
             return '<div class="space-y-4 md:space-y-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900">Staff Management</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">' + staffCards + '</div><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4"><p class="text-xs md:text-sm text-blue-800"><strong>Note:</strong> To add or edit staff, access Supabase Table Editor.</p></div></div>';
+        }
+
+        function renderReviewRequests() {
+            const reviewJobs = jobs.filter(j =>
+                j.status === 'Completed' &&
+                j.request_review === true &&
+                j.review_sent !== true
+            );
+
+            let html = '<div class="space-y-6">';
+            html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">';
+            html += '<h2 class="text-2xl font-bold text-gray-900">Review Requests</h2>';
+            html += '<div class="text-sm text-gray-600">Pending: <span class="font-bold text-yellow-600">' + reviewJobs.length + '</span></div>';
+            html += '</div>';
+
+            if (reviewJobs.length === 0) {
+                html += '<div class="bg-white rounded-lg shadow p-12 text-center">';
+                html += '<span class="material-icons text-gray-300" style="font-size: 64px;">rate_review</span>';
+                html += '<p class="text-gray-500 mt-4">No pending review requests</p>';
+                html += '</div>';
+                html += '</div>';
+                return html;
+            }
+
+            html += '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Suburb</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            reviewJobs.forEach(job => {
+                const staffName = job.staff ? job.staff.full_name : 'Unassigned';
+                const staffColor = job.staff ? job.staff.color_code : '#666';
+
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm whitespace-nowrap">' + new Date(job.date).toLocaleDateString() + '</td>';
+                html += '<td class="px-4 py-3 text-sm font-medium">' + escapeHtml(job.client_name) + '</td>';
+                html += '<td class="px-4 py-3 text-sm">' + escapeHtml(job.suburb || 'N/A') + '</td>';
+                html += '<td class="px-4 py-3 text-sm">' + escapeHtml(job.client_phone) + '</td>';
+                html += '<td class="px-4 py-3 text-sm">' + (job.client_email ? escapeHtml(job.client_email) : '<span class="text-gray-400">No email</span>') + '</td>';
+                html += '<td class="px-4 py-3 text-sm"><span style="color: ' + staffColor + '">' + staffName + '</span></td>';
+                html += '<td class="px-4 py-3 text-sm whitespace-nowrap">';
+                html += '<button onclick="markReviewSent(\'' + job.id + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">Mark as Sent</button>';
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            html += '</div>';
+
+            return html;
         }
 
         async function handleLogin(e) {
