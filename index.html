@@ -2205,9 +2205,54 @@
             html += '<div><div class="opacity-80 mb-1">Cash</div><div class="text-xl font-medium">$' + cashTotal.toFixed(2) + '</div></div>';
             html += '<div><div class="opacity-80 mb-1">Bank</div><div class="text-xl font-medium">$' + bankTotal.toFixed(2) + '</div></div>';
             html += '</div></div>';
+            // Review Stats Summary
+            const totalReviewRequests = jobs.filter(j => j.request_review === true && j.status === 'Completed').length;
+            const totalReviewsSent = jobs.filter(j => j.review_sent === true).length;
+            const totalReviewsReceived = jobs.filter(j => j.review_received === true).length;
+            const conversionRate = totalReviewsSent > 0 ? ((totalReviewsReceived / totalReviewsSent) * 100).toFixed(1) : 0;
+
+            html += '<div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">';
+            html += '<h3 class="text-sm font-medium mb-3 opacity-90">Review Statistics</h3>';
+            html += '<div class="text-4xl font-semibold mb-4">' + totalReviewsReceived + '</div>';
+            html += '<div class="flex space-x-6 text-sm">';
+            html += '<div><div class="opacity-80 mb-1">Sent</div><div class="text-xl font-medium">' + totalReviewsSent + '</div></div>';
+            html += '<div><div class="opacity-80 mb-1">Rate</div><div class="text-xl font-medium">' + conversionRate + '%</div></div>';
+            html += '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
             html += '<h3 class="text-lg font-semibold text-gray-900 mb-4">Staff Workload</h3>';
             html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">' + workloadCards + '</div>';
+            html += '</div>';
+
+            // Staff Review Performance
+            const reviewStats = staff.map(s => {
+                const staffReviews = jobs.filter(j =>
+                    j.assigned_to === s.id &&
+                    j.review_received === true
+                );
+                return {
+                    id: s.id,
+                    name: s.full_name,
+                    color: s.color_code,
+                    reviewCount: staffReviews.length
+                };
+            }).sort((a, b) => b.reviewCount - a.reviewCount); // Sort by most reviews
+
+            const reviewStatsCards = reviewStats.map(s =>
+                '<div onclick="changeView(\'review-requests\'); currentReviewTab = \'received\'; currentStaffFilter = \'' + s.id + '\'; renderApp();" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer transform hover:scale-105" style="border-left: 3px solid ' + s.color + '">' +
+                '<div class="text-sm font-medium text-gray-600 mb-1">' + s.name + '</div>' +
+                '<div class="flex items-center gap-2">' +
+                '<span class="text-2xl font-semibold" style="color: ' + s.color + '">' + s.reviewCount + '</span>' +
+                '<span class="text-xs text-gray-500">reviews</span>' +
+                '</div>' +
+                '</div>'
+            ).join('');
+
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
+            html += '<div class="flex justify-between items-center mb-4">';
+            html += '<h3 class="text-lg font-semibold text-gray-900">Staff Review Performance</h3>';
+            html += '<button onclick="changeView(\'review-requests\'); currentReviewTab = \'received\';" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All →</button>';
+            html += '</div>';
+            html += '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">' + reviewStatsCards + '</div>';
             html += '</div>';
 
             // Profitability Analysis Section
@@ -2681,8 +2726,23 @@
             html += '<button onclick="currentReviewTab = \'received\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentReviewTab === 'received' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Received (' + receivedJobs.length + ')</button>';
             html += '</div>';
 
+            // Staff filter dropdown
+            const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
+            html += '<div class="flex justify-between items-center mb-4">';
+            html += '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm">';
+            html += '<option value="">All Staff</option>' + staffOptions;
+            html += '</select>';
+            html += '<div class="text-sm text-gray-600">Showing: <span class="font-bold">' + (currentStaffFilter ? staff.find(s => s.id === currentStaffFilter).full_name : 'All Staff') + '</span></div>';
+            html += '</div>';
+
             // Determine which jobs to show based on tab
             let displayJobs = pendingJobs;
+
+            // Apply staff filter if selected
+            if (currentStaffFilter) {
+                displayJobs = displayJobs.filter(j => j.assigned_to === currentStaffFilter);
+            }
+
             let emptyMessage = 'No pending review requests';
             let showSentButton = true;
             let showReceivedButton = false;
@@ -2692,11 +2752,19 @@
                 emptyMessage = 'No sent review requests awaiting response';
                 showSentButton = false;
                 showReceivedButton = true;
+                // Apply staff filter
+                if (currentStaffFilter) {
+                    displayJobs = displayJobs.filter(j => j.assigned_to === currentStaffFilter);
+                }
             } else if (currentReviewTab === 'received') {
                 displayJobs = receivedJobs;
                 emptyMessage = 'No reviews received yet';
                 showSentButton = false;
                 showReceivedButton = false;
+                // Apply staff filter
+                if (currentStaffFilter) {
+                    displayJobs = displayJobs.filter(j => j.assigned_to === currentStaffFilter);
+                }
             }
 
             if (displayJobs.length === 0) {
