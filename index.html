@@ -657,6 +657,39 @@
             </div>
         </div>
     </div>
+    <div id="ratingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Add Review Rating</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Rating (1-5 stars)</label>
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="selectRating(1)" id="star-1"
+                            class="text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                        <button onclick="selectRating(2)" id="star-2"
+                            class="text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                        <button onclick="selectRating(3)" id="star-3"
+                            class="text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                        <button onclick="selectRating(4)" id="star-4"
+                            class="text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                        <button onclick="selectRating(5)" id="star-5"
+                            class="text-4xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-2" id="rating-text">Select a rating</p>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeRatingModal()"
+                    class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors">
+                    Cancel
+                </button>
+                <button onclick="submitRating()"
+                    class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                    Save Rating
+                </button>
+            </div>
+        </div>
+    </div>
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -692,6 +725,8 @@
         };
         let columnSelectorOpen = false;
         let pendingCompletionJobId = null;
+        let pendingRatingJobId = null;
+        let selectedRatingValue = 0;
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -1948,6 +1983,73 @@
             }
         }
 
+        function openRatingModal(jobId) {
+            pendingRatingJobId = jobId;
+            selectedRatingValue = 0;
+            // Reset all stars
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('star-' + i).classList.remove('text-yellow-400');
+                document.getElementById('star-' + i).classList.add('text-gray-300');
+            }
+            document.getElementById('rating-text').textContent = 'Select a rating';
+            document.getElementById('ratingModal').classList.remove('hidden');
+        }
+
+        function closeRatingModal() {
+            document.getElementById('ratingModal').classList.add('hidden');
+            pendingRatingJobId = null;
+            selectedRatingValue = 0;
+        }
+
+        function selectRating(rating) {
+            selectedRatingValue = rating;
+
+            // Update star display
+            for (let i = 1; i <= 5; i++) {
+                const star = document.getElementById('star-' + i);
+                if (i <= rating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            }
+
+            // Update text
+            const ratingText = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+            document.getElementById('rating-text').textContent = ratingText[rating] + ' (' + rating + ' stars)';
+        }
+
+        async function submitRating() {
+            if (selectedRatingValue === 0) {
+                alert('Please select a rating');
+                return;
+            }
+
+            if (!pendingRatingJobId) {
+                alert('Error: No job selected. Please refresh and try again.');
+                closeRatingModal();
+                return;
+            }
+
+            try {
+                const {error} = await supabase
+                    .from('jobs')
+                    .update({review_rating: selectedRatingValue})
+                    .eq('id', pendingRatingJobId);
+
+                if (error) throw error;
+
+                closeRatingModal();
+                await loadJobs();
+                renderApp();
+            } catch (error) {
+                console.error('Error saving rating:', error);
+                alert('Failed to save rating: ' + error.message);
+            }
+        }
+
         function duplicateJob(jobId) {
             const job = jobs.find(j => j.id === jobId);
             if (!job) {
@@ -2211,12 +2313,25 @@
             const totalReviewsReceived = jobs.filter(j => j.review_received === true).length;
             const conversionRate = totalReviewsSent > 0 ? ((totalReviewsReceived / totalReviewsSent) * 100).toFixed(1) : 0;
 
+            // Calculate overall average rating
+            const allRatedReviews = jobs.filter(j => j.review_received === true && j.review_rating);
+            const overallAvgRating = allRatedReviews.length > 0
+                ? (allRatedReviews.reduce((sum, j) => sum + j.review_rating, 0) / allRatedReviews.length).toFixed(1)
+                : 0;
+
             html += '<div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">';
             html += '<h3 class="text-sm font-medium mb-3 opacity-90">Review Statistics</h3>';
-            html += '<div class="text-4xl font-semibold mb-4">' + totalReviewsReceived + '</div>';
+            html += '<div class="flex items-center gap-3 mb-4">';
+            html += '<div class="text-4xl font-semibold">' + totalReviewsReceived + '</div>';
+            if (overallAvgRating > 0) {
+                html += '<div class="text-3xl text-yellow-300">' + '★'.repeat(Math.round(overallAvgRating)) + '</div>';
+                html += '<div class="text-xl font-medium opacity-90">' + overallAvgRating + '/5</div>';
+            }
+            html += '</div>';
             html += '<div class="flex space-x-6 text-sm">';
             html += '<div><div class="opacity-80 mb-1">Sent</div><div class="text-xl font-medium">' + totalReviewsSent + '</div></div>';
             html += '<div><div class="opacity-80 mb-1">Rate</div><div class="text-xl font-medium">' + conversionRate + '%</div></div>';
+            html += '<div><div class="opacity-80 mb-1">Rated</div><div class="text-xl font-medium">' + allRatedReviews.length + '</div></div>';
             html += '</div></div>';
             html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
             html += '<h3 class="text-lg font-semibold text-gray-900 mb-4">Staff Workload</h3>';
@@ -2229,20 +2344,32 @@
                     j.assigned_to === s.id &&
                     j.review_received === true
                 );
+
+                // Calculate average rating
+                const ratedReviews = staffReviews.filter(j => j.review_rating);
+                const avgRating = ratedReviews.length > 0
+                    ? (ratedReviews.reduce((sum, j) => sum + j.review_rating, 0) / ratedReviews.length).toFixed(1)
+                    : 0;
+
                 return {
                     id: s.id,
                     name: s.full_name,
                     color: s.color_code,
-                    reviewCount: staffReviews.length
+                    reviewCount: staffReviews.length,
+                    ratedCount: ratedReviews.length,
+                    avgRating: avgRating
                 };
             }).sort((a, b) => b.reviewCount - a.reviewCount); // Sort by most reviews
 
             const reviewStatsCards = reviewStats.map(s =>
                 '<div onclick="changeView(\'review-requests\'); currentReviewTab = \'received\'; currentStaffFilter = \'' + s.id + '\'; renderApp();" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer transform hover:scale-105" style="border-left: 3px solid ' + s.color + '">' +
                 '<div class="text-sm font-medium text-gray-600 mb-1">' + s.name + '</div>' +
+                '<div class="flex items-center justify-between">' +
                 '<div class="flex items-center gap-2">' +
                 '<span class="text-2xl font-semibold" style="color: ' + s.color + '">' + s.reviewCount + '</span>' +
                 '<span class="text-xs text-gray-500">reviews</span>' +
+                '</div>' +
+                (s.avgRating > 0 ? '<div class="text-right"><div class="text-yellow-500 text-lg">' + '★'.repeat(Math.round(s.avgRating)) + '</div><div class="text-xs text-gray-500">' + s.avgRating + '/5 (' + s.ratedCount + ')</div></div>' : '') +
                 '</div>' +
                 '</div>'
             ).join('');
@@ -2789,6 +2916,9 @@
             if (currentReviewTab === 'received') {
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Received</th>';
             }
+            if (currentReviewTab === 'received') {
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>';
+            }
             if (showSentButton || showReceivedButton) {
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
             }
@@ -2811,6 +2941,13 @@
                 if (currentReviewTab === 'received') {
                     const receivedDate = job.review_received_date ? new Date(job.review_received_date).toLocaleDateString() : 'N/A';
                     html += '<td class="px-4 py-3 text-sm">' + receivedDate + '</td>';
+                }
+
+                if (currentReviewTab === 'received') {
+                    const ratingDisplay = job.review_rating
+                        ? '<span class="text-yellow-500">' + '★'.repeat(job.review_rating) + '</span>'
+                        : '<button onclick="openRatingModal(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 text-xs">Add Rating</button>';
+                    html += '<td class="px-4 py-3 text-sm">' + ratingDisplay + '</td>';
                 }
 
                 if (showSentButton || showReceivedButton) {
