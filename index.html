@@ -1553,6 +1553,25 @@
                     return true;
                 }
 
+                // Reset review fields if changing FROM "Completed" to any other status
+                if (field === 'status' && job.status === 'Completed' && value !== 'Completed') {
+                    const {error} = await supabase.from('jobs').update({
+                        status: value,
+                        request_review: false,
+                        review_sent: false,
+                        review_received: false,
+                        review_rating: null,
+                        review_received_date: null,
+                        amount_paid: null,
+                        payment_method: null
+                    }).eq('id', jobId);
+
+                    if (error) throw error;
+                    await loadJobs();
+                    renderApp();
+                    return true;
+                }
+
                 const {error} = await supabase.from('jobs').update({[field]: value}).eq('id', jobId);
                 if (error) throw error;
 
@@ -1877,6 +1896,18 @@
                     renderApp();
                 } else {
                     // Update existing job
+
+                    // If changing FROM "Completed" to another status, reset review fields
+                    if (job && job.status === 'Completed' && jobData.status !== 'Completed') {
+                        jobData.request_review = false;
+                        jobData.review_sent = false;
+                        jobData.review_received = false;
+                        jobData.review_rating = null;
+                        jobData.review_received_date = null;
+                        jobData.amount_paid = null;
+                        jobData.payment_method = null;
+                    }
+
                     const {error} = await supabase.from('jobs').update(jobData).eq('id', jobId);
                     if (error) throw error;
                     alert('Job updated successfully!');
