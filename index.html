@@ -1146,7 +1146,7 @@
             const paymentMethod = document.querySelector('input[name="manager_payment_method"]:checked').value;
             const requestReview = document.getElementById('manager_request_review').checked;
 
-            if (!amountPaid || amountPaid <= 0) {
+            if (!amountPaid || amountPaid < 0) {
                 alert('Please enter a valid amount paid.');
                 return;
             }
