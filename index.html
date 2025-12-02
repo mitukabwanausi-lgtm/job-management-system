@@ -1193,6 +1193,7 @@
             }
 
             try {
+                // Always reset review workflow fields when completing
                 const {error} = await supabase
                     .from('jobs')
                     .update({
@@ -1200,6 +1201,10 @@
                         amount_paid: Number(parseFloat(amountPaid).toFixed(2)),
                         payment_method: paymentMethod,
                         request_review: requestReview,
+                        review_sent: false,           // Reset to false
+                        review_received: false,       // Reset to false
+                        review_rating: null,          // Clear rating
+                        review_received_date: null,   // Clear date
                         actual_end_time: new Date().toISOString()
                     })
                     .eq('id', pendingCompletionJobId);
