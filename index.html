@@ -693,6 +693,167 @@
             </div>
         </div>
     </div>
+    <!-- Add/Edit Inventory Item Modal -->
+    <div id="inventoryItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h2 id="inventoryItemModalTitle" class="text-2xl font-bold text-gray-900">Add Inventory Item
+                        </h2>
+                        <button onclick="closeInventoryItemModal()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form id="inventoryItemForm" onsubmit="handleInventoryItemSubmit(event)" class="space-y-4">
+                        <input type="hidden" id="inventory_item_id">
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
+                            <input type="text" id="inventory_item_name" required
+                                class="w-full px-4 py-2 border rounded-lg" placeholder="e.g., Red Paint">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                                <select id="inventory_category" required class="w-full px-4 py-2 border rounded-lg">
+                                    <option value="">Select category...</option>
+                                    <option value="Paint">Paint</option>
+                                    <option value="Consumables">Consumables</option>
+                                    <option value="Tools">Tools</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Unit of Measurement
+                                    *</label>
+                                <select id="inventory_unit" required class="w-full px-4 py-2 border rounded-lg">
+                                    <option value="">Select unit...</option>
+                                    <option value="ml">ml (milliliters)</option>
+                                    <option value="litres">litres</option>
+                                    <option value="sheets">sheets</option>
+                                    <option value="pieces">pieces</option>
+                                    <option value="rolls">rolls</option>
+                                    <option value="kg">kg (kilograms)</option>
+                                    <option value="grams">grams</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Stock *</label>
+                                <input type="number" step="0.01" id="inventory_current_stock" required
+                                    class="w-full px-4 py-2 border rounded-lg" placeholder="0">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Stock Alert
+                                    *</label>
+                                <input type="number" step="0.01" id="inventory_min_stock" required
+                                    class="w-full px-4 py-2 border rounded-lg" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit Cost ($)</label>
+                            <input type="number" step="0.01" id="inventory_unit_cost"
+                                class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
+                            <p class="text-xs text-gray-500 mt-1">Cost per unit (optional, for tracking purposes)</p>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-6 border-t">
+                    <div class="flex gap-3">
+                        <button type="submit" form="inventoryItemForm"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">
+                            Save Item
+                        </button>
+                        <button type="button" onclick="closeInventoryItemModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restock Item Modal -->
+    <div id="restockModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg my-8">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-900">Restock Item</h2>
+                        <button onclick="closeRestockModal()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form id="restockForm" onsubmit="handleRestockSubmit(event)" class="space-y-4">
+                        <input type="hidden" id="restock_item_id">
+
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-sm text-gray-600">Item:</div>
+                            <div id="restock_item_name" class="text-lg font-semibold text-gray-900"></div>
+                            <div class="text-sm text-gray-600 mt-2">Current Stock:</div>
+                            <div id="restock_current_stock" class="text-lg font-semibold text-blue-600"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity to Add *</label>
+                            <input type="number" step="0.01" id="restock_quantity" required
+                                class="w-full px-4 py-2 border rounded-lg" placeholder="0">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cost ($)</label>
+                            <input type="number" step="0.01" id="restock_cost"
+                                class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
+                            <p class="text-xs text-gray-500 mt-1">Total cost for this restock (optional)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+                            <input type="text" id="restock_supplier" class="w-full px-4 py-2 border rounded-lg"
+                                placeholder="Supplier name">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                            <textarea id="restock_notes" rows="2" class="w-full px-4 py-2 border rounded-lg"
+                                placeholder="Any additional notes..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-6 border-t">
+                    <div class="flex gap-3">
+                        <button type="submit" form="restockForm"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg">
+                            Add to Stock
+                        </button>
+                        <button type="button" onclick="closeRestockModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -3321,20 +3482,186 @@
             }
         }
 
+        // Add/Edit Inventory Item Functions
         function openAddItemModal() {
-            alert('Add Item modal coming in Step 4!');
+            document.getElementById('inventoryItemModalTitle').textContent = 'Add Inventory Item';
+            document.getElementById('inventory_item_id').value = '';
+            document.getElementById('inventory_item_name').value = '';
+            document.getElementById('inventory_category').value = '';
+            document.getElementById('inventory_unit').value = '';
+            document.getElementById('inventory_current_stock').value = '0';
+            document.getElementById('inventory_min_stock').value = '0';
+            document.getElementById('inventory_unit_cost').value = '';
+            document.getElementById('inventoryItemModal').classList.remove('hidden');
         }
 
         function openEditItemModal(itemId) {
-            alert('Edit Item modal coming in Step 4! Item ID: ' + itemId);
+            const item = inventoryItems.find(i => i.id === itemId);
+            if (!item) {
+                alert('Item not found');
+                return;
+            }
+
+            document.getElementById('inventoryItemModalTitle').textContent = 'Edit Inventory Item';
+            document.getElementById('inventory_item_id').value = item.id;
+            document.getElementById('inventory_item_name').value = item.item_name;
+            document.getElementById('inventory_category').value = item.category;
+            document.getElementById('inventory_unit').value = item.unit_of_measurement;
+            document.getElementById('inventory_current_stock').value = item.current_stock;
+            document.getElementById('inventory_min_stock').value = item.minimum_stock_alert;
+            document.getElementById('inventory_unit_cost').value = item.unit_cost || '';
+            document.getElementById('inventoryItemModal').classList.remove('hidden');
         }
 
+        function closeInventoryItemModal() {
+            document.getElementById('inventoryItemModal').classList.add('hidden');
+        }
+
+        async function handleInventoryItemSubmit(e) {
+            e.preventDefault();
+
+            const itemId = document.getElementById('inventory_item_id').value;
+            const isEdit = itemId !== '';
+
+            const itemData = {
+                item_name: document.getElementById('inventory_item_name').value,
+                category: document.getElementById('inventory_category').value,
+                unit_of_measurement: document.getElementById('inventory_unit').value,
+                current_stock: parseFloat(document.getElementById('inventory_current_stock').value),
+                minimum_stock_alert: parseFloat(document.getElementById('inventory_min_stock').value),
+                unit_cost: document.getElementById('inventory_unit_cost').value ? parseFloat(document.getElementById('inventory_unit_cost').value) : 0,
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                if (isEdit) {
+                    // Update existing item
+                    const {error} = await supabase
+                        .from('inventory_items')
+                        .update(itemData)
+                        .eq('id', itemId);
+
+                    if (error) throw error;
+                    alert('Item updated successfully!');
+                } else {
+                    // Create new item
+                    const {error} = await supabase
+                        .from('inventory_items')
+                        .insert([itemData]);
+
+                    if (error) throw error;
+                    alert('Item added successfully!');
+                }
+
+                closeInventoryItemModal();
+                await loadInventoryItems();
+                renderApp();
+            } catch (error) {
+                console.error('Error saving inventory item:', error);
+                alert('Failed to save item: ' + error.message);
+            }
+        }
+
+        async function deleteInventoryItem(itemId) {
+            const item = inventoryItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            if (!confirm('Are you sure you want to delete "' + item.item_name + '"? This will also delete all withdrawal and restock history for this item.')) {
+                return;
+            }
+
+            try {
+                const {error} = await supabase
+                    .from('inventory_items')
+                    .delete()
+                    .eq('id', itemId);
+
+                if (error) throw error;
+
+                alert('Item deleted successfully!');
+                await loadInventoryItems();
+                renderApp();
+            } catch (error) {
+                console.error('Error deleting inventory item:', error);
+                alert('Failed to delete item: ' + error.message);
+            }
+        }
+
+        // Restock Functions
         function openRestockModal(itemId) {
-            alert('Restock modal coming in Step 4! Item ID: ' + itemId);
+            const item = inventoryItems.find(i => i.id === itemId);
+            if (!item) {
+                alert('Item not found');
+                return;
+            }
+
+            document.getElementById('restock_item_id').value = item.id;
+            document.getElementById('restock_item_name').textContent = item.item_name;
+            document.getElementById('restock_current_stock').textContent = item.current_stock + ' ' + item.unit_of_measurement;
+            document.getElementById('restock_quantity').value = '';
+            document.getElementById('restock_cost').value = '';
+            document.getElementById('restock_supplier').value = '';
+            document.getElementById('restock_notes').value = '';
+            document.getElementById('restockModal').classList.remove('hidden');
         }
 
-        function deleteInventoryItem(itemId) {
-            alert('Delete function coming in Step 4! Item ID: ' + itemId);
+        function closeRestockModal() {
+            document.getElementById('restockModal').classList.add('hidden');
+        }
+
+        async function handleRestockSubmit(e) {
+            e.preventDefault();
+
+            const itemId = document.getElementById('restock_item_id').value;
+            const quantity = parseFloat(document.getElementById('restock_quantity').value);
+            const cost = document.getElementById('restock_cost').value ? parseFloat(document.getElementById('restock_cost').value) : 0;
+            const supplier = document.getElementById('restock_supplier').value || null;
+            const notes = document.getElementById('restock_notes').value || null;
+
+            if (quantity <= 0) {
+                alert('Quantity must be greater than 0');
+                return;
+            }
+
+            try {
+                // 1. Get current item
+                const item = inventoryItems.find(i => i.id === itemId);
+                if (!item) throw new Error('Item not found');
+
+                // 2. Insert restock record
+                const {error: restockError} = await supabase
+                    .from('inventory_restocks')
+                    .insert([{
+                        item_id: itemId,
+                        quantity_added: quantity,
+                        cost: cost,
+                        supplier: supplier,
+                        notes: notes,
+                        restock_date: new Date().toISOString()
+                    }]);
+
+                if (restockError) throw restockError;
+
+                // 3. Update current stock
+                const newStock = item.current_stock + quantity;
+                const {error: updateError} = await supabase
+                    .from('inventory_items')
+                    .update({
+                        current_stock: newStock,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', itemId);
+
+                if (updateError) throw updateError;
+
+                alert('Stock updated successfully! New stock: ' + newStock + ' ' + item.unit_of_measurement);
+                closeRestockModal();
+                await loadInventoryItems();
+                renderApp();
+            } catch (error) {
+                console.error('Error restocking item:', error);
+                alert('Failed to restock item: ' + error.message);
+            }
         }
 
         initialize();
