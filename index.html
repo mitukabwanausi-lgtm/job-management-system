@@ -769,7 +769,7 @@
 
         async function loadJobs() {
             try {
-                const {data, error} = await supabase.from('jobs').select('*, staff:assigned_to (full_name, color_code)').order('date', {ascending: true}).order('start_time', {ascending: true});
+                const {data, error} = await supabase.from('jobs').select('*, staff:assigned_to (full_name, color_code)').order('date', {ascending: false}).order('start_time', {ascending: false});
                 if (error) throw error;
                 jobs = data || [];
                 populateSuburbList();
