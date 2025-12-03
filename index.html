@@ -250,6 +250,10 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">group</span> Staff
                 </button>
+                <button onclick="changeView('inventory'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">inventory_2</span> Inventory
+                </button>
                 <hr class="my-4">
                 <button onclick="logout(); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium flex items-center gap-3">
@@ -726,6 +730,9 @@
         let pendingCompletionJobId = null;
         let pendingRatingJobId = null;
         let selectedRatingValue = 0;
+        let inventoryItems = [];
+        let inventoryWithdrawals = [];
+        let currentInventoryView = 'items'; // 'items', 'withdrawals', 'restocks'
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -795,6 +802,41 @@
                 return staff;
             } catch (error) {
                 console.error('Error loading staff:', error);
+                return [];
+            }
+        }
+
+        async function loadInventoryItems() {
+            try {
+                const {data, error} = await supabase
+                    .from('inventory_items')
+                    .select('*')
+                    .eq('active', true)
+                    .order('category', {ascending: true})
+                    .order('item_name', {ascending: true});
+
+                if (error) throw error;
+                inventoryItems = data || [];
+                return inventoryItems;
+            } catch (error) {
+                console.error('Error loading inventory items:', error);
+                return [];
+            }
+        }
+
+        async function loadInventoryWithdrawals() {
+            try {
+                const {data, error} = await supabase
+                    .from('inventory_withdrawals')
+                    .select('*, staff:staff_id (full_name), item:item_id (item_name, unit_of_measurement), job:job_id (job_number, client_name)')
+                    .order('withdrawal_date', {ascending: false})
+                    .limit(100);
+
+                if (error) throw error;
+                inventoryWithdrawals = data || [];
+                return inventoryWithdrawals;
+            } catch (error) {
+                console.error('Error loading inventory withdrawals:', error);
                 return [];
             }
         }
@@ -2155,7 +2197,8 @@
                 {key: 'completed-jobs', label: 'Completed'},
                 {key: 'archived-jobs', label: 'Archived'},
                 {key: 'review-requests', label: 'Reviews'},
-                {key: 'staff-management', label: 'Staff'}
+                {key: 'staff-management', label: 'Staff'},
+                {key: 'inventory', label: 'Inventory'}
             ];
             const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (currentView === v.key ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50') + '">' + v.label + '</button>').join('');
             return '<nav class="bg-white border-b border-gray-200 sticky top-0 z-30"><div class="max-w-full mx-auto px-4"><div class="flex justify-between items-center h-16"><div class="flex items-center space-x-4"><button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="flex items-center gap-3"><img src="https://scratchvanish.com.au/wp-content/uploads/2021/11/logo.png" alt="Company Logo" class="h-8 w-auto"><h1 class="text-xl font-semibold text-gray-900">Job Management</h1></div><div class="hidden md:flex space-x-1">' + navButtons + '</div></div><div class="flex items-center space-x-4"><span class="text-sm text-gray-600 hidden sm:inline">Hi, ' + escapeHtml(currentUser.full_name) + '</span><button onclick="logout()" class="text-sm text-red-600 hover:text-red-700 font-medium">Logout</button></div></div></div></nav>';
@@ -2169,6 +2212,7 @@
             if (currentView === 'archived-jobs') return renderJobsList('archived');
             if (currentView === 'staff-management') return renderStaffManagement();
             if (currentView === 'review-requests') return renderReviewRequests();
+            if (currentView === 'inventory') return renderInventory();
             return renderDashboard();
         }
 
@@ -2854,6 +2898,161 @@
             return '<div class="space-y-4 md:space-y-6"><h2 class="text-xl md:text-2xl font-bold text-gray-900">Staff Management</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">' + staffCards + '</div><div class="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4"><p class="text-xs md:text-sm text-blue-800"><strong>Note:</strong> To add or edit staff, access Supabase Table Editor.</p></div></div>';
         }
 
+        function renderInventory() {
+            let html = '<div class="space-y-6">';
+
+            // Header with tabs
+            html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">';
+            html += '<h2 class="text-2xl font-bold text-gray-900">Inventory Management</h2>';
+            html += '<button onclick="openAddItemModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm flex items-center gap-2">';
+            html += '<span class="material-icons md-18">add</span> Add Item';
+            html += '</button>';
+            html += '</div>';
+
+            // Tab buttons
+            html += '<div class="bg-white rounded-lg shadow p-2 flex gap-2 mb-4">';
+            html += '<button onclick="currentInventoryView = \'items\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentInventoryView === 'items' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Items (' + inventoryItems.length + ')</button>';
+            html += '<button onclick="currentInventoryView = \'withdrawals\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentInventoryView === 'withdrawals' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Withdrawals</button>';
+            html += '<button onclick="currentInventoryView = \'restocks\'; renderApp();" class="flex-1 px-4 py-2 rounded ' + (currentInventoryView === 'restocks' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700') + ' font-medium text-sm">Restocks</button>';
+            html += '</div>';
+
+            // Content based on current view
+            if (currentInventoryView === 'items') {
+                html += renderInventoryItemsView();
+            } else if (currentInventoryView === 'withdrawals') {
+                html += renderInventoryWithdrawalsView();
+            } else if (currentInventoryView === 'restocks') {
+                html += '<div class="bg-white rounded-lg shadow p-12 text-center"><p class="text-gray-500">Restocks view coming soon...</p></div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderInventoryItemsView() {
+            if (inventoryItems.length === 0) {
+                return '<div class="bg-white rounded-lg shadow p-12 text-center"><span class="material-icons text-gray-300" style="font-size: 64px;">inventory_2</span><p class="text-gray-500 mt-4">No inventory items yet. Click "Add Item" to get started.</p></div>';
+            }
+
+            // Group items by category
+            const itemsByCategory = {};
+            inventoryItems.forEach(item => {
+                if (!itemsByCategory[item.category]) {
+                    itemsByCategory[item.category] = [];
+                }
+                itemsByCategory[item.category].push(item);
+            });
+
+            let html = '<div class="space-y-6">';
+
+            // Low stock alerts
+            const lowStockItems = inventoryItems.filter(item => item.current_stock <= item.minimum_stock_alert);
+            if (lowStockItems.length > 0) {
+                html += '<div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">';
+                html += '<div class="flex items-center mb-2">';
+                html += '<span class="material-icons text-red-600 mr-2">warning</span>';
+                html += '<h3 class="text-lg font-semibold text-red-800">Low Stock Alert (' + lowStockItems.length + ' items)</h3>';
+                html += '</div>';
+                html += '<div class="space-y-1">';
+                lowStockItems.forEach(item => {
+                    html += '<div class="text-sm text-red-700">• ' + escapeHtml(item.item_name) + ': ' + item.current_stock + item.unit_of_measurement + ' (min: ' + item.minimum_stock_alert + item.unit_of_measurement + ')</div>';
+                });
+                html += '</div></div>';
+            }
+
+            // Display items by category
+            Object.keys(itemsByCategory).sort().forEach(category => {
+                html += '<div class="bg-white rounded-lg shadow overflow-hidden">';
+                html += '<div class="bg-gray-100 px-4 py-3 border-b">';
+                html += '<h3 class="text-lg font-semibold text-gray-800">' + escapeHtml(category) + ' (' + itemsByCategory[category].length + ')</h3>';
+                html += '</div>';
+                html += '<div class="overflow-x-auto">';
+                html += '<table class="min-w-full">';
+                html += '<thead class="bg-gray-50">';
+                html += '<tr>';
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Current Stock</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min Alert</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>';
+                html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>';
+                html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>';
+                html += '</tr>';
+                html += '</thead>';
+                html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+                itemsByCategory[category].forEach(item => {
+                    const isLowStock = item.current_stock <= item.minimum_stock_alert;
+                    const stockColor = isLowStock ? 'text-red-600 font-semibold' : 'text-gray-900';
+                    const statusBadge = isLowStock
+                        ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Low Stock</span>'
+                        : '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">OK</span>';
+
+                    html += '<tr class="hover:bg-gray-50">';
+                    html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + escapeHtml(item.item_name) + '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">' + item.current_stock + ' ' + item.unit_of_measurement + '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + item.minimum_stock_alert + ' ' + item.unit_of_measurement + '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">$' + (item.unit_cost || 0).toFixed(2) + '</td>';
+                    html += '<td class="px-4 py-3 text-center">' + statusBadge + '</td>';
+                    html += '<td class="px-4 py-3 text-center">';
+                    html += '<button onclick="openRestockModal(\'' + item.id + '\')" class="text-green-600 hover:text-green-800 mr-2" title="Restock"><span class="material-icons md-18">add_circle</span></button>';
+                    html += '<button onclick="openEditItemModal(\'' + item.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2" title="Edit"><span class="material-icons md-18">edit</span></button>';
+                    html += '<button onclick="deleteInventoryItem(\'' + item.id + '\')" class="text-red-600 hover:text-red-800" title="Delete"><span class="material-icons md-18">delete</span></button>';
+                    html += '</td>';
+                    html += '</tr>';
+                });
+
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderInventoryWithdrawalsView() {
+            if (inventoryWithdrawals.length === 0) {
+                return '<div class="bg-white rounded-lg shadow p-12 text-center"><p class="text-gray-500">No withdrawal history yet.</p></div>';
+            }
+
+            let html = '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            inventoryWithdrawals.forEach(withdrawal => {
+                const withdrawalDate = new Date(withdrawal.withdrawal_date);
+                const staffName = withdrawal.staff ? withdrawal.staff.full_name : 'Unknown';
+                const itemName = withdrawal.item ? withdrawal.item.item_name : 'Unknown Item';
+                const unit = withdrawal.item ? withdrawal.item.unit_of_measurement : '';
+                const jobInfo = withdrawal.job ? '#' + withdrawal.job.job_number + ' - ' + withdrawal.job.client_name : 'No job linked';
+
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + withdrawalDate.toLocaleDateString() + ' ' + withdrawalDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + escapeHtml(staffName) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + escapeHtml(itemName) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right font-medium text-gray-900">' + withdrawal.quantity_withdrawn + ' ' + unit + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(jobInfo) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + (withdrawal.notes ? escapeHtml(withdrawal.notes) : '-') + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            return html;
+        }
+
         function renderReviewRequests() {
             // Filter jobs by status
             const pendingJobs = jobs.filter(j =>
@@ -3110,6 +3309,8 @@
             if (currentUser) {
                 await loadStaff();
                 await loadJobs();
+                await loadInventoryItems();
+                await loadInventoryWithdrawals();
             }
             renderApp();
             if (currentUser) {
@@ -3118,6 +3319,22 @@
                     if (currentView === 'dashboard' || currentView === 'all-jobs' || currentView === 'completed-jobs') renderApp();
                 }, 120000);
             }
+        }
+
+        function openAddItemModal() {
+            alert('Add Item modal coming in Step 4!');
+        }
+
+        function openEditItemModal(itemId) {
+            alert('Edit Item modal coming in Step 4! Item ID: ' + itemId);
+        }
+
+        function openRestockModal(itemId) {
+            alert('Restock modal coming in Step 4! Item ID: ' + itemId);
+        }
+
+        function deleteInventoryItem(itemId) {
+            alert('Delete function coming in Step 4! Item ID: ' + itemId);
         }
 
         initialize();
