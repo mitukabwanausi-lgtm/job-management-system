@@ -3714,7 +3714,11 @@
             }
 
             document.getElementById('restock_item_id').value = item.id;
-            document.getElementById('restock_item_name').textContent = item.item_name;
+
+            // Show item name with bottle size if available
+            const bottleInfo = item.bottle_size > 0 ? ' (' + item.bottle_size + item.unit_of_measurement + ' bottle)' : '';
+            document.getElementById('restock_item_name').textContent = item.item_name + bottleInfo;
+
             document.getElementById('restock_current_stock').textContent = item.current_stock + ' ' + item.unit_of_measurement;
             document.getElementById('restock_quantity').value = '';
             document.getElementById('restock_cost').value = '';
@@ -3844,8 +3848,9 @@
                 optionsHtml += '<optgroup label="' + category + '">';
                 itemsByCategory[category].forEach(item => {
                     const stockWarning = item.current_stock <= item.minimum_stock_alert ? ' ⚠️ LOW' : '';
-                    optionsHtml += '<option value="' + item.id + '" data-unit="' + item.unit_of_measurement + '">' +
-                        item.item_name + ' (' + item.current_stock + ' ' + item.unit_of_measurement + ' available)' + stockWarning + '</option>';
+                    const bottleInfo = item.bottle_size > 0 ? ' [' + item.bottle_size + item.unit_of_measurement + ' bottle]' : '';
+                    optionsHtml += '<option value="' + item.id + '" data-unit="' + item.unit_of_measurement + '" data-bottle-size="' + item.bottle_size + '">' +
+                        item.item_name + bottleInfo + ' (' + item.current_stock + ' ' + item.unit_of_measurement + ' available)' + stockWarning + '</option>';
                 });
                 optionsHtml += '</optgroup>';
             });
@@ -3862,10 +3867,42 @@
                 ` : ''}
             </div>
             <div class="space-y-3">
-                <select id="manager_item_${rowId}" onchange="updateManagerWithdrawalUnit(${rowId})" required 
+                <select id="manager_item_${rowId}" onchange="updateManagerWithdrawalOptions(${rowId})" required 
                     class="w-full px-3 py-2 border rounded-lg text-sm">
                     ${optionsHtml}
                 </select>
+                
+                <div id="manager_fraction_options_${rowId}" class="hidden space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Withdrawal Amount:</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-100">
+                            <input type="radio" name="manager_fraction_${rowId}" value="full" onchange="updateManagerQuantityFromFraction(${rowId})" 
+                                class="w-4 h-4 text-blue-600">
+                            <span class="ml-3 text-sm" id="manager_full_label_${rowId}">Full Bottle</span>
+                        </label>
+                        <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-100">
+                            <input type="radio" name="manager_fraction_${rowId}" value="three_quarter" onchange="updateManagerQuantityFromFraction(${rowId})" 
+                                class="w-4 h-4 text-blue-600">
+                            <span class="ml-3 text-sm" id="manager_three_quarter_label_${rowId}">Three-Quarter Bottle</span>
+                        </label>
+                        <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-100">
+                            <input type="radio" name="manager_fraction_${rowId}" value="half" onchange="updateManagerQuantityFromFraction(${rowId})" 
+                                class="w-4 h-4 text-blue-600">
+                            <span class="ml-3 text-sm" id="manager_half_label_${rowId}">Half Bottle</span>
+                        </label>
+                        <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-100">
+                            <input type="radio" name="manager_fraction_${rowId}" value="quarter" onchange="updateManagerQuantityFromFraction(${rowId})" 
+                                class="w-4 h-4 text-blue-600">
+                            <span class="ml-3 text-sm" id="manager_quarter_label_${rowId}">Quarter Bottle</span>
+                        </label>
+                        <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-100">
+                            <input type="radio" name="manager_fraction_${rowId}" value="custom" checked onchange="updateManagerQuantityFromFraction(${rowId})" 
+                                class="w-4 h-4 text-blue-600">
+                            <span class="ml-3 text-sm">Custom Amount</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="flex gap-2">
                     <input type="number" step="0.01" id="manager_quantity_${rowId}" required 
                         placeholder="Quantity" 
@@ -3881,23 +3918,86 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        function removeManagerWithdrawalItemRow(rowId) {
-            const row = document.getElementById('manager_withdrawal_row_' + rowId);
-            if (row) {
-                row.remove();
-            }
-        }
-
-        function updateManagerWithdrawalUnit(rowId) {
+        function updateManagerWithdrawalOptions(rowId) {
             const select = document.getElementById('manager_item_' + rowId);
             const unitSpan = document.getElementById('manager_unit_' + rowId);
+            const fractionOptions = document.getElementById('manager_fraction_options_' + rowId);
+            const quantityInput = document.getElementById('manager_quantity_' + rowId);
 
             if (select.value) {
                 const selectedOption = select.options[select.selectedIndex];
                 const unit = selectedOption.getAttribute('data-unit');
+                const bottleSize = parseFloat(selectedOption.getAttribute('data-bottle-size'));
+
                 unitSpan.textContent = unit || 'unit';
+
+                // Show fraction options if bottle size is defined
+                if (bottleSize > 0) {
+                    fractionOptions.classList.remove('hidden');
+
+                    // Update fraction labels with actual amounts
+                    document.getElementById('manager_full_label_' + rowId).innerHTML =
+                        'Full Bottle <span class="text-blue-600 font-medium">(' + bottleSize + ' ' + unit + ')</span>';
+                    document.getElementById('manager_three_quarter_label_' + rowId).innerHTML =
+                        'Three-Quarter Bottle <span class="text-blue-600 font-medium">(' + (bottleSize * 0.75) + ' ' + unit + ')</span>';
+                    document.getElementById('manager_half_label_' + rowId).innerHTML =
+                        'Half Bottle <span class="text-blue-600 font-medium">(' + (bottleSize * 0.5) + ' ' + unit + ')</span>';
+                    document.getElementById('manager_quarter_label_' + rowId).innerHTML =
+                        'Quarter Bottle <span class="text-blue-600 font-medium">(' + (bottleSize * 0.25) + ' ' + unit + ')</span>';
+
+                    // Set custom as default
+                    document.querySelector('input[name="manager_fraction_' + rowId + '"][value="custom"]').checked = true;
+                    quantityInput.value = '';
+                } else {
+                    fractionOptions.classList.add('hidden');
+                    quantityInput.value = '';
+                }
             } else {
                 unitSpan.textContent = 'unit';
+                fractionOptions.classList.add('hidden');
+                quantityInput.value = '';
+            }
+        }
+
+        function updateManagerQuantityFromFraction(rowId) {
+            const select = document.getElementById('manager_item_' + rowId);
+            const quantityInput = document.getElementById('manager_quantity_' + rowId);
+            const selectedFraction = document.querySelector('input[name="manager_fraction_' + rowId + '"]:checked');
+
+            if (!select.value || !selectedFraction) return;
+
+            const selectedOption = select.options[select.selectedIndex];
+            const bottleSize = parseFloat(selectedOption.getAttribute('data-bottle-size'));
+
+            if (selectedFraction.value === 'custom') {
+                quantityInput.value = '';
+                quantityInput.focus();
+                return;
+            }
+
+            let quantity = 0;
+            switch (selectedFraction.value) {
+                case 'full':
+                    quantity = bottleSize;
+                    break;
+                case 'three_quarter':
+                    quantity = bottleSize * 0.75;
+                    break;
+                case 'half':
+                    quantity = bottleSize * 0.5;
+                    break;
+                case 'quarter':
+                    quantity = bottleSize * 0.25;
+                    break;
+            }
+
+            quantityInput.value = quantity;
+        }
+
+        function removeManagerWithdrawalItemRow(rowId) {
+            const row = document.getElementById('manager_withdrawal_row_' + rowId);
+            if (row) {
+                row.remove();
             }
         }
 
