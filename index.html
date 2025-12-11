@@ -2570,8 +2570,18 @@
 
         function renderDashboard() {
             const activeJobs = jobs.filter(j => j.status !== 'Completed').length;
-            const unassigned = jobs.filter(j => j.status === 'Unassigned').length;
-            const assigned = jobs.filter(j => j.status === 'Assigned').length;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const unassigned = jobs.filter(j => {
+                const jobDate = new Date(j.date);
+                jobDate.setHours(0, 0, 0, 0);
+                return j.status === 'Unassigned' && jobDate.getTime() === today.getTime();
+            }).length;
+            const assigned = jobs.filter(j => {
+                const jobDate = new Date(j.date);
+                jobDate.setHours(0, 0, 0, 0);
+                return j.status === 'Assigned' && jobDate.getTime() === today.getTime();
+            }).length;
             const completedToday = jobs.filter(j => {
                 if (j.status !== 'Completed') return false;
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
@@ -2604,8 +2614,8 @@
             html += '<h2 class="text-2xl font-semibold text-gray-900">Dashboard</h2>';
             html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-4">';
             html += '<div onclick="changeView(\'all-jobs\')" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Jobs</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + activeJobs + '</div></div>';
-            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
-            html += '<div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
+            html += '<div onclick="filterTodayUnassigned()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today\'s Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
+            html += '<div onclick="filterTodayAssigned()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today\'s Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
             html += '<div onclick="filterCompletedToday()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
             const reviewRequestsCount = jobs.filter(j => j.status === 'Completed' && j.request_review === true && j.review_sent !== true).length;
             html += '<div onclick="changeView(\'review-requests\')" class="bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl border border-yellow-600 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-yellow-900 uppercase tracking-wide">Review Requests</div><div class="text-3xl font-semibold text-white mt-2">' + reviewRequestsCount + '</div></div>';
@@ -2893,6 +2903,9 @@
 
             if (currentStaffFilter) {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === currentStaffFilter);
+            }
+            if (window.statusFilter) {
+                filteredJobs = filteredJobs.filter(j => j.status === window.statusFilter);
             }
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
@@ -3496,6 +3509,7 @@
             currentView = view;
             currentStaffFilter = '';
             currentDateFilter = '';
+            window.statusFilter = '';
             currentReviewTab = 'pending';
 
             // Set default columns for Completed Jobs
@@ -4093,6 +4107,24 @@
             currentView = 'completed-jobs';
             currentDateFilter = 'today';
             currentStaffFilter = '';
+            renderApp();
+        }
+
+        function filterTodayUnassigned() {
+            currentView = 'all-jobs';
+            currentDateFilter = 'today';
+            currentStaffFilter = '';
+            // Store the status filter
+            window.statusFilter = 'Unassigned';
+            renderApp();
+        }
+
+        function filterTodayAssigned() {
+            currentView = 'all-jobs';
+            currentDateFilter = 'today';
+            currentStaffFilter = '';
+            // Store the status filter
+            window.statusFilter = 'Assigned';
             renderApp();
         }
 
