@@ -966,6 +966,80 @@
         let inventoryWithdrawals = [];
         let currentInventoryView = 'items'; // 'items', 'withdrawals', 'restocks'
         let managerWithdrawalItemCounter = 0;
+        let inventoryRestocks = [];
+        let reportTimePeriod = 'last_30_days';
+        let reportStaffFilter = '';
+
+        // ==================== BOTTLE CALCULATION HELPERS ====================
+        function calculateBottles(mlAmount, bottleSize) {
+            if (!bottleSize || bottleSize === 0) return 0;
+            return mlAmount / bottleSize;
+        }
+
+        function formatBottleDisplay(mlAmount, bottleSize, unit = 'ml') {
+            if (!bottleSize || bottleSize === 0) {
+                return mlAmount + ' ' + unit;
+            }
+
+            const bottles = calculateBottles(mlAmount, bottleSize);
+            const bottleText = bottles === 1 ? 'bottle' : 'bottles';
+
+            return bottles.toFixed(2) + ' ' + bottleText + ' (' + mlAmount + ' ' + unit + ')';
+        }
+
+        function getBottleVisual(mlAmount, bottleSize) {
+            if (!bottleSize || bottleSize === 0) return '';
+
+            const bottles = calculateBottles(mlAmount, bottleSize);
+            const fullBottles = Math.floor(bottles);
+            const remainder = bottles - fullBottles;
+
+            let visual = '';
+
+            // Add full bottles
+            for (let i = 0; i < fullBottles; i++) {
+                visual += '🟢';
+            }
+
+            // Add partial bottle
+            if (remainder >= 0.75) {
+                visual += '🟡'; // 75-99% full
+            } else if (remainder >= 0.5) {
+                visual += '🟠'; // 50-74% full
+            } else if (remainder >= 0.25) {
+                visual += '🔴'; // 25-49% full
+            } else if (remainder > 0) {
+                visual += '⚪'; // Less than 25%
+            }
+
+            return visual + ' (' + bottles.toFixed(2) + ')';
+        }
+
+        function getBottleBreakdown(mlAmount, bottleSize) {
+            if (!bottleSize || bottleSize === 0) return mlAmount + 'ml';
+
+            const bottles = calculateBottles(mlAmount, bottleSize);
+            const fullBottles = Math.floor(bottles);
+            const remainder = bottles - fullBottles;
+
+            let breakdown = '';
+
+            if (fullBottles > 0) {
+                breakdown += fullBottles + ' full';
+            }
+
+            if (remainder >= 0.75) {
+                breakdown += (breakdown ? ' + ' : '') + '¾ bottle';
+            } else if (remainder >= 0.5) {
+                breakdown += (breakdown ? ' + ' : '') + '½ bottle';
+            } else if (remainder >= 0.25) {
+                breakdown += (breakdown ? ' + ' : '') + '¼ bottle';
+            } else if (remainder > 0) {
+                breakdown += (breakdown ? ' + ' : '') + remainder.toFixed(2) + ' bottle';
+            }
+
+            return breakdown || '0 bottles';
+        }
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
@@ -1070,6 +1144,23 @@
                 return inventoryWithdrawals;
             } catch (error) {
                 console.error('Error loading inventory withdrawals:', error);
+                return [];
+            }
+        }
+
+        async function loadInventoryRestocks() {
+            try {
+                const {data, error} = await supabase
+                    .from('inventory_restocks')
+                    .select('*, item:item_id (item_name, unit_of_measurement)')
+                    .order('restock_date', {ascending: false})
+                    .limit(100);
+
+                if (error) throw error;
+                inventoryRestocks = data || [];
+                return inventoryRestocks;
+            } catch (error) {
+                console.error('Error loading inventory restocks:', error);
                 return [];
             }
         }
@@ -3189,7 +3280,9 @@
             } else if (currentInventoryView === 'withdrawals') {
                 html += renderInventoryWithdrawalsView();
             } else if (currentInventoryView === 'restocks') {
-                html += '<div class="bg-white rounded-lg shadow p-12 text-center"><p class="text-gray-500">Restocks view coming soon...</p></div>';
+                html += renderInventoryRestocksView();
+            } else if (currentInventoryView === 'reports') {
+                html += renderInventoryReportsView();
             }
 
             html += '</div>';
@@ -3222,7 +3315,14 @@
                 html += '</div>';
                 html += '<div class="space-y-1">';
                 lowStockItems.forEach(item => {
-                    html += '<div class="text-sm text-red-700">• ' + escapeHtml(item.item_name) + ': ' + item.current_stock + item.unit_of_measurement + ' (min: ' + item.minimum_stock_alert + item.unit_of_measurement + ')</div>';
+                    const bottleDisplay = item.bottle_size > 0
+                        ? calculateBottles(item.current_stock, item.bottle_size).toFixed(2) + ' bottles'
+                        : item.current_stock + item.unit_of_measurement;
+                    const minBottleDisplay = item.bottle_size > 0
+                        ? calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles'
+                        : item.minimum_stock_alert + item.unit_of_measurement;
+
+                    html += '<div class="text-sm text-red-700">• ' + escapeHtml(item.item_name) + ': ' + bottleDisplay + ' (min: ' + minBottleDisplay + ')</div>';
                 });
                 html += '</div></div>';
             }
@@ -3239,7 +3339,7 @@
                 html += '<tr>';
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bottle Size</th>';
-                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Current Stock</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bottles in Stock</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min Alert</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>';
                 html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>';
@@ -3255,11 +3355,20 @@
                         ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Low Stock</span>'
                         : '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">OK</span>';
 
+                    const bottleVisual = getBottleVisual(item.current_stock, item.bottle_size);
+                    const bottleBreakdown = getBottleBreakdown(item.current_stock, item.bottle_size);
+
                     html += '<tr class="hover:bg-gray-50">';
                     html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + escapeHtml(item.item_name) + '</td>';
                     html += '<td class="px-4 py-3 text-sm text-right text-blue-600 font-medium">' + (item.bottle_size || 0) + ' ' + item.unit_of_measurement + '</td>';
-                    html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">' + item.current_stock + ' ' + item.unit_of_measurement + '</td>';
-                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + item.minimum_stock_alert + ' ' + item.unit_of_measurement + '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">';
+                    html += '<div class="flex flex-col items-end">';
+                    html += '<div class="font-semibold">' + bottleVisual + '</div>';
+                    html += '<div class="text-xs text-gray-600">' + bottleBreakdown + '</div>';
+                    html += '<div class="text-xs text-gray-500">' + item.current_stock + ' ' + item.unit_of_measurement + '</div>';
+                    html += '</div>';
+                    html += '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles</td>';
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">$' + (item.unit_cost || 0).toFixed(2) + '</td>';
                     html += '<td class="px-4 py-3 text-center">' + statusBadge + '</td>';
                     html += '<td class="px-4 py-3 text-center">';
@@ -3310,7 +3419,19 @@
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + withdrawalDate.toLocaleDateString() + ' ' + withdrawalDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + escapeHtml(staffName) + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + escapeHtml(itemName) + '</td>';
-                html += '<td class="px-4 py-3 text-sm text-right font-medium text-gray-900">' + withdrawal.quantity_withdrawn + ' ' + unit + '</td>';
+                const item = inventoryItems.find(i => i.id === withdrawal.item_id);
+                const bottleSize = item ? item.bottle_size : 0;
+                let quantityDisplay = withdrawal.quantity_withdrawn + ' ' + unit;
+
+                if (bottleSize > 0) {
+                    const bottles = calculateBottles(withdrawal.quantity_withdrawn, bottleSize);
+                    quantityDisplay = '<div class="flex flex-col items-end">';
+                    quantityDisplay += '<div class="font-semibold">' + bottles.toFixed(2) + ' bottles</div>';
+                    quantityDisplay += '<div class="text-xs text-gray-500">' + withdrawal.quantity_withdrawn + ' ' + unit + '</div>';
+                    quantityDisplay += '</div>';
+                }
+
+                html += '<td class="px-4 py-3 text-sm text-right font-medium text-gray-900">' + quantityDisplay + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(jobInfo) + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-600">' + (withdrawal.notes ? escapeHtml(withdrawal.notes) : '-') + '</td>';
                 html += '</tr>';
@@ -3319,6 +3440,413 @@
             html += '</tbody>';
             html += '</table>';
             html += '</div>';
+            return html;
+        }
+
+        function renderInventoryRestocksView() {
+            if (inventoryRestocks.length === 0) {
+                return '<div class="bg-white rounded-lg shadow p-12 text-center"><p class="text-gray-500">No restock history yet.</p></div>';
+            }
+
+            let html = '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity Added</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            inventoryRestocks.forEach(restock => {
+                const restockDate = new Date(restock.restock_date);
+                const itemName = restock.item ? restock.item.item_name : 'Unknown Item';
+                const unit = restock.item ? restock.item.unit_of_measurement : '';
+
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + restockDate.toLocaleDateString() + ' ' + restockDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + escapeHtml(itemName) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right font-medium text-green-600">+' + restock.quantity_added + ' ' + unit + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right text-gray-900">' + (restock.cost ? '$' + parseFloat(restock.cost).toFixed(2) : '-') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + (restock.supplier ? escapeHtml(restock.supplier) : '-') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + (restock.notes ? escapeHtml(restock.notes) : '-') + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderInventoryReportsView() {
+            let html = '<div class="space-y-6">';
+
+            // Filters
+            html += '<div class="bg-white rounded-lg shadow p-4">';
+            html += '<div class="flex flex-wrap gap-4 items-center">';
+            html += '<div class="flex-1 min-w-[200px]">';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Time Period</label>';
+            html += '<select onchange="reportTimePeriod = this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg">';
+            html += '<option value="last_7_days"' + (reportTimePeriod === 'last_7_days' ? ' selected' : '') + '>Last 7 Days</option>';
+            html += '<option value="last_30_days"' + (reportTimePeriod === 'last_30_days' ? ' selected' : '') + '>Last 30 Days</option>';
+            html += '<option value="last_90_days"' + (reportTimePeriod === 'last_90_days' ? ' selected' : '') + '>Last 90 Days</option>';
+            html += '<option value="this_month"' + (reportTimePeriod === 'this_month' ? ' selected' : '') + '>This Month</option>';
+            html += '<option value="last_month"' + (reportTimePeriod === 'last_month' ? ' selected' : '') + '>Last Month</option>';
+            html += '<option value="this_year"' + (reportTimePeriod === 'this_year' ? ' selected' : '') + '>This Year</option>';
+            html += '<option value="all_time"' + (reportTimePeriod === 'all_time' ? ' selected' : '') + '>All Time</option>';
+            html += '</select>';
+            html += '</div>';
+            html += '<div class="flex-1 min-w-[200px]">';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Staff Filter</label>';
+            html += '<select onchange="reportStaffFilter = this.value; renderApp();" class="w-full px-4 py-2 border rounded-lg">';
+            html += '<option value="">All Staff</option>';
+            staff.forEach(s => {
+                html += '<option value="' + s.id + '"' + (reportStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Get filtered withdrawals
+            const filteredWithdrawals = getFilteredWithdrawalsForReports();
+
+            // Summary Cards
+            const totalWithdrawals = filteredWithdrawals.length;
+            const uniqueItems = [...new Set(filteredWithdrawals.map(w => w.item_id))].length;
+            const totalCost = filteredWithdrawals.reduce((sum, w) => {
+                const item = inventoryItems.find(i => i.id === w.item_id);
+                if (item && item.unit_cost) {
+                    return sum + (w.quantity_withdrawn * item.unit_cost);
+                }
+                return sum;
+            }, 0);
+
+            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+            html += '<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Withdrawals</div>';
+            html += '<div class="text-3xl font-bold">' + totalWithdrawals + '</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Items Used</div>';
+            html += '<div class="text-3xl font-bold">' + uniqueItems + '</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Est. Total Cost</div>';
+            html += '<div class="text-3xl font-bold">$' + totalCost.toFixed(2) + '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Staff Usage Report
+            html += renderStaffUsageReport(filteredWithdrawals);
+
+            // Item Usage Report
+            html += renderItemUsageReport(filteredWithdrawals);
+
+            // Cost Analysis Report
+            html += renderCostAnalysisReport(filteredWithdrawals);
+
+            html += '</div>';
+            return html;
+        }
+
+        function getFilteredWithdrawalsForReports() {
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+
+            let startDate = new Date();
+
+            switch (reportTimePeriod) {
+                case 'last_7_days':
+                    startDate.setDate(today.getDate() - 7);
+                    break;
+                case 'last_30_days':
+                    startDate.setDate(today.getDate() - 30);
+                    break;
+                case 'last_90_days':
+                    startDate.setDate(today.getDate() - 90);
+                    break;
+                case 'this_month':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    break;
+                case 'last_month':
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                    lastMonthEnd.setHours(23, 59, 59, 999);
+                    return inventoryWithdrawals.filter(w => {
+                        const withdrawalDate = new Date(w.withdrawal_date);
+                        const matchesDate = withdrawalDate >= startDate && withdrawalDate <= lastMonthEnd;
+                        const matchesStaff = !reportStaffFilter || w.staff_id === reportStaffFilter;
+                        return matchesDate && matchesStaff;
+                    });
+                case 'this_year':
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    break;
+                case 'all_time':
+                    startDate = new Date('2000-01-01');
+                    break;
+                default:
+                    startDate.setDate(today.getDate() - 30);
+            }
+
+            startDate.setHours(0, 0, 0, 0);
+
+            return inventoryWithdrawals.filter(w => {
+                const withdrawalDate = new Date(w.withdrawal_date);
+                const matchesDate = withdrawalDate >= startDate && withdrawalDate <= today;
+                const matchesStaff = !reportStaffFilter || w.staff_id === reportStaffFilter;
+                return matchesDate && matchesStaff;
+            });
+        }
+
+        function renderStaffUsageReport(filteredWithdrawals) {
+            const staffUsage = {};
+
+            filteredWithdrawals.forEach(w => {
+                if (!staffUsage[w.staff_id]) {
+                    const staffMember = w.staff || staff.find(s => s.id === w.staff_id);
+                    staffUsage[w.staff_id] = {
+                        staffName: staffMember ? staffMember.full_name : 'Unknown',
+                        withdrawals: 0,
+                        items: {},
+                        totalCost: 0
+                    };
+                }
+
+                staffUsage[w.staff_id].withdrawals++;
+
+                const item = w.item || inventoryItems.find(i => i.id === w.item_id);
+                if (item) {
+                    const itemKey = item.item_name;
+                    if (!staffUsage[w.staff_id].items[itemKey]) {
+                        staffUsage[w.staff_id].items[itemKey] = {
+                            quantity: 0,
+                            unit: item.unit_of_measurement,
+                            bottleSize: item.bottle_size || 0
+                        };
+                    }
+                    staffUsage[w.staff_id].items[itemKey].quantity += w.quantity_withdrawn;
+
+                    if (item.unit_cost) {
+                        staffUsage[w.staff_id].totalCost += w.quantity_withdrawn * item.unit_cost;
+                    }
+                }
+            });
+
+            const sortedStaff = Object.values(staffUsage).sort((a, b) => b.withdrawals - a.withdrawals);
+
+            if (sortedStaff.length === 0) {
+                return '<div class="bg-white rounded-lg shadow p-8 text-center"><p class="text-gray-500">No staff usage data for selected period</p></div>';
+            }
+
+            let html = '<div class="bg-white rounded-lg shadow overflow-hidden">';
+            html += '<div class="bg-gray-100 px-6 py-4 border-b">';
+            html += '<h3 class="text-lg font-semibold text-gray-800">Staff Usage Report</h3>';
+            html += '</div>';
+            html += '<div class="p-6">';
+
+            sortedStaff.forEach((staffData, index) => {
+                html += '<div class="mb-6 pb-6 ' + (index < sortedStaff.length - 1 ? 'border-b border-gray-200' : '') + '">';
+                html += '<div class="flex justify-between items-start mb-3">';
+                html += '<div>';
+                html += '<h4 class="text-lg font-semibold text-gray-900">' + (index + 1) + '. ' + escapeHtml(staffData.staffName) + '</h4>';
+                html += '<div class="text-sm text-gray-500">' + staffData.withdrawals + ' withdrawal' + (staffData.withdrawals !== 1 ? 's' : '') + '</div>';
+                html += '</div>';
+                html += '<div class="text-right">';
+                html += '<div class="text-lg font-bold text-green-600">$' + staffData.totalCost.toFixed(2) + '</div>';
+                html += '<div class="text-xs text-gray-500">Est. Cost</div>';
+                html += '</div>';
+                html += '</div>';
+
+                html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
+                Object.entries(staffData.items).forEach(([itemName, itemData]) => {
+                    let quantityDisplay = itemData.quantity.toFixed(2) + ' ' + itemData.unit;
+                    if (itemData.bottleSize > 0) {
+                        const bottles = calculateBottles(itemData.quantity, itemData.bottleSize);
+                        quantityDisplay = bottles.toFixed(2) + ' bottles (' + itemData.quantity.toFixed(2) + ' ' + itemData.unit + ')';
+                    }
+
+                    html += '<div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">';
+                    html += '<span class="text-sm text-gray-700">' + escapeHtml(itemName) + '</span>';
+                    html += '<span class="text-sm font-medium text-gray-900">' + quantityDisplay + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderItemUsageReport(filteredWithdrawals) {
+            const itemUsage = {};
+
+            filteredWithdrawals.forEach(w => {
+                const item = w.item || inventoryItems.find(i => i.id === w.item_id);
+                if (item) {
+                    if (!itemUsage[item.id]) {
+                        itemUsage[item.id] = {
+                            itemName: item.item_name,
+                            category: item.category,
+                            unit: item.unit_of_measurement,
+                            bottleSize: item.bottle_size || 0,
+                            totalQuantity: 0,
+                            withdrawalCount: 0,
+                            totalCost: 0,
+                            unitCost: item.unit_cost || 0,
+                            currentStock: item.current_stock,
+                            usedByStaff: {}
+                        };
+                    }
+
+                    itemUsage[item.id].totalQuantity += w.quantity_withdrawn;
+                    itemUsage[item.id].withdrawalCount++;
+                    itemUsage[item.id].totalCost += w.quantity_withdrawn * (item.unit_cost || 0);
+
+                    const staffMember = w.staff || staff.find(s => s.id === w.staff_id);
+                    const staffName = staffMember ? staffMember.full_name : 'Unknown';
+                    if (!itemUsage[item.id].usedByStaff[staffName]) {
+                        itemUsage[item.id].usedByStaff[staffName] = 0;
+                    }
+                    itemUsage[item.id].usedByStaff[staffName] += w.quantity_withdrawn;
+                }
+            });
+
+            const sortedItems = Object.values(itemUsage).sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+            if (sortedItems.length === 0) {
+                return '';
+            }
+
+            let html = '<div class="bg-white rounded-lg shadow overflow-hidden">';
+            html += '<div class="bg-gray-100 px-6 py-4 border-b">';
+            html += '<h3 class="text-lg font-semibold text-gray-800">Item Usage Report</h3>';
+            html += '</div>';
+            html += '<div class="overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Used</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Withdrawals</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Est. Cost</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Current Stock</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Top User</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            sortedItems.forEach((itemData, index) => {
+                const topUser = Object.entries(itemData.usedByStaff).sort((a, b) => b[1] - a[1])[0];
+                const topUserName = topUser ? topUser[0] : '-';
+
+                let topUserQuantity = '-';
+                if (topUser) {
+                    if (itemData.bottleSize > 0) {
+                        const bottles = calculateBottles(topUser[1], itemData.bottleSize);
+                        topUserQuantity = bottles.toFixed(2) + ' bottles';
+                    } else {
+                        topUserQuantity = topUser[1].toFixed(2);
+                    }
+                }
+
+                const bottleUsage = itemData.bottleSize > 0
+                    ? calculateBottles(itemData.totalQuantity, itemData.bottleSize).toFixed(2) + ' bottles'
+                    : itemData.totalQuantity.toFixed(2) + ' ' + itemData.unit;
+
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + (index + 1) + '. ' + escapeHtml(itemData.itemName) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(itemData.category) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right font-semibold text-blue-600">';
+                html += '<div class="flex flex-col items-end">';
+                html += '<div>' + bottleUsage + '</div>';
+                html += '<div class="text-xs text-gray-500">(' + itemData.totalQuantity.toFixed(2) + ' ' + itemData.unit + ')</div>';
+                html += '</div>';
+                html += '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + itemData.withdrawalCount + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right text-green-600 font-medium">$' + itemData.totalCost.toFixed(2) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + itemData.currentStock + ' ' + itemData.unit + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(topUserName) + (topUser ? ' (' + topUserQuantity + ')' : '') + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderCostAnalysisReport(filteredWithdrawals) {
+            // Group by category
+            const categoryData = {};
+
+            filteredWithdrawals.forEach(w => {
+                const item = w.item || inventoryItems.find(i => i.id === w.item_id);
+                if (item && item.unit_cost) {
+                    const category = item.category;
+                    if (!categoryData[category]) {
+                        categoryData[category] = {
+                            totalCost: 0,
+                            totalQuantity: 0,
+                            withdrawalCount: 0
+                        };
+                    }
+
+                    categoryData[category].totalCost += w.quantity_withdrawn * item.unit_cost;
+                    categoryData[category].withdrawalCount++;
+                }
+            });
+
+            const sortedCategories = Object.entries(categoryData).sort((a, b) => b[1].totalCost - a[1].totalCost);
+
+            if (sortedCategories.length === 0) {
+                return '';
+            }
+
+            const totalCost = sortedCategories.reduce((sum, [_, data]) => sum + data.totalCost, 0);
+
+            let html = '<div class="bg-white rounded-lg shadow overflow-hidden">';
+            html += '<div class="bg-gray-100 px-6 py-4 border-b">';
+            html += '<h3 class="text-lg font-semibold text-gray-800">Cost Analysis by Category</h3>';
+            html += '</div>';
+            html += '<div class="p-6">';
+
+            sortedCategories.forEach(([category, data]) => {
+                const percentage = totalCost > 0 ? (data.totalCost / totalCost * 100) : 0;
+
+                html += '<div class="mb-4">';
+                html += '<div class="flex justify-between items-center mb-2">';
+                html += '<span class="text-sm font-medium text-gray-700">' + escapeHtml(category) + '</span>';
+                html += '<span class="text-sm font-bold text-gray-900">$' + data.totalCost.toFixed(2) + ' (' + percentage.toFixed(1) + '%)</span>';
+                html += '</div>';
+                html += '<div class="w-full bg-gray-200 rounded-full h-3">';
+                html += '<div class="bg-blue-600 h-3 rounded-full" style="width: ' + percentage + '%"></div>';
+                html += '</div>';
+                html += '<div class="text-xs text-gray-500 mt-1">' + data.withdrawalCount + ' withdrawal' + (data.withdrawalCount !== 1 ? 's' : '') + '</div>';
+                html += '</div>';
+            });
+
+            html += '<div class="mt-6 pt-4 border-t border-gray-200">';
+            html += '<div class="flex justify-between items-center">';
+            html += '<span class="text-lg font-semibold text-gray-900">Total Estimated Cost</span>';
+            html += '<span class="text-2xl font-bold text-green-600">$' + totalCost.toFixed(2) + '</span>';
+            html += '</div>';
+            html += '</div>';
+
+            html += '</div>';
+            html += '</div>';
+
             return html;
         }
 
@@ -3581,6 +4109,7 @@
                 await loadJobs();
                 await loadInventoryItems();
                 await loadInventoryWithdrawals();
+                await loadInventoryRestocks();
             }
             renderApp();
             if (currentUser) {
@@ -3808,6 +4337,7 @@
                 alert('Stock updated successfully! New stock: ' + newStock + ' ' + item.unit_of_measurement);
                 closeRestockModal();
                 await loadInventoryItems();
+                await loadInventoryRestocks();  // ← ADD THIS LINE
                 renderApp();
             } catch (error) {
                 console.error('Error restocking item:', error);
