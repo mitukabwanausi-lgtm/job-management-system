@@ -2463,6 +2463,20 @@
                     startDate.setDate(today.getDate() - daysFromMonday);
                     startDate.setHours(0, 0, 0, 0);
                     break;
+                case 'last_week':
+                    // Get Monday of last week
+                    const lastWeekMonday = new Date(today);
+                    const currentDayOfWeek = today.getDay();
+                    const daysToLastMonday = currentDayOfWeek === 0 ? 13 : currentDayOfWeek + 6; // If Sunday, go back 13 days, else go back to last Monday
+                    lastWeekMonday.setDate(today.getDate() - daysToLastMonday);
+                    lastWeekMonday.setHours(0, 0, 0, 0);
+
+                    // Get Sunday of last week
+                    const lastWeekSunday = new Date(lastWeekMonday);
+                    lastWeekSunday.setDate(lastWeekMonday.getDate() + 6);
+                    lastWeekSunday.setHours(23, 59, 59, 999);
+
+                    return {startDate: lastWeekMonday, endDate: lastWeekSunday};
                 case 'this_month':
                     startDate = new Date(today.getFullYear(), today.getMonth(), 1);
                     startDate.setHours(0, 0, 0, 0);
@@ -2718,6 +2732,7 @@
             html += '<h3 class="text-xl font-semibold text-gray-900">Profitability Analysis</h3>';
             html += '<select onchange="dashboardTimePeriod = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm">';
             html += '<option value="this_week"' + (dashboardTimePeriod === 'this_week' ? ' selected' : '') + '>This Week</option>';
+            html += '<option value="last_week"' + (dashboardTimePeriod === 'last_week' ? ' selected' : '') + '>Last Week</option>';
             html += '<option value="this_month"' + (dashboardTimePeriod === 'this_month' ? ' selected' : '') + '>This Month</option>';
             html += '<option value="last_month"' + (dashboardTimePeriod === 'last_month' ? ' selected' : '') + '>Last Month</option>';
             html += '<option value="last_3_months"' + (dashboardTimePeriod === 'last_3_months' ? ' selected' : '') + '>Last 3 Months</option>';
