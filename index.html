@@ -1768,7 +1768,7 @@
 
                 const totalRevenue = totalBaseAmount + totalGSTAmount;
                 const cashTotal = jobsData.filter(j => j.payment_method === 'Cash').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
-                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card' || j.payment_method === 'Bank Transfer/Check').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
 
                 // Find which column index has amount_paid
                 let amountPaidIndex = 0;
@@ -2702,11 +2702,16 @@
 
             const cashTotal = jobs.filter(j => {
                 if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
-                // Use job date OR actual_end_time (whichever exists)
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
-            const bankTotal = todayRevenue - cashTotal;
+
+            const bankTotal = jobs.filter(j => {
+                if (j.status !== 'Completed' || !j.amount_paid) return false;
+                if (j.payment_method !== 'Bank Transfer/Card' && j.payment_method !== 'Bank Transfer/Check') return false;
+                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
+                return dateToCheck.toDateString() === new Date().toDateString();
+            }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
             const workload = staff.map(s => ({
                 id: s.id,
                 name: s.full_name,
