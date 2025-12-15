@@ -774,6 +774,13 @@
                                 class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
                             <p class="text-xs text-gray-500 mt-1">Cost per unit (optional, for tracking purposes)</p>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                            <textarea id="inventory_notes" rows="2" class="w-full px-4 py-2 border rounded-lg"
+                                placeholder="Any additional notes about this item..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1">Supplier info, color codes, special instructions, etc.
+                            </p>
+                        </div>
                     </form>
                 </div>
                 <div class="p-6 border-t">
@@ -3310,6 +3317,35 @@
             });
 
             let html = '<div class="space-y-6">';
+            // Calculate summary statistics
+            let totalBottles = 0;
+            let totalValue = 0;
+
+            inventoryItems.forEach(item => {
+                if (item.bottle_size > 0) {
+                    const bottles = calculateBottles(item.current_stock, item.bottle_size);
+                    totalBottles += bottles;
+                }
+                if (item.unit_cost) {
+                    totalValue += item.current_stock * item.unit_cost;
+                }
+            });
+
+            // Summary cards
+            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">';
+            html += '<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Items</div>';
+            html += '<div class="text-3xl font-bold">' + inventoryItems.length + '</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Bottles in Stock</div>';
+            html += '<div class="text-3xl font-bold">' + totalBottles.toFixed(2) + '</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Stock Value</div>';
+            html += '<div class="text-3xl font-bold">$' + totalValue.toFixed(2) + '</div>';
+            html += '</div>';
+            html += '</div>';
 
             // Low stock alerts
             const lowStockItems = inventoryItems.filter(item => item.current_stock <= item.minimum_stock_alert);
@@ -3349,6 +3385,7 @@
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min Alert</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>';
                 html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>';
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>';
                 html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>';
                 html += '</tr>';
                 html += '</thead>';
@@ -3377,10 +3414,11 @@
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles</td>';
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">$' + (item.unit_cost || 0).toFixed(2) + '</td>';
                     html += '<td class="px-4 py-3 text-center">' + statusBadge + '</td>';
+                    html += '<td class="px-4 py-3 text-sm text-gray-600">' + (item.notes ? escapeHtml(item.notes) : '-') + '</td>';
                     html += '<td class="px-4 py-3 text-center">';
                     html += '<button onclick="openRestockModal(\'' + item.id + '\')" class="text-green-600 hover:text-green-800 mr-2" title="Restock"><span class="material-icons md-18">add_circle</span></button>';
                     html += '<button onclick="openEditItemModal(\'' + item.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2" title="Edit"><span class="material-icons md-18">edit</span></button>';
-                    html += '<button onclick="deleteInventoryItem(\'' + item.id + '\')" class="text-red-600 hover:text-red-800" title="Delete"><span class="material-icons md-18">delete</span></button>';
+                    // Delete button removed for safety - use Supabase to delete items if needed
                     html += '</td>';
                     html += '</tr>';
                 });
@@ -4149,6 +4187,7 @@
             document.getElementById('inventory_current_stock').value = '0';
             document.getElementById('inventory_min_stock').value = '0';
             document.getElementById('inventory_unit_cost').value = '';
+            document.getElementById('inventory_notes').value = '';
 
             populateCategoryList();  // ← Add this line
 
@@ -4176,6 +4215,7 @@
             document.getElementById('inventory_current_stock').value = item.current_stock;
             document.getElementById('inventory_min_stock').value = item.minimum_stock_alert;
             document.getElementById('inventory_unit_cost').value = item.unit_cost || '';
+            document.getElementById('inventory_notes').value = item.notes || '';
 
             populateCategoryList();  // ← Add this line
 
@@ -4200,7 +4240,8 @@
                 current_stock: parseFloat(document.getElementById('inventory_current_stock').value),
                 minimum_stock_alert: parseFloat(document.getElementById('inventory_min_stock').value),
                 unit_cost: document.getElementById('inventory_unit_cost').value ? parseFloat(document.getElementById('inventory_unit_cost').value) : 0,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                notes: document.getElementById('inventory_notes').value || null
             };
 
             try {
