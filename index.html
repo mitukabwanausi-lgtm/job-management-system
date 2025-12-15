@@ -1338,9 +1338,35 @@
                 completedJobs = completedJobs.filter(j => j.assigned_to === currentStaffFilter);
             }
 
-            // Separate by payment method
-            const cashJobs = completedJobs.filter(j => j.payment_method === 'Cash' && j.amount_paid);
-            const bankJobs = completedJobs.filter(j => (j.payment_method === 'Bank Transfer/Card') && j.amount_paid);
+            // Separate by payment method - handle split payments
+            const cashJobs = [];
+            const bankJobs = [];
+
+            completedJobs.forEach(j => {
+                if (!j.amount_paid) return;
+
+                if (j.payment_method === 'Cash') {
+                    cashJobs.push(j);
+                } else if (j.payment_method === 'Bank Transfer/Card') {
+                    bankJobs.push(j);
+                } else if (j.payment_method === 'Split') {
+                    // For split payments, create separate entries for cash and bank portions
+                    if (j.cash_amount && j.cash_amount > 0) {
+                        cashJobs.push({
+                            ...j,
+                            amount_paid: j.cash_amount,
+                            payment_method: 'Cash (Split)'
+                        });
+                    }
+                    if (j.bank_amount && j.bank_amount > 0) {
+                        bankJobs.push({
+                            ...j,
+                            amount_paid: j.bank_amount,
+                            payment_method: 'Bank (Split)'
+                        });
+                    }
+                }
+            });
 
             // Helper function for CSV escaping
             const escapeCSV = (value) => {
@@ -1774,8 +1800,19 @@
                 });
 
                 const totalRevenue = totalBaseAmount + totalGSTAmount;
-                const cashTotal = jobsData.filter(j => j.payment_method === 'Cash').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
-                const bankTotal = jobsData.filter(j => j.payment_method === 'Bank Transfer/Card').reduce((sum, j) => sum + (parseFloat(j.amount_paid) || 0), 0);
+                let cashTotal = 0;
+                let bankTotal = 0;
+
+                jobsData.forEach(j => {
+                    if (j.payment_method === 'Cash') {
+                        cashTotal += parseFloat(j.amount_paid) || 0;
+                    } else if (j.payment_method === 'Bank Transfer/Card') {
+                        bankTotal += parseFloat(j.amount_paid) || 0;
+                    } else if (j.payment_method === 'Split') {
+                        cashTotal += parseFloat(j.cash_amount) || 0;
+                        bankTotal += parseFloat(j.bank_amount) || 0;
+                    }
+                });
 
                 // Find which column index has amount_paid
                 let amountPaidIndex = 0;
@@ -2707,18 +2744,24 @@
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
 
-            const cashTotal = jobs.filter(j => {
-                if (j.status !== 'Completed' || j.payment_method !== 'Cash' || !j.amount_paid) return false;
-                const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
-                return dateToCheck.toDateString() === new Date().toDateString();
-            }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
+            let cashTotal = 0;
+            let bankTotal = 0;
 
-            const bankTotal = jobs.filter(j => {
-                if (j.status !== 'Completed' || !j.amount_paid) return false;
-                if (j.payment_method !== 'Bank Transfer/Card' && j.payment_method !== 'Bank Transfer/Check') return false;
+            jobs.forEach(j => {
+                if (j.status !== 'Completed' || !j.amount_paid) return;
+
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
-                return dateToCheck.toDateString() === new Date().toDateString();
-            }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
+                if (dateToCheck.toDateString() !== new Date().toDateString()) return;
+
+                if (j.payment_method === 'Cash') {
+                    cashTotal += Number(j.amount_paid);
+                } else if (j.payment_method === 'Bank Transfer/Card') {
+                    bankTotal += Number(j.amount_paid);
+                } else if (j.payment_method === 'Split') {
+                    cashTotal += Number(j.cash_amount || 0);
+                    bankTotal += Number(j.bank_amount || 0);
+                }
+            });
             const workload = staff.map(s => ({
                 id: s.id,
                 name: s.full_name,
