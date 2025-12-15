@@ -629,15 +629,44 @@
                         <label
                             class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                             <input type="radio" name="manager_payment_method" value="Cash" checked
-                                class="w-4 h-4 text-green-600">
+                                onchange="toggleSplitPaymentFields()" class="w-4 h-4 text-green-600">
                             <span class="ml-3 text-gray-900">Cash</span>
                         </label>
                         <label
                             class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                             <input type="radio" name="manager_payment_method" value="Bank Transfer/Card"
-                                class="w-4 h-4 text-green-600">
+                                onchange="toggleSplitPaymentFields()" class="w-4 h-4 text-green-600">
                             <span class="ml-3 text-gray-900">Bank Transfer/Card</span>
                         </label>
+                        <label
+                            class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="manager_payment_method" value="Split"
+                                onchange="toggleSplitPaymentFields()" class="w-4 h-4 text-green-600">
+                            <span class="ml-3 text-gray-900">Split Payment (Cash + Bank)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Split payment fields (hidden by default) -->
+                <div id="split_payment_fields"
+                    class="hidden space-y-4 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="text-sm font-semibold text-blue-900 mb-2">Split Payment Breakdown</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Cash Amount ($)</label>
+                            <input type="number" id="manager_cash_amount" step="0.01" placeholder="0.00"
+                                onchange="updateSplitTotal()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Bank Amount ($)</label>
+                            <input type="number" id="manager_bank_amount" step="0.01" placeholder="0.00"
+                                onchange="updateSplitTotal()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        Total: <span id="split_total" class="font-bold text-blue-600">$0.00</span>
                     </div>
                 </div>
                 <div>
@@ -1564,7 +1593,16 @@
         function openManagerPaymentModal(jobId) {
             pendingCompletionJobId = jobId;
             document.getElementById('manager_amount_paid').value = '';
+            document.getElementById('manager_amount_paid').disabled = false;
             document.querySelector('input[name="manager_payment_method"][value="Cash"]').checked = true;
+            document.getElementById('manager_request_review').checked = false;
+
+            // Reset split payment fields
+            document.getElementById('split_payment_fields').classList.add('hidden');
+            document.getElementById('manager_cash_amount').value = '';
+            document.getElementById('manager_bank_amount').value = '';
+            document.getElementById('split_total').textContent = '$0.00';
+
             document.getElementById('paymentModal').classList.remove('hidden');
         }
 
@@ -1573,14 +1611,58 @@
             pendingCompletionJobId = null;
         }
 
+        function toggleSplitPaymentFields() {
+            const paymentMethod = document.querySelector('input[name="manager_payment_method"]:checked').value;
+            const splitFields = document.getElementById('split_payment_fields');
+            const amountPaidInput = document.getElementById('manager_amount_paid');
+
+            if (paymentMethod === 'Split') {
+                splitFields.classList.remove('hidden');
+                amountPaidInput.disabled = true;
+                amountPaidInput.value = '';
+                amountPaidInput.placeholder = 'Will be calculated from split amounts';
+            } else {
+                splitFields.classList.add('hidden');
+                amountPaidInput.disabled = false;
+                amountPaidInput.placeholder = 'Enter amount';
+                document.getElementById('manager_cash_amount').value = '';
+                document.getElementById('manager_bank_amount').value = '';
+                document.getElementById('split_total').textContent = '$0.00';
+            }
+        }
+
+        function updateSplitTotal() {
+            const cashAmount = parseFloat(document.getElementById('manager_cash_amount').value) || 0;
+            const bankAmount = parseFloat(document.getElementById('manager_bank_amount').value) || 0;
+            const total = cashAmount + bankAmount;
+
+            document.getElementById('split_total').textContent = '$' + total.toFixed(2);
+            document.getElementById('manager_amount_paid').value = total.toFixed(2);
+        }
+
+
         async function submitManagerCompletion() {
-            const amountPaid = document.getElementById('manager_amount_paid').value;
             const paymentMethod = document.querySelector('input[name="manager_payment_method"]:checked').value;
             const requestReview = document.getElementById('manager_request_review').checked;
 
-            if (!amountPaid || amountPaid === '' || parseFloat(amountPaid) < 0) {
-                alert('Please enter a valid amount paid.');
-                return;
+            let amountPaid, cashAmount = null, bankAmount = null;
+
+            if (paymentMethod === 'Split') {
+                cashAmount = parseFloat(document.getElementById('manager_cash_amount').value) || 0;
+                bankAmount = parseFloat(document.getElementById('manager_bank_amount').value) || 0;
+                amountPaid = cashAmount + bankAmount;
+
+                if (cashAmount <= 0 && bankAmount <= 0) {
+                    alert('Please enter valid cash and/or bank amounts for split payment.');
+                    return;
+                }
+            } else {
+                amountPaid = document.getElementById('manager_amount_paid').value;
+
+                if (!amountPaid || amountPaid === '' || parseFloat(amountPaid) < 0) {
+                    alert('Please enter a valid amount paid.');
+                    return;
+                }
             }
 
             if (!pendingCompletionJobId) {
@@ -1590,20 +1672,30 @@
             }
 
             try {
-                // Always reset review workflow fields when completing
+                const updateData = {
+                    status: 'Completed',
+                    amount_paid: Number(parseFloat(amountPaid).toFixed(2)),
+                    payment_method: paymentMethod,
+                    request_review: requestReview,
+                    review_sent: false,
+                    review_received: false,
+                    review_rating: null,
+                    review_received_date: null,
+                    actual_end_time: new Date().toISOString()
+                };
+
+                // Add split amounts if payment method is Split
+                if (paymentMethod === 'Split') {
+                    updateData.cash_amount = Number(cashAmount.toFixed(2));
+                    updateData.bank_amount = Number(bankAmount.toFixed(2));
+                } else {
+                    updateData.cash_amount = null;
+                    updateData.bank_amount = null;
+                }
+
                 const {error} = await supabase
                     .from('jobs')
-                    .update({
-                        status: 'Completed',
-                        amount_paid: Number(parseFloat(amountPaid).toFixed(2)),
-                        payment_method: paymentMethod,
-                        request_review: requestReview,
-                        review_sent: false,           // Reset to false
-                        review_received: false,       // Reset to false
-                        review_rating: null,          // Clear rating
-                        review_received_date: null,   // Clear date
-                        actual_end_time: new Date().toISOString()
-                    })
+                    .update(updateData)
                     .eq('id', pendingCompletionJobId);
 
                 if (error) throw error;
