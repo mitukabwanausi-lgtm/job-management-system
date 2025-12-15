@@ -2991,21 +2991,53 @@
                 today.setHours(0, 0, 0, 0);
 
                 filteredJobs = filteredJobs.filter(j => {
-                    const jobDate = new Date(j.date);
+                    // For completed jobs, use actual_end_time if available, otherwise use job date
+                    let jobDate;
+                    if (showCompleted === true && j.actual_end_time) {
+                        jobDate = new Date(j.actual_end_time);
+                    } else {
+                        jobDate = new Date(j.date);
+                    }
                     jobDate.setHours(0, 0, 0, 0);
 
                     if (currentDateFilter === 'today') {
                         return jobDate.getTime() === today.getTime();
-                    } else if (currentDateFilter === 'tomorrow') {
-                        const tomorrow = new Date(today);
-                        tomorrow.setDate(today.getDate() + 1);
-                        return jobDate.getTime() === tomorrow.getTime();
+                    } else if (currentDateFilter === 'yesterday') {
+                        const yesterday = new Date(today);
+                        yesterday.setDate(today.getDate() - 1);
+                        return jobDate.getTime() === yesterday.getTime();
                     } else if (currentDateFilter === 'this_week') {
+                        // Current week: Monday to Sunday
                         const weekStart = new Date(today);
                         weekStart.setDate(today.getDate() - today.getDay());
                         const weekEnd = new Date(weekStart);
                         weekEnd.setDate(weekStart.getDate() + 6);
                         return jobDate >= weekStart && jobDate <= weekEnd;
+                    } else if (currentDateFilter === 'last_week') {
+                        // Previous Monday to Sunday
+                        const lastWeekEnd = new Date(today);
+                        lastWeekEnd.setDate(today.getDate() - today.getDay() - 1); // Last Sunday
+                        const lastWeekStart = new Date(lastWeekEnd);
+                        lastWeekStart.setDate(lastWeekEnd.getDate() - 6); // Previous Monday
+                        return jobDate >= lastWeekStart && jobDate <= lastWeekEnd;
+                    } else if (currentDateFilter === 'last_month') {
+                        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                        return jobDate >= lastMonth && jobDate <= lastMonthEnd;
+                    } else if (currentDateFilter === 'last_3_months') {
+                        const threeMonthsAgo = new Date(today);
+                        threeMonthsAgo.setMonth(today.getMonth() - 3);
+                        return jobDate >= threeMonthsAgo && jobDate <= today;
+                    } else if (currentDateFilter === 'last_6_months') {
+                        const sixMonthsAgo = new Date(today);
+                        sixMonthsAgo.setMonth(today.getMonth() - 6);
+                        return jobDate >= sixMonthsAgo && jobDate <= today;
+                    } else if (currentDateFilter === 'this_year') {
+                        return jobDate.getFullYear() === today.getFullYear();
+                    } else if (currentDateFilter === 'tomorrow') {
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+                        return jobDate.getTime() === tomorrow.getTime();
                     } else if (currentDateFilter === 'next_week') {
                         const nextWeekStart = new Date(today);
                         nextWeekStart.setDate(today.getDate() - today.getDay() + 7);
@@ -3027,7 +3059,32 @@
             }
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
-            const dateFilterDropdown = '<select onchange="currentDateFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Dates</option><option value="today"' + (currentDateFilter === 'today' ? ' selected' : '') + '>Today</option><option value="tomorrow"' + (currentDateFilter === 'tomorrow' ? ' selected' : '') + '>Tomorrow</option><option value="this_week"' + (currentDateFilter === 'this_week' ? ' selected' : '') + '>This Week</option><option value="next_week"' + (currentDateFilter === 'next_week' ? ' selected' : '') + '>Next Week</option><option value="this_month"' + (currentDateFilter === 'this_month' ? ' selected' : '') + '>This Month</option></select>';
+            // Different filters for active vs completed jobs
+            let dateFilterDropdown;
+            if (showCompleted === true) {
+                // Historical filters for completed jobs
+                dateFilterDropdown = '<select onchange="currentDateFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base">' +
+                    '<option value="">All Time</option>' +
+                    '<option value="today"' + (currentDateFilter === 'today' ? ' selected' : '') + '>Today</option>' +
+                    '<option value="yesterday"' + (currentDateFilter === 'yesterday' ? ' selected' : '') + '>Yesterday</option>' +
+                    '<option value="this_week"' + (currentDateFilter === 'this_week' ? ' selected' : '') + '>This Week</option>' +
+                    '<option value="last_week"' + (currentDateFilter === 'last_week' ? ' selected' : '') + '>Last Week</option>' +
+                    '<option value="last_month"' + (currentDateFilter === 'last_month' ? ' selected' : '') + '>Last Month</option>' +
+                    '<option value="last_3_months"' + (currentDateFilter === 'last_3_months' ? ' selected' : '') + '>Last 3 Months</option>' +
+                    '<option value="last_6_months"' + (currentDateFilter === 'last_6_months' ? ' selected' : '') + '>Last 6 Months</option>' +
+                    '<option value="this_year"' + (currentDateFilter === 'this_year' ? ' selected' : '') + '>This Year</option>' +
+                    '</select>';
+            } else {
+                // Future-focused filters for active jobs
+                dateFilterDropdown = '<select onchange="currentDateFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base">' +
+                    '<option value="">All Dates</option>' +
+                    '<option value="today"' + (currentDateFilter === 'today' ? ' selected' : '') + '>Today</option>' +
+                    '<option value="tomorrow"' + (currentDateFilter === 'tomorrow' ? ' selected' : '') + '>Tomorrow</option>' +
+                    '<option value="this_week"' + (currentDateFilter === 'this_week' ? ' selected' : '') + '>This Week</option>' +
+                    '<option value="next_week"' + (currentDateFilter === 'next_week' ? ' selected' : '') + '>Next Week</option>' +
+                    '<option value="this_month"' + (currentDateFilter === 'this_month' ? ' selected' : '') + '>This Month</option>' +
+                    '</select>';
+            }
             const columnSelector = `
                 <div class="relative">
                     <button onclick="toggleColumnSelector()" class="px-4 py-2 border rounded-lg text-sm md:text-base bg-white hover:bg-gray-50 flex items-center gap-2">
