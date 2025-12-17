@@ -964,7 +964,7 @@
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
         let currentView = 'dashboard';
         let jobs = [];
@@ -1005,6 +1005,9 @@
         let inventoryRestocks = [];
         let reportTimePeriod = 'last_30_days';
         let reportStaffFilter = '';
+        let reviewReportPeriod = 'this_week';
+        let dashboardReviewPeriod = 'this_week';
+        let dashboardReviewStaff = '';
 
         // ==================== BOTTLE CALCULATION HELPERS ====================
         function calculateBottles(mlAmount, bottleSize) {
@@ -2739,6 +2742,32 @@
 
             return {startDate, endDate: today};
         }
+        function getStaffReviewStats(timePeriod) {
+            const {startDate, endDate} = getDateRangeForPeriod(timePeriod);
+
+            const staffStats = staff.map(s => {
+                const staffReviews = jobs.filter(j => {
+                    if (j.assigned_to !== s.id || !j.review_received) return false;
+
+                    const reviewDate = new Date(j.review_received_date);
+                    return reviewDate >= startDate && reviewDate <= endDate;
+                });
+
+                const avgRating = staffReviews.length > 0
+                    ? (staffReviews.reduce((sum, j) => sum + (j.review_rating || 0), 0) / staffReviews.length).toFixed(1)
+                    : 0;
+
+                return {
+                    name: s.full_name,
+                    color: s.color_code,
+                    reviewCount: staffReviews.length,
+                    avgRating: avgRating,
+                    ratings: staffReviews.filter(j => j.review_rating).length
+                };
+            }).sort((a, b) => b.reviewCount - a.reviewCount);
+
+            return staffStats;
+        }
         function getCompletedJobsForPeriod(period) {
             const {startDate, endDate} = getDateRangeForPeriod(period);
 
@@ -2935,18 +2964,35 @@
                 };
             }).sort((a, b) => b.reviewCount - a.reviewCount); // Sort by most reviews
 
-            const reviewStatsCards = reviewStats.map(s =>
-                '<div onclick="changeView(\'review-requests\'); currentReviewTab = \'received\'; currentStaffFilter = \'' + s.id + '\'; renderApp();" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer transform hover:scale-105" style="border-left: 3px solid ' + s.color + '">' +
-                '<div class="text-sm font-medium text-gray-600 mb-1">' + s.name + '</div>' +
-                '<div class="flex items-center justify-between">' +
-                '<div class="flex items-center gap-2">' +
-                '<span class="text-2xl font-semibold" style="color: ' + s.color + '">' + s.reviewCount + '</span>' +
-                '<span class="text-xs text-gray-500">reviews</span>' +
-                '</div>' +
-                (s.avgRating > 0 ? '<div class="text-right"><div class="text-yellow-500 text-lg">' + '★'.repeat(Math.round(s.avgRating)) + '</div><div class="text-xs text-gray-500">' + s.avgRating + '/5 (' + s.ratedCount + ')</div></div>' : '') +
-                '</div>' +
-                '</div>'
-            ).join('');
+            const reviewStatsCards = reviewStats.map(s => {
+                // Create visual star rating
+                let starsHtml = '';
+                if (s.avgRating > 0) {
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= Math.round(s.avgRating)) {
+                            starsHtml += '<span class="text-yellow-500">★</span>';
+                        } else {
+                            starsHtml += '<span class="text-gray-300">★</span>';
+                        }
+                    }
+                }
+
+                return '<div onclick="dashboardReviewStaff = \'' + s.id + '\'; window.scrollTo(0, document.body.scrollHeight);" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer transform hover:scale-105" style="border-left: 3px solid ' + s.color + '">' +
+                    '<div class="text-sm font-medium text-gray-600 mb-1">' + s.name + '</div>' +
+                    '<div class="flex items-center justify-between">' +
+                    '<div class="flex items-center gap-2">' +
+                    '<span class="text-2xl font-semibold" style="color: ' + s.color + '">' + s.reviewCount + '</span>' +
+                    '<span class="text-xs text-gray-500">reviews</span>' +
+                    '</div>' +
+                    (s.avgRating > 0 ?
+                        '<div class="text-right">' +
+                        '<div class="flex gap-0.5">' + starsHtml + '</div>' +
+                        '<div class="text-xs text-gray-500 mt-1">' + s.avgRating + '/5 (' + s.ratedCount + ')</div>' +
+                        '</div>'
+                        : '<div class="text-xs text-gray-400">No ratings</div>') +
+                    '</div>' +
+                    '</div>';
+            }).join('');
 
             html += '<div class="bg-white rounded-xl border border-gray-200 p-6">';
             html += '<div class="flex justify-between items-center mb-4">';
@@ -3063,7 +3109,251 @@
             html += '</div>';
 
             html += '</div>'; // Close profitability section
+
+            // Add Review Analytics Section
+            html += renderReviewAnalytics();
+
             html += '</div>'; // Close main dashboard container
+            return html;
+        }
+
+        function renderReviewAnalytics() {
+            let html = '<div class="bg-white rounded-lg shadow p-6 mt-6">';
+
+            // Header with filters
+            html += '<div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">';
+            html += '<h3 class="text-xl font-semibold text-gray-900">Review Analytics</h3>';
+            html += '<div class="flex flex-wrap gap-3">';
+
+            // Time period filter
+            html += '<select onchange="dashboardReviewPeriod = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm">';
+            html += '<option value="this_week"' + (typeof dashboardReviewPeriod === 'undefined' || dashboardReviewPeriod === 'this_week' ? ' selected' : '') + '>This Week</option>';
+            html += '<option value="last_week"' + (dashboardReviewPeriod === 'last_week' ? ' selected' : '') + '>Last Week</option>';
+            html += '<option value="this_month"' + (dashboardReviewPeriod === 'this_month' ? ' selected' : '') + '>This Month</option>';
+            html += '<option value="last_month"' + (dashboardReviewPeriod === 'last_month' ? ' selected' : '') + '>Last Month</option>';
+            html += '<option value="last_3_months"' + (dashboardReviewPeriod === 'last_3_months' ? ' selected' : '') + '>Last 3 Months</option>';
+            html += '<option value="this_year"' + (dashboardReviewPeriod === 'this_year' ? ' selected' : '') + '>This Year</option>';
+            html += '<option value="all_time"' + (dashboardReviewPeriod === 'all_time' ? ' selected' : '') + '>All Time</option>';
+            html += '</select>';
+
+            // Staff filter
+            html += '<select onchange="dashboardReviewStaff = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm">';
+            html += '<option value="">All Staff</option>';
+            staff.forEach(s => {
+                html += '<option value="' + s.id + '"' + (typeof dashboardReviewStaff !== 'undefined' && dashboardReviewStaff === s.id ? ' selected' : '') + '>' + s.full_name + '</option>';
+            });
+            html += '</select>';
+
+            html += '</div>';
+            html += '</div>';
+
+            // Get filtered reviews
+            const period = typeof dashboardReviewPeriod === 'undefined' ? 'this_week' : dashboardReviewPeriod;
+            const {startDate, endDate} = getDateRangeForPeriod(period);
+
+            let filteredReviews = jobs.filter(j => {
+                if (!j.review_received || !j.review_received_date) return false;
+
+                const reviewDate = new Date(j.review_received_date);
+                const matchesDate = reviewDate >= startDate && reviewDate <= endDate;
+                const matchesStaff = !dashboardReviewStaff || j.assigned_to === dashboardReviewStaff;
+
+                return matchesDate && matchesStaff;
+            });
+
+            // Calculate statistics
+            const totalReviews = filteredReviews.length;
+            const ratedReviews = filteredReviews.filter(j => j.review_rating);
+            const avgRating = ratedReviews.length > 0
+                ? (ratedReviews.reduce((sum, j) => sum + j.review_rating, 0) / ratedReviews.length)
+                : 0;
+
+            // Rating distribution
+            const ratingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            ratedReviews.forEach(j => {
+                if (j.review_rating) {
+                    ratingDistribution[j.review_rating]++;
+                }
+            });
+
+            // Summary Cards
+            html += '<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">';
+
+            // Total Reviews
+            html += '<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Reviews</div>';
+            html += '<div class="text-3xl font-bold">' + totalReviews + '</div>';
+            html += '<div class="text-sm opacity-80 mt-1">' + ratedReviews.length + ' rated</div>';
+            html += '</div>';
+
+            // Average Rating
+            html += '<div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Average Rating</div>';
+            html += '<div class="text-3xl font-bold flex items-center gap-2">';
+            if (avgRating > 0) {
+                html += avgRating.toFixed(1) + ' <span class="text-2xl">★</span>';
+            } else {
+                html += 'N/A';
+            }
+            html += '</div>';
+            html += '<div class="text-sm opacity-80 mt-1">out of 5.0</div>';
+            html += '</div>';
+
+            // 5-Star Reviews
+            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">5-Star Reviews</div>';
+            html += '<div class="text-3xl font-bold">' + ratingDistribution[5] + '</div>';
+            html += '<div class="text-sm opacity-80 mt-1">' + (ratedReviews.length > 0 ? ((ratingDistribution[5] / ratedReviews.length) * 100).toFixed(1) : 0) + '% of rated</div>';
+            html += '</div>';
+
+            // Below 4-Star Reviews (needs attention)
+            const below4Star = ratingDistribution[1] + ratingDistribution[2] + ratingDistribution[3];
+            html += '<div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Needs Attention</div>';
+            html += '<div class="text-3xl font-bold">' + below4Star + '</div>';
+            html += '<div class="text-sm opacity-80 mt-1">Reviews below 4★</div>';
+            html += '</div>';
+
+            html += '</div>';
+
+            if (totalReviews === 0) {
+                html += '<div class="text-center py-12 text-gray-500">';
+                html += '<span class="material-icons text-gray-300" style="font-size: 64px;">rate_review</span>';
+                html += '<p class="mt-4">No reviews for selected period</p>';
+                html += '</div>';
+                html += '</div>';
+                return html;
+            }
+
+            // Rating Distribution Chart
+            html += '<div class="mb-6">';
+            html += '<h4 class="text-lg font-semibold text-gray-900 mb-4">Rating Distribution</h4>';
+            html += '<div class="space-y-3">';
+
+            for (let rating = 5; rating >= 1; rating--) {
+                const count = ratingDistribution[rating];
+                const percentage = ratedReviews.length > 0 ? (count / ratedReviews.length) * 100 : 0;
+
+                html += '<div class="flex items-center gap-4">';
+                html += '<div class="flex items-center gap-1 w-24">';
+                html += '<span class="text-sm font-medium text-gray-700">' + rating + '</span>';
+                html += '<span class="text-yellow-500">★</span>';
+                html += '</div>';
+                html += '<div class="flex-1">';
+                html += '<div class="flex items-center gap-3">';
+                html += '<div class="flex-1 bg-gray-200 rounded-full h-6">';
+
+                let barColor = 'bg-gray-400';
+                if (rating === 5) barColor = 'bg-green-500';
+                else if (rating === 4) barColor = 'bg-blue-500';
+                else if (rating === 3) barColor = 'bg-yellow-500';
+                else if (rating === 2) barColor = 'bg-orange-500';
+                else if (rating === 1) barColor = 'bg-red-500';
+
+                html += '<div class="' + barColor + ' h-6 rounded-full flex items-center justify-end pr-2 transition-all" style="width: ' + percentage + '%">';
+                if (count > 0) {
+                    html += '<span class="text-xs text-white font-medium">' + count + '</span>';
+                }
+                html += '</div>';
+                html += '</div>';
+                html += '<span class="text-sm text-gray-600 font-medium w-12 text-right">' + percentage.toFixed(1) + '%</span>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            }
+
+            html += '</div>';
+            html += '</div>';
+
+            // Individual Reviews Table
+            html += '<div class="mb-6">';
+            html += '<h4 class="text-lg font-semibold text-gray-900 mb-4">Recent Reviews</h4>';
+            html += '<div class="overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job Details</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            // Sort by date, most recent first
+            const sortedReviews = [...filteredReviews].sort((a, b) => {
+                return new Date(b.review_received_date) - new Date(a.review_received_date);
+            });
+
+            // Show max 20 most recent
+            sortedReviews.slice(0, 20).forEach(job => {
+                const staffMember = job.staff || staff.find(s => s.id === job.assigned_to);
+                const staffName = staffMember ? staffMember.full_name : 'Unknown';
+                const staffColor = staffMember ? staffMember.color_code : '#666';
+
+                html += '<tr class="hover:bg-gray-50">';
+
+                // Date
+                html += '<td class="px-4 py-3 text-sm whitespace-nowrap">';
+                html += new Date(job.review_received_date).toLocaleDateString();
+                html += '</td>';
+
+                // Client
+                html += '<td class="px-4 py-3 text-sm font-medium">';
+                html += escapeHtml(job.client_name);
+                html += '<div class="text-xs text-gray-500">' + escapeHtml(job.suburb || '') + '</div>';
+                html += '</td>';
+
+                // Staff
+                html += '<td class="px-4 py-3 text-sm">';
+                html += '<span style="color: ' + staffColor + '" class="font-medium">' + escapeHtml(staffName) + '</span>';
+                html += '</td>';
+
+                // Rating
+                html += '<td class="px-4 py-3 text-sm">';
+                if (job.review_rating) {
+                    html += '<div class="flex items-center gap-2">';
+                    html += '<div class="flex">';
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= job.review_rating) {
+                            html += '<span class="text-yellow-500 text-lg">★</span>';
+                        } else {
+                            html += '<span class="text-gray-300 text-lg">★</span>';
+                        }
+                    }
+                    html += '</div>';
+                    html += '<span class="text-gray-600 font-medium">(' + job.review_rating + '/5)</span>';
+                    html += '</div>';
+                } else {
+                    html += '<span class="text-gray-400 text-xs">Not rated</span>';
+                }
+                html += '</td>';
+
+                // Job Details
+                html += '<td class="px-4 py-3 text-sm text-gray-600">';
+                html += '<div class="max-w-xs truncate" title="' + escapeHtml(job.job_description) + '">';
+                html += escapeHtml(job.job_description);
+                html += '</div>';
+                html += '<div class="text-xs text-gray-500 mt-1">Job Date: ' + new Date(job.date).toLocaleDateString() + '</div>';
+                html += '</td>';
+
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+
+            if (sortedReviews.length > 20) {
+                html += '<div class="text-center mt-4 text-sm text-gray-500">';
+                html += 'Showing 20 of ' + sortedReviews.length + ' reviews';
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            html += '</div>';
             return html;
         }
 
@@ -3511,12 +3801,17 @@
             let html = '<div class="space-y-6">';
             // Calculate summary statistics
             let totalBottles = 0;
+            let totalLiquidItems = 0;
+            let totalNonLiquidItems = 0;
             let totalValue = 0;
 
             inventoryItems.forEach(item => {
                 if (item.bottle_size > 0) {
                     const bottles = calculateBottles(item.current_stock, item.bottle_size);
                     totalBottles += bottles;
+                    totalLiquidItems++;
+                } else {
+                    totalNonLiquidItems++;
                 }
                 if (item.unit_cost) {
                     totalValue += item.current_stock * item.unit_cost;
@@ -3524,14 +3819,21 @@
             });
 
             // Summary cards
-            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">';
+            html += '<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">';
             html += '<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">';
             html += '<div class="text-sm opacity-90 mb-1">Total Items</div>';
             html += '<div class="text-3xl font-bold">' + inventoryItems.length + '</div>';
+            html += '<div class="text-xs opacity-75 mt-1">' + totalLiquidItems + ' liquids, ' + totalNonLiquidItems + ' supplies</div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">';
-            html += '<div class="text-sm opacity-90 mb-1">Total Bottles in Stock</div>';
+            html += '<div class="text-sm opacity-90 mb-1">Liquid Stock (Bottles)</div>';
             html += '<div class="text-3xl font-bold">' + totalBottles.toFixed(2) + '</div>';
+            html += '<div class="text-xs opacity-75 mt-1">Paint, primers, clear coats</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Supplies Stock</div>';
+            html += '<div class="text-3xl font-bold">' + totalNonLiquidItems + '</div>';
+            html += '<div class="text-xs opacity-75 mt-1">Rolls, pieces, packs</div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">';
             html += '<div class="text-sm opacity-90 mb-1">Total Stock Value</div>';
@@ -3572,8 +3874,8 @@
                 html += '<thead class="bg-gray-50">';
                 html += '<tr>';
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>';
-                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bottle Size</th>';
-                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bottles in Stock</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Container Size</th>';
+                html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Current Stock</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min Alert</th>';
                 html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>';
                 html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>';
@@ -3590,18 +3892,53 @@
                         ? '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Low Stock</span>'
                         : '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">OK</span>';
 
-                    const bottleVisual = getBottleVisual(item.current_stock, item.bottle_size);
-                    const bottleBreakdown = getBottleBreakdown(item.current_stock, item.bottle_size);
-
                     html += '<tr class="hover:bg-gray-50">';
                     html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + escapeHtml(item.item_name) + '</td>';
-                    html += '<td class="px-4 py-3 text-sm text-right text-blue-600 font-medium">' + (item.bottle_size || 0) + ' ' + item.unit_of_measurement + '</td>';
+
+                    // Container Size column - show only if bottle_size > 0
+                    if (item.bottle_size > 0) {
+                        html += '<td class="px-4 py-3 text-sm text-right text-blue-600 font-medium">' + item.bottle_size + ' ' + item.unit_of_measurement + '</td>';
+                    } else {
+                        html += '<td class="px-4 py-3 text-sm text-right text-gray-400">N/A</td>';
+                    }
+
+                    // Current Stock column - different display based on bottle_size
                     html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">';
-                    html += '<div class="flex flex-col items-end">';
-                    html += '<div class="font-semibold">' + bottleVisual + '</div>';
-                    html += '<div class="text-xs text-gray-600">' + bottleBreakdown + '</div>';
-                    html += '<div class="text-xs text-gray-500">' + item.current_stock + ' ' + item.unit_of_measurement + '</div>';
-                    html += '</div>';
+                    if (item.bottle_size > 0) {
+                        // Show bottle visual for liquid items
+                        html += '<tr class="hover:bg-gray-50">';
+                        html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + escapeHtml(item.item_name) + '</td>';
+
+                        // Container Size column - show only if bottle_size > 0
+                        if (item.bottle_size > 0) {
+                            html += '<td class="px-4 py-3 text-sm text-right text-blue-600 font-medium">' + item.bottle_size + ' ' + item.unit_of_measurement + '</td>';
+                        } else {
+                            html += '<td class="px-4 py-3 text-sm text-right text-gray-400">N/A</td>';
+                        }
+
+                        // Current Stock column - different display based on bottle_size
+                        html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">';
+                        if (item.bottle_size > 0) {
+                            // Show bottle visual for liquid items
+                            const bottleVisual = getBottleVisual(item.current_stock, item.bottle_size);
+                            const bottleBreakdown = getBottleBreakdown(item.current_stock, item.bottle_size);
+
+                            html += '<div class="flex flex-col items-end">';
+                            html += '<div class="font-semibold">' + bottleVisual + '</div>';
+                            html += '<div class="text-xs text-gray-600">' + bottleBreakdown + '</div>';
+                            html += '<div class="text-xs text-gray-500">' + item.current_stock + ' ' + item.unit_of_measurement + '</div>';
+                            html += '</div>';
+                        } else {
+                            // Show simple count for non-liquid items (rolls, pieces, packs)
+                            html += '<div class="font-semibold text-lg">' + item.current_stock + '</div>';
+                            html += '<div class="text-xs text-gray-500">' + item.unit_of_measurement + '</div>';
+                        }
+                        html += '</td>';
+                    } else {
+                        // Show simple count for non-liquid items (rolls, pieces, packs)
+                        html += '<div class="font-semibold text-lg">' + item.current_stock + '</div>';
+                        html += '<div class="text-xs text-gray-500">' + item.unit_of_measurement + '</div>';
+                    }
                     html += '</td>';
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles</td>';
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">$' + (item.unit_cost || 0).toFixed(2) + '</td>';
@@ -4086,6 +4423,172 @@
             return html;
         }
 
+        function renderWeeklyReviewReport() {
+            const staffStats = getStaffReviewStats(reviewReportPeriod);
+
+            // Calculate totals
+            const totalReviews = staffStats.reduce((sum, s) => sum + s.reviewCount, 0);
+            const totalRatings = staffStats.reduce((sum, s) => sum + s.ratings, 0);
+            const avgRating = totalRatings > 0
+                ? (staffStats.reduce((sum, s) => sum + (parseFloat(s.avgRating) * s.ratings), 0) / totalRatings).toFixed(1)
+                : 0;
+
+            let html = '<div class="bg-white rounded-lg shadow p-6 mt-6">';
+            html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">';
+            html += '<h3 class="text-xl font-semibold text-gray-900">Weekly Review Performance</h3>';
+            html += '<div class="flex gap-2">';
+            html += '<select onchange="reviewReportPeriod = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm">';
+            html += '<option value="this_week"' + (reviewReportPeriod === 'this_week' ? ' selected' : '') + '>This Week</option>';
+            html += '<option value="last_week"' + (reviewReportPeriod === 'last_week' ? ' selected' : '') + '>Last Week</option>';
+            html += '<option value="this_month"' + (reviewReportPeriod === 'this_month' ? ' selected' : '') + '>This Month</option>';
+            html += '<option value="last_month"' + (reviewReportPeriod === 'last_month' ? ' selected' : '') + '>Last Month</option>';
+            html += '<option value="last_3_months"' + (reviewReportPeriod === 'last_3_months' ? ' selected' : '') + '>Last 3 Months</option>';
+            html += '</select>';
+            html += '<button onclick="exportWeeklyReviewReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm">';
+            html += '<span class="material-icons md-18">download</span> Export';
+            html += '</button>';
+            html += '</div>';
+            html += '</div>';
+
+            // Summary cards
+            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">';
+            html += '<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Total Reviews</div>';
+            html += '<div class="text-3xl font-bold">' + totalReviews + '</div>';
+            html += '<div class="text-sm opacity-80 mt-1">' + totalRatings + ' rated</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Average Rating</div>';
+            html += '<div class="text-3xl font-bold">' + (avgRating > 0 ? avgRating + ' ★' : 'N/A') + '</div>';
+            html += '</div>';
+            html += '<div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">';
+            html += '<div class="text-sm opacity-90 mb-1">Top Performer</div>';
+            html += '<div class="text-xl font-bold">' + (staffStats[0] && staffStats[0].reviewCount > 0 ? staffStats[0].name : 'N/A') + '</div>';
+            html += '<div class="text-sm opacity-80">' + (staffStats[0] && staffStats[0].reviewCount > 0 ? staffStats[0].reviewCount + ' reviews' : '') + '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            if (totalReviews === 0) {
+                html += '<div class="text-center py-8 text-gray-500">No reviews for this period</div>';
+                html += '</div>';
+                return html;
+            }
+
+            // Staff breakdown table
+            html += '<div class="overflow-x-auto">';
+            html += '<table class="min-w-full">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Reviews</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rated</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Avg Rating</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            staffStats.forEach((s, idx) => {
+                if (s.reviewCount === 0) return;
+
+                const performanceBar = s.avgRating > 0 ? ((parseFloat(s.avgRating) / 5) * 100) : 0;
+                const medalEmoji = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : '';
+
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm font-bold text-gray-500">' + medalEmoji + (idx + 1) + '</td>';
+                html += '<td class="px-4 py-3"><span style="color: ' + s.color + '" class="font-medium text-sm">' + escapeHtml(s.name) + '</span></td>';
+                html += '<td class="px-4 py-3 text-right font-semibold text-sm">' + s.reviewCount + '</td>';
+                html += '<td class="px-4 py-3 text-right text-sm">' + s.ratings + '</td>';
+                html += '<td class="px-4 py-3 text-right text-sm">';
+                if (s.avgRating > 0) {
+                    html += '<div class="flex flex-col items-end">';
+                    html += '<span class="text-yellow-500 text-lg">' + '★'.repeat(Math.round(parseFloat(s.avgRating))) + '</span>';
+                    html += '<span class="text-gray-600 text-xs">' + s.avgRating + '/5</span>';
+                    html += '</div>';
+                } else {
+                    html += '<span class="text-gray-400">Not rated</span>';
+                }
+                html += '</td>';
+                html += '<td class="px-4 py-3">';
+                html += '<div class="flex items-center gap-2">';
+                html += '<div class="flex-1 bg-gray-200 rounded-full h-3">';
+                html += '<div class="bg-green-600 h-3 rounded-full transition-all" style="width: ' + performanceBar.toFixed(1) + '%"></div>';
+                html += '</div>';
+                html += '<span class="text-xs text-gray-600 font-medium min-w-[45px]">' + performanceBar.toFixed(1) + '%</span>';
+                html += '</div>';
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            html += '</div>';
+
+            return html;
+        }
+        function exportWeeklyReviewReport() {
+            const {startDate, endDate} = getDateRangeForPeriod(reviewReportPeriod);
+            const staffStats = getStaffReviewStats(reviewReportPeriod);
+
+            const periodLabels = {
+                'this_week': 'This Week',
+                'last_week': 'Last Week',
+                'this_month': 'This Month',
+                'last_month': 'Last Month',
+                'last_3_months': 'Last 3 Months'
+            };
+
+            let csv = 'WEEKLY REVIEW PERFORMANCE REPORT\n';
+            csv += 'Period: ' + periodLabels[reviewReportPeriod] + '\n';
+            csv += 'Date Range: ' + startDate.toLocaleDateString() + ' to ' + endDate.toLocaleDateString() + '\n';
+            csv += 'Generated: ' + new Date().toLocaleString() + '\n\n';
+
+            // Calculate totals
+            const totalReviews = staffStats.reduce((sum, s) => sum + s.reviewCount, 0);
+            const totalRatings = staffStats.reduce((sum, s) => sum + s.ratings, 0);
+            const avgRating = totalRatings > 0
+                ? (staffStats.reduce((sum, s) => sum + (parseFloat(s.avgRating) * s.ratings), 0) / totalRatings).toFixed(1)
+                : 0;
+
+            csv += 'SUMMARY\n';
+            csv += 'Total Reviews,' + totalReviews + '\n';
+            csv += 'Total Rated Reviews,' + totalRatings + '\n';
+            csv += 'Overall Average Rating,' + avgRating + '\n\n';
+
+            csv += 'STAFF BREAKDOWN\n';
+            csv += 'Rank,Staff Member,Total Reviews,Rated Reviews,Average Rating,Performance %\n';
+
+            staffStats.forEach((s, idx) => {
+                if (s.reviewCount === 0) return;
+
+                const performance = s.avgRating > 0 ? ((parseFloat(s.avgRating) / 5) * 100).toFixed(1) : 0;
+                csv += [
+                    idx + 1,
+                    s.name,
+                    s.reviewCount,
+                    s.ratings,
+                    s.avgRating > 0 ? s.avgRating : 'Not rated',
+                    performance + '%'
+                ].join(',') + '\n';
+            });
+
+            // Download CSV
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = 'review_report_' + reviewReportPeriod + '_' + timestamp + '.csv';
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function renderReviewRequests() {
             // Filter jobs by status
             const pendingJobs = jobs.filter(j =>
@@ -4233,8 +4736,12 @@
             html += '</tbody>';
             html += '</table>';
             html += '</div>';
-            html += '</div>';
+            html += '</div>'; // Close the reviews table section
 
+            // Add weekly report
+            html += renderWeeklyReviewReport();
+
+            html += '</div>'; // Close main container
             return html;
         }
 
@@ -4445,6 +4952,10 @@
                         .eq('id', itemId);
 
                     if (error) throw error;
+
+                    closeInventoryItemModal();
+                    await loadInventoryItems();
+                    renderApp();
                     alert('Item updated successfully!');
                 } else {
                     // Create new item
@@ -4453,12 +4964,12 @@
                         .insert([itemData]);
 
                     if (error) throw error;
+
+                    closeInventoryItemModal();
+                    await loadInventoryItems();
+                    renderApp();
                     alert('Item added successfully!');
                 }
-
-                closeInventoryItemModal();
-                await loadInventoryItems();
-                renderApp();
             } catch (error) {
                 console.error('Error saving inventory item:', error);
                 alert('Failed to save item: ' + error.message);
