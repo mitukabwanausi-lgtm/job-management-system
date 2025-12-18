@@ -1154,7 +1154,7 @@
 
         async function loadInventoryItems() {
             try {
-                const {data, error} = await supabase
+                const {data, error} = await supabaseClient
                     .from('inventory_items')
                     .select('*')
                     .eq('active', true)
@@ -1172,7 +1172,7 @@
 
         async function loadInventoryWithdrawals() {
             try {
-                const {data, error} = await supabase
+                const {data, error} = await supabaseClient
                     .from('inventory_withdrawals')
                     .select('*, staff:staff_id (full_name), item:item_id (item_name, unit_of_measurement), job:job_id (job_number, client_name)')
                     .order('withdrawal_date', {ascending: false})
@@ -1189,7 +1189,7 @@
 
         async function loadInventoryRestocks() {
             try {
-                const {data, error} = await supabase
+                const {data, error} = await supabaseClient
                     .from('inventory_restocks')
                     .select('*, item:item_id (item_name, unit_of_measurement)')
                     .order('restock_date', {ascending: false})
@@ -4943,7 +4943,7 @@
             try {
                 if (isEdit) {
                     // Update existing item
-                    const {error} = await supabase
+                    const {error} = await supabaseClient
                         .from('inventory_items')
                         .update(itemData)
                         .eq('id', itemId);
@@ -4956,7 +4956,7 @@
                     alert('Item updated successfully!');
                 } else {
                     // Create new item
-                    const {error} = await supabase
+                    const {error} = await supabaseClient
                         .from('inventory_items')
                         .insert([itemData]);
 
@@ -5056,7 +5056,7 @@
                 if (!item) throw new Error('Item not found');
 
                 // 2. Insert restock record
-                const {error: restockError} = await supabase
+                const {error: restockError} = await supabaseClient
                     .from('inventory_restocks')
                     .insert([{
                         item_id: itemId,
@@ -5071,7 +5071,7 @@
 
                 // 3. Update current stock
                 const newStock = item.current_stock + quantity;
-                const {error: updateError} = await supabase
+                const {error: updateError} = await supabaseClient
                     .from('inventory_items')
                     .update({
                         current_stock: newStock,
@@ -5357,7 +5357,7 @@
 
             try {
                 // Insert all withdrawals
-                const {error: withdrawalError} = await supabase
+                const {error: withdrawalError} = await supabaseClient
                     .from('inventory_withdrawals')
                     .insert(withdrawals);
 
@@ -5369,7 +5369,7 @@
                     if (item) {
                         const newStock = item.current_stock - withdrawal.quantity_withdrawn;
 
-                        const {error: updateError} = await supabase
+                        const {error: updateError} = await supabaseClient
                             .from('inventory_items')
                             .update({
                                 current_stock: newStock,
