@@ -964,8 +964,7 @@
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const supabase = supabaseClient; // Use this for all your code
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
         let currentView = 'dashboard';
         let jobs = [];
@@ -3800,6 +3799,7 @@
             });
 
             let html = '<div class="space-y-6">';
+
             // Calculate summary statistics
             let totalBottles = 0;
             let totalLiquidItems = 0;
@@ -3854,10 +3854,10 @@
                 lowStockItems.forEach(item => {
                     const bottleDisplay = item.bottle_size > 0
                         ? calculateBottles(item.current_stock, item.bottle_size).toFixed(2) + ' bottles'
-                        : item.current_stock + item.unit_of_measurement;
+                        : item.current_stock + ' ' + item.unit_of_measurement;
                     const minBottleDisplay = item.bottle_size > 0
                         ? calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles'
-                        : item.minimum_stock_alert + item.unit_of_measurement;
+                        : item.minimum_stock_alert + ' ' + item.unit_of_measurement;
 
                     html += '<div class="text-sm text-red-700">• ' + escapeHtml(item.item_name) + ': ' + bottleDisplay + ' (min: ' + minBottleDisplay + ')</div>';
                 });
@@ -3907,49 +3907,45 @@
                     html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">';
                     if (item.bottle_size > 0) {
                         // Show bottle visual for liquid items
-                        html += '<tr class="hover:bg-gray-50">';
-                        html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + escapeHtml(item.item_name) + '</td>';
+                        const bottleVisual = getBottleVisual(item.current_stock, item.bottle_size);
+                        const bottleBreakdown = getBottleBreakdown(item.current_stock, item.bottle_size);
 
-                        // Container Size column - show only if bottle_size > 0
-                        if (item.bottle_size > 0) {
-                            html += '<td class="px-4 py-3 text-sm text-right text-blue-600 font-medium">' + item.bottle_size + ' ' + item.unit_of_measurement + '</td>';
-                        } else {
-                            html += '<td class="px-4 py-3 text-sm text-right text-gray-400">N/A</td>';
-                        }
-
-                        // Current Stock column - different display based on bottle_size
-                        html += '<td class="px-4 py-3 text-sm text-right ' + stockColor + '">';
-                        if (item.bottle_size > 0) {
-                            // Show bottle visual for liquid items
-                            const bottleVisual = getBottleVisual(item.current_stock, item.bottle_size);
-                            const bottleBreakdown = getBottleBreakdown(item.current_stock, item.bottle_size);
-
-                            html += '<div class="flex flex-col items-end">';
-                            html += '<div class="font-semibold">' + bottleVisual + '</div>';
-                            html += '<div class="text-xs text-gray-600">' + bottleBreakdown + '</div>';
-                            html += '<div class="text-xs text-gray-500">' + item.current_stock + ' ' + item.unit_of_measurement + '</div>';
-                            html += '</div>';
-                        } else {
-                            // Show simple count for non-liquid items (rolls, pieces, packs)
-                            html += '<div class="font-semibold text-lg">' + item.current_stock + '</div>';
-                            html += '<div class="text-xs text-gray-500">' + item.unit_of_measurement + '</div>';
-                        }
-                        html += '</td>';
+                        html += '<div class="flex flex-col items-end">';
+                        html += '<div class="font-semibold">' + bottleVisual + '</div>';
+                        html += '<div class="text-xs text-gray-600">' + bottleBreakdown + '</div>';
+                        html += '<div class="text-xs text-gray-500">' + item.current_stock + ' ' + item.unit_of_measurement + '</div>';
+                        html += '</div>';
                     } else {
                         // Show simple count for non-liquid items (rolls, pieces, packs)
                         html += '<div class="font-semibold text-lg">' + item.current_stock + '</div>';
                         html += '<div class="text-xs text-gray-500">' + item.unit_of_measurement + '</div>';
                     }
                     html += '</td>';
-                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">' + calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles</td>';
+
+                    // Min Alert column - different display based on bottle_size
+                    html += '<td class="px-4 py-3 text-sm text-right text-gray-600">';
+                    if (item.bottle_size > 0) {
+                        html += calculateBottles(item.minimum_stock_alert, item.bottle_size).toFixed(2) + ' bottles';
+                    } else {
+                        html += item.minimum_stock_alert + ' ' + item.unit_of_measurement;
+                    }
+                    html += '</td>';
+
+                    // Unit Cost column
                     html += '<td class="px-4 py-3 text-sm text-right text-gray-600">$' + (item.unit_cost || 0).toFixed(2) + '</td>';
+
+                    // Status column
                     html += '<td class="px-4 py-3 text-center">' + statusBadge + '</td>';
+
+                    // Notes column
                     html += '<td class="px-4 py-3 text-sm text-gray-600">' + (item.notes ? escapeHtml(item.notes) : '-') + '</td>';
+
+                    // Actions column
                     html += '<td class="px-4 py-3 text-center">';
                     html += '<button onclick="openRestockModal(\'' + item.id + '\')" class="text-green-600 hover:text-green-800 mr-2" title="Restock"><span class="material-icons md-18">add_circle</span></button>';
                     html += '<button onclick="openEditItemModal(\'' + item.id + '\')" class="text-blue-600 hover:text-blue-800 mr-2" title="Edit"><span class="material-icons md-18">edit</span></button>';
-                    // Delete button removed for safety - use Supabase to delete items if needed
                     html += '</td>';
+
                     html += '</tr>';
                 });
 
