@@ -765,7 +765,6 @@
                                 <select id="inventory_unit" required class="w-full px-4 py-2 border rounded-lg">
                                     <option value="">Select unit...</option>
                                     <option value="ml">ml (milliliters)</option>
-                                    <option value="litres">litres</option>
                                     <option value="sheets">sheets</option>
                                     <option value="pieces">pieces</option>
                                     <option value="rolls">rolls</option>
@@ -4908,27 +4907,22 @@
             document.getElementById('inventory_category').value = item.category;
 
             // 1. DETERMINE IF THIS IS A LIQUID ITEM
-            const isLiquid = item.bottle_size > 0 && (item.unit_of_measurement === 'ml' || item.unit_of_measurement === 'litres');
+            const isLiquid = item.bottle_size > 0 && item.unit_of_measurement === 'ml';
 
-            // 2. CONVERT VALUES FOR DISPLAY
-            // Convert ml to litres for display
-            const bottleSizeDisplay = isLiquid ? (item.bottle_size / 1000).toFixed(3) : item.bottle_size;
-            const currentStockDisplay = isLiquid ? (item.current_stock / 1000).toFixed(3) : item.current_stock;
-            const minStockDisplay = isLiquid ? (item.minimum_stock_alert / 1000).toFixed(3) : item.minimum_stock_alert;
+            // 2. FOR DISPLAY: Show ml values directly (no conversion needed)
+            // The database stores ml, so show ml in the form
+            document.getElementById('inventory_bottle_size').value = item.bottle_size;
+            document.getElementById('inventory_current_stock').value = item.current_stock;
+            document.getElementById('inventory_min_stock').value = item.minimum_stock_alert;
 
-            // 3. SET THE FORM FIELD VALUES
-            document.getElementById('inventory_bottle_size').value = bottleSizeDisplay;
-            document.getElementById('inventory_current_stock').value = currentStockDisplay;
-            document.getElementById('inventory_min_stock').value = minStockDisplay;
-
-            // 4. SET THE UNIT DROPDOWN
+            // 3. SET THE UNIT DROPDOWN
             document.getElementById('inventory_unit').value = item.unit_of_measurement;
 
-            // 5. Set unit cost and notes
+            // 4. Set other fields
             document.getElementById('inventory_unit_cost').value = item.unit_cost || '';
             document.getElementById('inventory_notes').value = item.notes || '';
 
-            // 6. SHOW THE MODAL
+            // 5. SHOW THE MODAL
             document.getElementById('inventoryItemModal').classList.remove('hidden');
         }
 
@@ -4942,20 +4936,30 @@
             const itemId = document.getElementById('inventory_item_id').value;
             const isEdit = itemId !== '';
 
-            // Get values from form
+            // Get raw values from form (in ml for liquids, or regular units for others)
+            const bottleSizeInput = parseFloat(document.getElementById('inventory_bottle_size').value);
+            const currentStockInput = parseFloat(document.getElementById('inventory_current_stock').value);
+            const minAlertInput = parseFloat(document.getElementById('inventory_min_stock').value);
+            const selectedUnit = document.getElementById('inventory_unit').value;
+
+            // DETERMINE IF THIS IS A LIQUID ITEM
+            // Liquid items have bottle_size > 0 AND use ml unit
+            const isLiquid = bottleSizeInput > 0 && selectedUnit === 'ml';
+
             const itemData = {
                 item_name: document.getElementById('inventory_item_name').value,
                 category: document.getElementById('inventory_category').value,
-                unit_of_measurement: document.getElementById('inventory_unit').value,
-                bottle_size: parseFloat(document.getElementById('inventory_bottle_size').value) || 0,
-                current_stock: parseFloat(document.getElementById('inventory_current_stock').value) || 0,
-                minimum_stock_alert: parseFloat(document.getElementById('inventory_min_stock').value) || 0,
+                // Store the selected unit
+                unit_of_measurement: selectedUnit,
+                // Store values directly (no conversion needed)
+                bottle_size: bottleSizeInput,
+                current_stock: currentStockInput,
+                minimum_stock_alert: minAlertInput,
                 unit_cost: document.getElementById('inventory_unit_cost').value ? parseFloat(document.getElementById('inventory_unit_cost').value) : 0,
-                notes: document.getElementById('inventory_notes').value || null,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                notes: document.getElementById('inventory_notes').value || null
             };
 
-            // Rest of the function remains the same...
             try {
                 if (isEdit) {
                     // Update existing item
