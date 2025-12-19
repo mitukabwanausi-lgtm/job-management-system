@@ -1757,36 +1757,56 @@
             };
 
             // Filter jobs
-            let filteredJobs = jobs;
+            let filteredJobs = [...jobs]; // Create a copy of all jobs
 
-            // Filter by date range - handle null dates
+            // Debug: Log what we're filtering
+            console.log('Filtering jobs:', {
+                totalJobs: filteredJobs.length,
+                fromDate: fromDate,
+                toDate: toDate,
+                status: status,
+                staffId: staffId
+            });
+
+            // Filter by date range
             if (fromDate) {
+                const fromDateObj = new Date(fromDate + 'T00:00:00');
                 filteredJobs = filteredJobs.filter(j => {
                     if (!j.date) return false;
-                    return j.date >= fromDate;
+                    const jobDate = new Date(j.date + 'T00:00:00');
+                    return jobDate >= fromDateObj;
                 });
+                console.log(`After fromDate filter (${fromDate}):`, filteredJobs.length);
             }
+
             if (toDate) {
+                const toDateObj = new Date(toDate + 'T23:59:59');
                 filteredJobs = filteredJobs.filter(j => {
                     if (!j.date) return false;
-                    return j.date <= toDate;
+                    const jobDate = new Date(j.date + 'T00:00:00');
+                    return jobDate <= toDateObj;
                 });
+                console.log(`After toDate filter (${toDate}):`, filteredJobs.length);
             }
 
             // Filter by status
             if (status !== 'all') {
                 filteredJobs = filteredJobs.filter(j => j.status === status);
+                console.log(`After status filter (${status}):`, filteredJobs.length);
             }
 
             // Filter by staff
             if (staffId !== 'all') {
                 filteredJobs = filteredJobs.filter(j => j.assigned_to === staffId);
+                console.log(`After staff filter (${staffId}):`, filteredJobs.length);
             }
 
             if (filteredJobs.length === 0) {
                 alert('No jobs match your selected filters.');
                 return;
             }
+
+            console.log('Final filtered jobs count:', filteredJobs.length);
 
             // Generate CSV with selected columns
             generateAdvancedCSV(filteredJobs, selectedColumns);
@@ -1867,16 +1887,37 @@
                 csv += row.map(escapeCSV).join(',') + '\n';
             });
 
-            // Add summary rows regardless of selected columns
-            csv += '\n';
+            // Add comprehensive summary section
+            csv += '\n\n';
             csv += 'SUMMARY REPORT\n';
-            csv += 'Generated:,' + new Date().toLocaleString() + '\n';
-            csv += 'Total Jobs:,' + jobsData.length + '\n';
+            csv += '========================================\n\n';
 
-            // Calculate totals
+            // Date range info
+            const fromDate = document.getElementById('export_from_date').value;
+            const toDate = document.getElementById('export_to_date').value;
+            csv += 'Date Range:,' + (fromDate || 'All') + ' to ' + (toDate || 'All') + '\n';
+
+            // Status info
+            const status = document.getElementById('export_status').value;
+            csv += 'Status Filter:,' + (status === 'all' ? 'All Statuses' : status) + '\n';
+
+            // Staff info
+            const staffId = document.getElementById('export_staff').value;
+            if (staffId !== 'all') {
+                const staffMember = staff.find(s => s.id === staffId);
+                csv += 'Staff Filter:,' + (staffMember ? staffMember.full_name : 'Unknown') + '\n';
+            }
+
+            csv += 'Total Jobs Exported:,' + jobsData.length + '\n';
+            csv += 'Export Generated:,' + new Date().toLocaleString() + '\n\n';
+
+            // Calculate financials
             let cashTotal = 0;
             let bankTotal = 0;
             let totalRevenue = 0;
+            let cashJobs = 0;
+            let bankJobs = 0;
+            let splitJobs = 0;
 
             jobsData.forEach(j => {
                 const amountPaid = parseFloat(j.amount_paid) || 0;
@@ -1884,17 +1925,24 @@
 
                 if (j.payment_method === 'Cash') {
                     cashTotal += amountPaid;
+                    cashJobs++;
                 } else if (j.payment_method === 'Bank Transfer/Card') {
                     bankTotal += amountPaid;
+                    bankJobs++;
                 } else if (j.payment_method === 'Split') {
-                    cashTotal += parseFloat(j.cash_amount) || 0;
-                    bankTotal += parseFloat(j.bank_amount) || 0;
+                    const cashAmount = parseFloat(j.cash_amount) || 0;
+                    const bankAmount = parseFloat(j.bank_amount) || 0;
+                    cashTotal += cashAmount;
+                    bankTotal += bankAmount;
+                    splitJobs++;
                 }
             });
 
             // Calculate GST breakdown
             let cashGST = 0;
             let bankGST = 0;
+            let cashExclGST = 0;
+            let bankExclGST = 0;
 
             jobsData.forEach(j => {
                 const amountPaid = parseFloat(j.amount_paid) || 0;
@@ -1914,24 +1962,35 @@
                 }
             });
 
-            const cashExclGST = cashTotal - cashGST;
-            const bankExclGST = bankTotal - bankGST;
-            const totalGST = cashGST + bankGST;
+            cashExclGST = cashTotal - cashGST;
+            bankExclGST = bankTotal - bankGST;
 
+            // Cash Summary
             csv += 'CASH TRANSACTIONS\n';
+            csv += 'Number of Cash Jobs:,' + cashJobs + '\n';
             csv += 'Cash Subtotal (excl GST):,$' + cashExclGST.toFixed(2) + '\n';
             csv += 'Cash GST:,$' + cashGST.toFixed(2) + '\n';
             csv += 'Cash Total (incl GST):,$' + cashTotal.toFixed(2) + '\n\n';
 
+            // Bank Summary
             csv += 'BANK TRANSACTIONS\n';
+            csv += 'Number of Bank Jobs:,' + bankJobs + '\n';
             csv += 'Bank Subtotal (excl GST):,$' + bankExclGST.toFixed(2) + '\n';
             csv += 'Bank GST:,$' + bankGST.toFixed(2) + '\n';
             csv += 'Bank Total (incl GST):,$' + bankTotal.toFixed(2) + '\n\n';
 
+            // Split Payments Summary
+            if (splitJobs > 0) {
+                csv += 'SPLIT PAYMENTS\n';
+                csv += 'Number of Split Payment Jobs:,' + splitJobs + '\n\n';
+            }
+
+            // Overall Summary
             csv += 'OVERALL SUMMARY\n';
             csv += 'Total Subtotal (excl GST):,$' + (cashExclGST + bankExclGST).toFixed(2) + '\n';
-            csv += 'Total GST:,$' + totalGST.toFixed(2) + '\n';
+            csv += 'Total GST:,$' + (cashGST + bankGST).toFixed(2) + '\n';
             csv += 'Grand Total (incl GST):,$' + totalRevenue.toFixed(2) + '\n';
+            csv += 'Total Completed Jobs:,' + (cashJobs + bankJobs + splitJobs) + '\n';
 
             // Create download
             const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
