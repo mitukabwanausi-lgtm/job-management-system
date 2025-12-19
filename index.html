@@ -4906,13 +4906,11 @@
             document.getElementById('inventory_item_id').value = item.id;
             document.getElementById('inventory_item_name').value = item.item_name;
             document.getElementById('inventory_category').value = item.category;
-            document.getElementById('inventory_unit').value = item.unit_of_measurement;
+
             // 1. DETERMINE IF THIS IS A LIQUID ITEM
-            // Liquid items have bottle_size > 0 AND are stored as 'ml'
             const isLiquid = item.bottle_size > 0 && item.unit_of_measurement === 'ml';
 
             // 2. CONVERT VALUES FOR DISPLAY
-            // If liquid: convert ml → Litres (/1000). If non-liquid: keep as-is.
             const bottleSizeDisplay = isLiquid ? (item.bottle_size / 1000).toFixed(3) : item.bottle_size;
             const currentStockDisplay = isLiquid ? (item.current_stock / 1000).toFixed(3) : item.current_stock;
             const minStockDisplay = isLiquid ? (item.minimum_stock_alert / 1000).toFixed(3) : item.minimum_stock_alert;
@@ -4923,13 +4921,9 @@
             document.getElementById('inventory_min_stock').value = minStockDisplay;
 
             // 4. SET THE UNIT DROPDOWN
-            // Show 'ml' in dropdown for liquid items (even though we display Litres)
             document.getElementById('inventory_unit').value = isLiquid ? 'ml' : item.unit_of_measurement;
-            document.getElementById('inventory_unit_cost').value = item.unit_cost || '';
-            document.getElementById('inventory_notes').value = item.notes || '';
 
-            populateCategoryList();  // ← Add this line
-
+            // 5. SHOW THE MODAL ← ADD THIS LINE
             document.getElementById('inventoryItemModal').classList.remove('hidden');
         }
 
