@@ -785,13 +785,13 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Current Stock *</label>
-                                <input type="number" step="0.001" id="inventory_bottle_size" required
+                                <input type="number" step="0.001" id="inventory_current_stock" required
                                     class="w-full px-4 py-2 border rounded-lg" placeholder="0">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Min Alert *</label>
-                                <input type="number" step="0.001" id="inventory_bottle_size" required
+                                <input type="number" step="0.001" id="inventory_min_stock" required
                                     class="w-full px-4 py-2 border rounded-lg" placeholder="0">
                                 <p class="text-xs text-gray-500 mt-1">25% of bottle size</p>
                             </div>
@@ -4908,9 +4908,10 @@
             document.getElementById('inventory_category').value = item.category;
 
             // 1. DETERMINE IF THIS IS A LIQUID ITEM
-            const isLiquid = item.bottle_size > 0 && item.unit_of_measurement === 'ml';
+            const isLiquid = item.bottle_size > 0 && (item.unit_of_measurement === 'ml' || item.unit_of_measurement === 'litres');
 
             // 2. CONVERT VALUES FOR DISPLAY
+            // Convert ml to litres for display
             const bottleSizeDisplay = isLiquid ? (item.bottle_size / 1000).toFixed(3) : item.bottle_size;
             const currentStockDisplay = isLiquid ? (item.current_stock / 1000).toFixed(3) : item.current_stock;
             const minStockDisplay = isLiquid ? (item.minimum_stock_alert / 1000).toFixed(3) : item.minimum_stock_alert;
@@ -4921,9 +4922,13 @@
             document.getElementById('inventory_min_stock').value = minStockDisplay;
 
             // 4. SET THE UNIT DROPDOWN
-            document.getElementById('inventory_unit').value = isLiquid ? 'ml' : item.unit_of_measurement;
+            document.getElementById('inventory_unit').value = item.unit_of_measurement;
 
-            // 5. SHOW THE MODAL ← ADD THIS LINE
+            // 5. Set unit cost and notes
+            document.getElementById('inventory_unit_cost').value = item.unit_cost || '';
+            document.getElementById('inventory_notes').value = item.notes || '';
+
+            // 6. SHOW THE MODAL
             document.getElementById('inventoryItemModal').classList.remove('hidden');
         }
 
@@ -4937,31 +4942,20 @@
             const itemId = document.getElementById('inventory_item_id').value;
             const isEdit = itemId !== '';
 
-            // 1. GET THE RAW VALUES FROM THE FORM (in Litres or regular units)
-            const bottleSizeInput = parseFloat(document.getElementById('inventory_bottle_size').value);
-            const currentStockInput = parseFloat(document.getElementById('inventory_current_stock').value);
-            const minAlertInput = parseFloat(document.getElementById('inventory_min_stock').value);
-            const selectedUnit = document.getElementById('inventory_unit').value;
-
-            // 2. DETERMINE IF THIS IS A LIQUID ITEM
-            // Liquid items have bottle_size > 0 AND use ml/litres units
-            const isLiquid = bottleSizeInput > 0 && ['ml', 'litres', 'L'].includes(selectedUnit.toLowerCase());
-
-            // 3. CONVERT VALUES FOR STORAGE
-            // If liquid: convert Litres → ml (*1000). If non-liquid: keep as-is.
+            // Get values from form
             const itemData = {
                 item_name: document.getElementById('inventory_item_name').value,
                 category: document.getElementById('inventory_category').value,
-                // Force 'ml' for liquids, otherwise use selected unit (packs, pieces, rolls)
-                unit_of_measurement: isLiquid ? 'ml' : selectedUnit,
-                bottle_size: isLiquid ? bottleSizeInput * 1000 : bottleSizeInput,
-                current_stock: isLiquid ? currentStockInput * 1000 : currentStockInput,
-                minimum_stock_alert: isLiquid ? minAlertInput * 1000 : minAlertInput,
+                unit_of_measurement: document.getElementById('inventory_unit').value,
+                bottle_size: parseFloat(document.getElementById('inventory_bottle_size').value) || 0,
+                current_stock: parseFloat(document.getElementById('inventory_current_stock').value) || 0,
+                minimum_stock_alert: parseFloat(document.getElementById('inventory_min_stock').value) || 0,
                 unit_cost: document.getElementById('inventory_unit_cost').value ? parseFloat(document.getElementById('inventory_unit_cost').value) : 0,
-                updated_at: new Date().toISOString(),
-                notes: document.getElementById('inventory_notes').value || null
+                notes: document.getElementById('inventory_notes').value || null,
+                updated_at: new Date().toISOString()
             };
 
+            // Rest of the function remains the same...
             try {
                 if (isEdit) {
                     // Update existing item
