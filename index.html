@@ -1759,12 +1759,18 @@
             // Filter jobs
             let filteredJobs = jobs;
 
-            // Filter by date range
+            // Filter by date range - handle null dates
             if (fromDate) {
-                filteredJobs = filteredJobs.filter(j => j.date >= fromDate);
+                filteredJobs = filteredJobs.filter(j => {
+                    if (!j.date) return false;
+                    return j.date >= fromDate;
+                });
             }
             if (toDate) {
-                filteredJobs = filteredJobs.filter(j => j.date <= toDate);
+                filteredJobs = filteredJobs.filter(j => {
+                    if (!j.date) return false;
+                    return j.date <= toDate;
+                });
             }
 
             // Filter by status
@@ -1861,98 +1867,71 @@
                 csv += row.map(escapeCSV).join(',') + '\n';
             });
 
-            // Add summary rows if amount_paid column is selected
-            if (selectedColumns.amount_paid) {
-                // Add blank row for separation
-                csv += '\n';
+            // Add summary rows regardless of selected columns
+            csv += '\n';
+            csv += 'SUMMARY REPORT\n';
+            csv += 'Generated:,' + new Date().toLocaleString() + '\n';
+            csv += 'Total Jobs:,' + jobsData.length + '\n';
 
-                // Calculate totals
-                // Calculate totals with GST breakdown
-                const totalJobs = jobsData.length;
+            // Calculate totals
+            let cashTotal = 0;
+            let bankTotal = 0;
+            let totalRevenue = 0;
 
-                // Calculate base amounts and GST
-                let totalBaseAmount = 0;
-                let totalGSTAmount = 0;
+            jobsData.forEach(j => {
+                const amountPaid = parseFloat(j.amount_paid) || 0;
+                totalRevenue += amountPaid;
 
-                jobsData.forEach(j => {
-                    const amountPaid = parseFloat(j.amount_paid) || 0;
-                    if (amountPaid > 0) {
-                        if (j.price_includes_gst) {
-                            // "Excl GST" - Amount paid has NO GST in it
-                            const base = amountPaid;
-                            const gst = 0;
-                            totalBaseAmount += base;
-                            totalGSTAmount += gst;
-                        } else {
-                            // "+GST" - Amount paid INCLUDES GST, extract it (GST = Total / 11)
+                if (j.payment_method === 'Cash') {
+                    cashTotal += amountPaid;
+                } else if (j.payment_method === 'Bank Transfer/Card') {
+                    bankTotal += amountPaid;
+                } else if (j.payment_method === 'Split') {
+                    cashTotal += parseFloat(j.cash_amount) || 0;
+                    bankTotal += parseFloat(j.bank_amount) || 0;
+                }
+            });
+
+            // Calculate GST breakdown
+            let cashGST = 0;
+            let bankGST = 0;
+
+            jobsData.forEach(j => {
+                const amountPaid = parseFloat(j.amount_paid) || 0;
+                if (amountPaid > 0) {
+                    if (j.payment_method === 'Cash' || j.payment_method === 'Split') {
+                        if (!j.price_includes_gst) {
+                            // Amount includes GST, so extract it
                             const gst = amountPaid / 11;
-                            const base = amountPaid - gst;
-                            totalBaseAmount += base;
-                            totalGSTAmount += gst;
+                            cashGST += gst;
+                        }
+                    } else if (j.payment_method === 'Bank Transfer/Card') {
+                        if (!j.price_includes_gst) {
+                            const gst = amountPaid / 11;
+                            bankGST += gst;
                         }
                     }
-                });
+                }
+            });
 
-                const totalRevenue = totalBaseAmount + totalGSTAmount;
-                let cashTotal = 0;
-                let bankTotal = 0;
+            const cashExclGST = cashTotal - cashGST;
+            const bankExclGST = bankTotal - bankGST;
+            const totalGST = cashGST + bankGST;
 
-                jobsData.forEach(j => {
-                    if (j.payment_method === 'Cash') {
-                        cashTotal += parseFloat(j.amount_paid) || 0;
-                    } else if (j.payment_method === 'Bank Transfer/Card') {
-                        bankTotal += parseFloat(j.amount_paid) || 0;
-                    } else if (j.payment_method === 'Split') {
-                        cashTotal += parseFloat(j.cash_amount) || 0;
-                        bankTotal += parseFloat(j.bank_amount) || 0;
-                    }
-                });
+            csv += 'CASH TRANSACTIONS\n';
+            csv += 'Cash Subtotal (excl GST):,$' + cashExclGST.toFixed(2) + '\n';
+            csv += 'Cash GST:,$' + cashGST.toFixed(2) + '\n';
+            csv += 'Cash Total (incl GST):,$' + cashTotal.toFixed(2) + '\n\n';
 
-                // Find which column index has amount_paid
-                let amountPaidIndex = 0;
-                let currentIndex = 0;
-                if (selectedColumns.job_number) currentIndex++;
-                if (selectedColumns.date) currentIndex++;
-                if (selectedColumns.day) currentIndex++;
-                if (selectedColumns.start_time) currentIndex++;
-                if (selectedColumns.end_time) currentIndex++;
-                if (selectedColumns.client_name) currentIndex++;
-                if (selectedColumns.phone) currentIndex++;
-                if (selectedColumns.email) currentIndex++;
-                if (selectedColumns.address) currentIndex++;
-                if (selectedColumns.suburb) currentIndex++;
-                if (selectedColumns.description) currentIndex++;
-                if (selectedColumns.assigned_to) currentIndex++;
-                if (selectedColumns.status) currentIndex++;
-                if (selectedColumns.priority) currentIndex++;
-                if (selectedColumns.price) currentIndex++;
-                if (selectedColumns.gst) currentIndex++;
-                amountPaidIndex = currentIndex;
+            csv += 'BANK TRANSACTIONS\n';
+            csv += 'Bank Subtotal (excl GST):,$' + bankExclGST.toFixed(2) + '\n';
+            csv += 'Bank GST:,$' + bankGST.toFixed(2) + '\n';
+            csv += 'Bank Total (incl GST):,$' + bankTotal.toFixed(2) + '\n\n';
 
-                // Create summary rows
-                const emptyColumns = new Array(amountPaidIndex).fill('');
-
-                // Total Jobs row
-                csv += [...emptyColumns, 'TOTAL JOBS:', totalJobs].map(escapeCSV).join(',') + '\n';
-
-                // Base Amount row
-                csv += [...emptyColumns, 'TOTAL AMOUNT (minus GST):', '$' + totalBaseAmount.toFixed(2)].map(escapeCSV).join(',') + '\n';
-
-                // GST Amount row
-                csv += [...emptyColumns, 'GST AMOUNT:', '$' + totalGSTAmount.toFixed(2)].map(escapeCSV).join(',') + '\n';
-
-                // Final Total row
-                csv += [...emptyColumns, 'FINAL TOTAL (incl GST):', '$' + totalRevenue.toFixed(2)].map(escapeCSV).join(',') + '\n';
-
-                // Blank row
-                csv += '\n';
-
-                // Cash Total row
-                csv += [...emptyColumns, 'CASH TOTAL:', '$' + cashTotal.toFixed(2)].map(escapeCSV).join(',') + '\n';
-
-                // Bank Total row
-                csv += [...emptyColumns, 'BANK TOTAL:', '$' + bankTotal.toFixed(2)].map(escapeCSV).join(',') + '\n';
-            }
+            csv += 'OVERALL SUMMARY\n';
+            csv += 'Total Subtotal (excl GST):,$' + (cashExclGST + bankExclGST).toFixed(2) + '\n';
+            csv += 'Total GST:,$' + totalGST.toFixed(2) + '\n';
+            csv += 'Grand Total (incl GST):,$' + totalRevenue.toFixed(2) + '\n';
 
             // Create download
             const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
