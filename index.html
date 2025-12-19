@@ -1696,7 +1696,7 @@
                     updateData.bank_amount = null;
                 }
 
-                const {error} = await supabase
+                const {error} = await supabaseClient
                     .from('jobs')
                     .update(updateData)
                     .eq('id', pendingCompletionJobId);
@@ -2485,7 +2485,7 @@
             if (!confirm('Mark this review request as sent?')) return;
 
             try {
-                const {error} = await supabase
+                const {error} = await supabaseClient
                     .from('jobs')
                     .update({review_sent: true})
                     .eq('id', jobId);
@@ -2504,7 +2504,7 @@
             if (!confirm('Mark this review as received?')) return;
 
             try {
-                const {error} = await supabase
+                const {error} = await supabaseClient
                     .from('jobs')
                     .update({
                         review_received: true,
@@ -2573,7 +2573,7 @@
             }
 
             try {
-                const {error} = await supabase
+                const {error} = await supabaseClient
                     .from('jobs')
                     .update({review_rating: selectedRatingValue})
                     .eq('id', pendingRatingJobId);
@@ -4994,7 +4994,7 @@
             }
 
             try {
-                const {error} = await supabase
+                const {error} = await supabaseClient
                     .from('inventory_items')
                     .delete()
                     .eq('id', itemId);
