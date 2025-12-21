@@ -2876,19 +2876,30 @@
 
 
         function renderDashboard() {
-            const activeJobs = jobs.filter(j => j.status !== 'Completed').length;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+
+            // Active Jobs: All jobs that are NOT Completed AND NOT Cancelled
+            const activeJobs = jobs.filter(j => {
+                return j.status !== 'Completed' && j.status !== 'Cancelled';
+            }).length;
+
+            // DEBUG: To verify the count
+            console.log('Active jobs (excluding Completed & Cancelled):', activeJobs);
+            console.log('All jobs count:', jobs.length);
+
             const unassigned = jobs.filter(j => {
                 const jobDate = new Date(j.date);
                 jobDate.setHours(0, 0, 0, 0);
                 return j.status === 'Unassigned' && jobDate.getTime() === today.getTime();
             }).length;
+
             const assigned = jobs.filter(j => {
                 const jobDate = new Date(j.date);
                 jobDate.setHours(0, 0, 0, 0);
                 return j.status === 'Assigned' && jobDate.getTime() === today.getTime();
             }).length;
+
             const completedToday = jobs.filter(j => {
                 if (j.status !== 'Completed') return false;
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
@@ -2897,10 +2908,11 @@
 
             const todayRevenue = jobs.filter(j => {
                 if (j.status !== 'Completed' || !j.amount_paid) return false;
-                // Use job date OR actual_end_time (whichever exists)
                 const dateToCheck = j.actual_end_time ? new Date(j.actual_end_time) : new Date(j.date);
                 return dateToCheck.toDateString() === new Date().toDateString();
             }).reduce((sum, j) => sum + Number(j.amount_paid), 0);
+
+            // ... rest of your dashboard code
 
             let cashTotal = 0;
             let bankTotal = 0;
