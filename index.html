@@ -1049,6 +1049,63 @@
             }
         }
 
+        async function removePhotoFromEdit(photoIndex) {
+            if (!confirm('Remove this photo?')) return;
+
+            try {
+                const jobId = document.getElementById('edit_job_id').value;
+
+                const {data: job, error: fetchError} = await supabaseClient
+                    .from('jobs')
+                    .select('photo_urls')
+                    .eq('id', jobId)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                const photoUrls = job.photo_urls || [];
+                const imageUrl = photoUrls[photoIndex];
+
+                // Remove from array
+                photoUrls.splice(photoIndex, 1);
+
+                // Update database
+                const {error: updateError} = await supabaseClient
+                    .from('jobs')
+                    .update({photo_urls: photoUrls})
+                    .eq('id', jobId);
+
+                if (updateError) throw updateError;
+
+                // Delete from storage
+                await deleteImageFromSupabase(imageUrl);
+
+                // Refresh the jobs data
+                await loadJobs();
+
+                // Refresh preview
+                const photoPreview = document.getElementById('photoPreview');
+                if (photoUrls.length > 0) {
+                    photoPreview.innerHTML = photoUrls.map((url, index) => `
+                        <div class="relative group">
+                            <img src="${url}" alt="Job Photo ${index + 1}" class="w-full h-24 object-cover rounded border border-gray-300">
+                            <button type="button" onclick="removePhotoFromEdit(${index})" 
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                ×
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    photoPreview.innerHTML = '<p class="text-sm text-gray-500">No photos uploaded</p>';
+                }
+
+                alert('Photo removed successfully!');
+            } catch (error) {
+                console.error('Error removing photo:', error);
+                alert('Failed to remove photo: ' + error.message);
+            }
+        }
+
         async function deleteImageFromSupabase(imageUrl) {
             try {
                 // Extract file path from URL
@@ -5039,78 +5096,82 @@
             }
 
             // Photo upload handler
-            document.getElementById('photoUpload').addEventListener('change', async function (e) {
-                const files = e.target.files;
-                if (!files || files.length === 0) return;
+            const photoUploadInput = document.getElementById('photoUpload');
+            if (photoUploadInput) {
+                photoUploadInput.addEventListener('change', async function (e) {
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
 
-                const jobId = document.getElementById('edit_job_id').value;
-                if (!jobId) {
-                    alert('Please save the job first before uploading photos.');
-                    return;
-                }
+                    const jobId = document.getElementById('edit_job_id').value;
+                    if (!jobId) {
+                        alert('Please save the job first before uploading photos.');
+                        return;
+                    }
 
-                const statusSpan = document.getElementById('uploadStatus');
-                statusSpan.textContent = 'Uploading...';
+                    const statusSpan = document.getElementById('uploadStatus');
+                    statusSpan.textContent = 'Uploading...';
 
-                try {
-                    // Get current photo URLs
-                    const {data: job, error: fetchError} = await supabaseClient
-                        .from('jobs')
-                        .select('photo_urls')
-                        .eq('id', jobId)
-                        .single();
+                    try {
+                        // Get current photo URLs
+                        const {data: job, error: fetchError} = await supabaseClient
+                            .from('jobs')
+                            .select('photo_urls')
+                            .eq('id', jobId)
+                            .single();
 
-                    if (fetchError) throw fetchError;
+                        if (fetchError) throw fetchError;
 
-                    const currentUrls = job.photo_urls || [];
+                        const currentUrls = job.photo_urls || [];
 
-                    // Upload all selected files
-                    const uploadPromises = Array.from(files).map(file =>
-                        uploadImageToSupabase(file, jobId)
-                    );
+                        // Upload all selected files
+                        const uploadPromises = Array.from(files).map(file =>
+                            uploadImageToSupabase(file, jobId)
+                        );
 
-                    const newUrls = await Promise.all(uploadPromises);
+                        const newUrls = await Promise.all(uploadPromises);
 
-                    // Combine with existing URLs
-                    const allUrls = [...currentUrls, ...newUrls];
+                        // Combine with existing URLs
+                        const allUrls = [...currentUrls, ...newUrls];
 
-                    // Update database
-                    const {error: updateError} = await supabaseClient
-                        .from('jobs')
-                        .update({photo_urls: allUrls})
-                        .eq('id', jobId);
+                        // Update database
+                        const {error: updateError} = await supabaseClient
+                            .from('jobs')
+                            .update({photo_urls: allUrls})
+                            .eq('id', jobId);
 
-                    if (updateError) throw updateError;
+                        if (updateError) throw updateError;
 
-                    statusSpan.textContent = `✓ ${files.length} photo(s) uploaded`;
+                        // CRITICAL: Refresh jobs data RIGHT AFTER database update
+                        await loadJobs();
 
-                    // Refresh the photo preview
-                    const photoPreview = document.getElementById('photoPreview');
-                    photoPreview.innerHTML = allUrls.map((url, index) => `
-                    <div class="relative group">
-                        <img src="${url}" alt="Job Photo ${index + 1}" class="w-full h-24 object-cover rounded border border-gray-300">
-                        <button type="button" onclick="removePhotoFromEdit(${index})" 
-                            class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            ×
-                        </button>
-                    </div>
-                `).join('');
+                        statusSpan.textContent = `✓ ${files.length} photo(s) uploaded`;
 
-                    setTimeout(() => {
-                        statusSpan.textContent = '';
-                    }, 3000);
+                        // Refresh the photo preview
+                        const photoPreview = document.getElementById('photoPreview');
+                        photoPreview.innerHTML = allUrls.map((url, index) => `
+                        <div class="relative group">
+                            <img src="${url}" alt="Job Photo ${index + 1}" class="w-full h-24 object-cover rounded border border-gray-300">
+                            <button type="button" onclick="removePhotoFromEdit(${index})" 
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                ×
+                            </button>
+                        </div>
+                    `).join('');
 
-                    await loadJobs();
+                        setTimeout(() => {
+                            statusSpan.textContent = '';
+                        }, 3000);
 
-                } catch (error) {
-                    console.error('Error uploading photos:', error);
-                    statusSpan.textContent = '✗ Upload failed';
-                    alert('Failed to upload photos: ' + error.message);
-                }
+                    } catch (error) {
+                        console.error('Error uploading photos:', error);
+                        statusSpan.textContent = '✗ Upload failed';
+                        alert('Failed to upload photos: ' + error.message);
+                    }
 
-                // Clear the input
-                e.target.value = '';
-            });
+                    // Clear the input
+                    e.target.value = '';
+                });
+            }
         }
 
         function populateCategoryList() {
