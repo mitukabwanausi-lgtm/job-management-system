@@ -2526,7 +2526,7 @@
         async function handleEditSubmit(e) {
             e.preventDefault();
             const jobId = document.getElementById('edit_job_id').value;
-            const photoUrl = document.getElementById('edit_photo_urls').value.trim();
+
             const job = jobs.find(j => j.id === jobId);
             const isDuplicate = jobId === 'DUPLICATE';
             const jobData = {
@@ -2546,7 +2546,7 @@
                 assigned_to: document.getElementById('edit_assigned_to').value || null,
                 amount_paid: document.getElementById('edit_amount_paid').value ? parseFloat(document.getElementById('edit_amount_paid').value) : null,
                 payment_method: document.getElementById('edit_payment_method').value || null,
-                photo_urls: photoUrl ? [photoUrl] : null,
+                photo_urls: job ? job.photo_urls : null,
                 notes: document.getElementById('edit_notes').value || null,
                 contact_method: document.getElementById('edit_contact_method').value || null
             };
