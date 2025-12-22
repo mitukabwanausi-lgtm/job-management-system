@@ -1125,59 +1125,7 @@
             }
         }
 
-        async function removePhotoFromEdit(photoIndex) {
-            if (!confirm('Remove this photo?')) return;
 
-            try {
-                const jobId = document.getElementById('edit_job_id').value;
-
-                const {data: job, error: fetchError} = await supabaseClient
-                    .from('jobs')
-                    .select('photo_urls')
-                    .eq('id', jobId)
-                    .single();
-
-                if (fetchError) throw fetchError;
-
-                const photoUrls = job.photo_urls || [];
-                const imageUrl = photoUrls[photoIndex];
-
-                // Remove from array
-                photoUrls.splice(photoIndex, 1);
-
-                // Update database
-                const {error: updateError} = await supabaseClient
-                    .from('jobs')
-                    .update({photo_urls: photoUrls})
-                    .eq('id', jobId);
-
-                if (updateError) throw updateError;
-
-                // Delete from storage
-                await deleteImageFromSupabase(imageUrl);
-
-                // Refresh preview
-                const photoPreview = document.getElementById('photoPreview');
-                if (photoUrls.length > 0) {
-                    photoPreview.innerHTML = photoUrls.map((url, index) => `
-                        <div class="relative group">
-                            <img src="${url}" alt="Job Photo ${index + 1}" class="w-full h-24 object-cover rounded border border-gray-300">
-                            <button type="button" onclick="removePhotoFromEdit(${index})" 
-                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                ×
-                            </button>
-                        </div>
-                    `).join('');
-                } else {
-                    photoPreview.innerHTML = '<p class="text-sm text-gray-500">No photos uploaded</p>';
-                }
-
-                alert('Photo removed successfully!');
-            } catch (error) {
-                console.error('Error removing photo:', error);
-                alert('Failed to remove photo: ' + error.message);
-            }
-        }
 
         // ==================== BOTTLE CALCULATION HELPERS ====================
         function calculateBottles(mlAmount, bottleSize) {
