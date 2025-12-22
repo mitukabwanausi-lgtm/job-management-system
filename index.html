@@ -969,6 +969,36 @@
             </div>
         </div>
     </div>
+    <!-- Photo Gallery Modal -->
+    <div id="photoGalleryModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <button onclick="closePhotoGallery()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <button onclick="previousPhoto()"
+            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 z-10">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+
+        <button onclick="nextPhoto()"
+            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 z-10">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+
+        <div class="max-w-6xl max-h-full flex flex-col">
+            <img id="galleryImage" src="" alt="Job Photo" class="max-w-full max-h-[80vh] object-contain">
+            <div class="text-center text-white mt-4">
+                <span id="galleryCounter" class="text-sm">1 / 1</span>
+            </div>
+        </div>
+    </div>
     <script>
         const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
@@ -2390,7 +2420,7 @@
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Contact Method:</span><span class="text-gray-900">' + (job.contact_method || 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Amount Paid:</span><span class="text-gray-900">' + (job.amount_paid ? '$' + parseFloat(job.amount_paid).toFixed(2) : 'N/A') + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Payment Method:</span><span class="text-gray-900">' + (job.payment_method || 'N/A') + '</span></div>' +
-                '<div class="flex justify-between py-2"><span class="font-semibold text-gray-600">Photos:</span><span class="text-gray-900">' + (job.photo_urls && job.photo_urls.length > 0 ? '<a href="' + job.photo_urls[0] + '" target="_blank" class="text-blue-600">View</a>' : 'None') + '</span></div>' +
+                '<div class="flex justify-between py-2"><span class="font-semibold text-gray-600">Photos:</span><span class="text-gray-900">' + (job.photo_urls && job.photo_urls.length > 0 ? '<button onclick="event.stopPropagation(); openPhotoGallery(' + JSON.stringify(job.photo_urls).replace(/"/g, '&quot;') + ', 0)" class="text-blue-600 hover:text-blue-800 underline">View (' + job.photo_urls.length + ')</button>' : 'None') + '</span></div>' +
                 (job.notes ? '<div class="py-2 border-t mt-2"><span class="font-semibold text-gray-600 block mb-1">Notes:</span><span class="text-gray-900 whitespace-pre-wrap bg-yellow-50 p-2 rounded">' + escapeHtml(job.notes) + '</span></div>' : '') +
                 '</div>';
 
@@ -2799,6 +2829,60 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Photo Gallery Functions
+        let currentPhotoGallery = [];
+        let currentPhotoIndex = 0;
+
+        function openPhotoGallery(photoUrls, startIndex = 0) {
+            if (!photoUrls || photoUrls.length === 0) return;
+
+            currentPhotoGallery = photoUrls;
+            currentPhotoIndex = startIndex;
+
+            updateGalleryImage();
+            document.getElementById('photoGalleryModal').classList.remove('hidden');
+
+            // Keyboard navigation
+            document.addEventListener('keydown', handleGalleryKeyboard);
+        }
+
+        function closePhotoGallery() {
+            document.getElementById('photoGalleryModal').classList.add('hidden');
+            document.removeEventListener('keydown', handleGalleryKeyboard);
+        }
+
+        function nextPhoto() {
+            if (currentPhotoIndex < currentPhotoGallery.length - 1) {
+                currentPhotoIndex++;
+                updateGalleryImage();
+            }
+        }
+
+        function previousPhoto() {
+            if (currentPhotoIndex > 0) {
+                currentPhotoIndex--;
+                updateGalleryImage();
+            }
+        }
+
+        function updateGalleryImage() {
+            const img = document.getElementById('galleryImage');
+            const counter = document.getElementById('galleryCounter');
+
+            img.src = currentPhotoGallery[currentPhotoIndex];
+            counter.textContent = (currentPhotoIndex + 1) + ' / ' + currentPhotoGallery.length;
+        }
+
+        function handleGalleryKeyboard(e) {
+            if (e.key === 'ArrowLeft') {
+                previousPhoto();
+            } else if (e.key === 'ArrowRight') {
+                nextPhoto();
+            } else if (e.key === 'Escape') {
+                closePhotoGallery();
+            }
         }
 
         function getStatusClass(status) {
@@ -3881,7 +3965,12 @@
                     row += '<td id="cell-' + job.id + '-payment_method" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'payment_method\', \'' + (job.payment_method || '') + '\', \'select-payment\')">' + (job.payment_method || '<span class="text-gray-400">N/A</span>') + '</td>';
                 }
                 if (visibleColumns.photos) {
-                    row += '<td id="cell-' + job.id + '-photo_urls" class="editable-cell text-sm whitespace-nowrap">' + (photoUrl ? '<a href="' + photoUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation()">View</a>' : '<span class="text-gray-400">None</span>') + '</td>';
+                    if (job.photo_urls && job.photo_urls.length > 0) {
+                        const photoCount = job.photo_urls.length > 1 ? ' (' + job.photo_urls.length + ')' : '';
+                        row += '<td class="text-sm whitespace-nowrap"><button onclick="event.stopPropagation(); openPhotoGallery(' + JSON.stringify(job.photo_urls).replace(/"/g, '&quot;') + ', 0)" class="text-blue-600 hover:text-blue-800 underline">View' + photoCount + '</button></td>';
+                    } else {
+                        row += '<td class="text-sm whitespace-nowrap"><span class="text-gray-400">None</span></td>';
+                    }
                 }
                 if (visibleColumns.notes) {
                     row += '<td id="cell-' + job.id + '-notes" class="editable-cell text-sm min-w-[150px] max-w-[250px]" onclick="makeEditable(\'' + job.id + '\', \'notes\', \'' + escapeHtml(job.notes || '').replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + (job.notes ? '<span class="bg-yellow-50 px-2 py-1 rounded text-xs">' + escapeHtml(job.notes.substring(0, 50)) + (job.notes.length > 50 ? '...' : '') + '</span>' : '<span class="text-gray-400">No notes</span>') + '</td>';
