@@ -2634,6 +2634,11 @@
         function generateTimeOptions(selectedTime) {
             const times = [];
             for (let hour = 0; hour < 24; hour++) {
+                // Skip hours between 10pm (22:00) and 5am (05:00)
+                if (hour >= 22 || hour < 5) {
+                    continue;
+                }
+
                 // 15-minute increments for 7am-10am (hours 7, 8, 9)
                 if (hour >= 7 && hour < 10) {
                     for (let min = 0; min < 60; min += 15) {
