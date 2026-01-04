@@ -2676,9 +2676,12 @@
             
             let options = '<option value="">Select End Time</option>';
             
-            // Generate times from 6 AM to 9:30 PM (same as start times)
+            // Generate ALL 15-minute intervals from 6 AM to 9:45 PM
             for (let hour = 6; hour < 22; hour++) {
                 for (let minute = 0; minute < 60; minute += 15) {
+                    // Skip times after 9:30 PM (last slot should be 9:30 PM)
+                    if (hour === 21 && minute > 30) continue;
+                    
                     const endTotalMinutes = hour * 60 + minute;
                     const duration = endTotalMinutes - startTotalMinutes;
                     
