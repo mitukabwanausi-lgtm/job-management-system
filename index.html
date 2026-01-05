@@ -2685,9 +2685,8 @@
                     const endTotalMinutes = hour * 60 + minute;
                     const duration = endTotalMinutes - startTotalMinutes;
                     
-                    // Only show times that give valid durations
-                    // Valid: 45min minimum, then +30min increments (45, 75, 105, 135...)
-                    if (duration >= 45 && (duration - 45) % 30 === 0) {
+                    // Only show times that are at least 45 minutes after start time
+                    if (duration >= 45) {
                         const period = hour >= 12 ? 'PM' : 'AM';
                         const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
                         const displayMinute = minute.toString().padStart(2, '0');
