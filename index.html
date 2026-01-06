@@ -2447,6 +2447,26 @@
             }
         }
 
+        function updateJobAvailabilityChecker() {
+            const dateInput = document.querySelector('input[name="date"]');
+            const startTimeSelect = document.querySelector('select[name="start_time"]');
+            const endTimeSelect = document.querySelector('select[name="end_time"]');
+            const checkerDiv = document.getElementById('jobAvailabilityChecker');
+            
+            if (!dateInput || !startTimeSelect || !endTimeSelect || !checkerDiv) return;
+            
+            const date = dateInput.value;
+            const startTime = startTimeSelect.value;
+            const endTime = endTimeSelect.value;
+            
+            if (date && startTime && endTime) {
+                checkerDiv.classList.remove('hidden');
+                checkerDiv.innerHTML = renderAvailabilityRecommendation(date, startTime, endTime);
+            } else {
+                checkerDiv.classList.add('hidden');
+            }
+        }
+
         async function createJob(jobData) {
             try {
                 const {data, error} = await supabaseClient.from('jobs').insert([jobData]).select();
@@ -3425,12 +3445,13 @@
             html += '<h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Create New Job</h2>';
             html += '<form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6">';
             html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" name="date" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select name="start_time" id="jobStartTime" onchange="updateEndTimeOptions(\'job\')" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select name="end_time" id="jobEndTime" onchange="updateDurationDisplay(\'job\')" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" name="date" onchange="updateJobAvailabilityChecker()" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select name="start_time" id="jobStartTime" onchange="updateEndTimeOptions(\'job\'); updateJobAvailabilityChecker();" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select name="end_time" id="jobEndTime" onchange="updateDurationDisplay(\'job\'); updateJobAvailabilityChecker();" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
             html += '<div id="jobDurationDisplay" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden"><div class="flex items-center gap-2"><span class="material-icons text-blue-600">schedule</span><span class="text-sm font-semibold text-blue-900">Job Duration: <span id="jobDurationText"></span></span></div></div>';
             html += '</div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">-- Leave Unassigned --</option>' + staffOptions + '</select></div>';
+            html += '<div id="jobAvailabilityChecker" class="hidden"></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Status</label><select name="status" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="Unassigned">Unassigned</option><option value="Assigned">Assigned</option><option value="Assigned/Fix">Assigned/Fix</option><option value="In Progress">In Progress</option><option value="Reschedule">Reschedule</option></select></div>';
             html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input type="text" name="client_name" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
@@ -4225,6 +4246,202 @@
             window.scheduleSelectedDate = dateStr;
             scheduleViewMode = 'daily';
             renderApp();
+        }
+
+        function getStaffAvailability(date, startTime, endTime, excludeJobId = null) {
+            if (!date || !startTime || !endTime) return null;
+            
+            const startMinutes = convertTimeToMinutes(startTime);
+            const endMinutes = convertTimeToMinutes(endTime);
+            
+            const availability = staff.map(s => {
+                // Find conflicts
+                const conflicts = checkTimeSlotConflict(s.id, date, startTime, endTime, excludeJobId);
+                
+                // Get all jobs for this staff on this date
+                const staffDayJobs = jobs.filter(j => {
+                    if (j.status === 'Completed' || j.status === 'Cancelled') return false;
+                    if (j.assigned_to !== s.id) return false;
+                    if (j.date !== date) return false;
+                    if (excludeJobId && j.id === excludeJobId) return false;
+                    return true;
+                }).sort((a, b) => {
+                    const aStart = convertTimeToMinutes(a.start_time);
+                    const bStart = convertTimeToMinutes(b.start_time);
+                    return aStart - bStart;
+                });
+                
+                // Find next job after requested time
+                const nextJob = staffDayJobs.find(j => {
+                    const jobStart = convertTimeToMinutes(j.start_time);
+                    return jobStart >= endMinutes;
+                });
+                
+                // Find previous job before requested time
+                const prevJob = staffDayJobs.reverse().find(j => {
+                    const jobEnd = convertTimeToMinutes(j.end_time);
+                    return jobEnd <= startMinutes;
+                });
+                
+                // Calculate gap time
+                let gapBefore = null;
+                let gapAfter = null;
+                
+                if (prevJob) {
+                    const prevEndMinutes = convertTimeToMinutes(prevJob.end_time);
+                    gapBefore = startMinutes - prevEndMinutes;
+                }
+                
+                if (nextJob) {
+                    const nextStartMinutes = convertTimeToMinutes(nextJob.start_time);
+                    gapAfter = nextStartMinutes - endMinutes;
+                }
+                
+                return {
+                    staff: s,
+                    available: !conflicts,
+                    conflicts: conflicts,
+                    totalJobsToday: staffDayJobs.length,
+                    nextJob: nextJob,
+                    prevJob: prevJob,
+                    gapBefore: gapBefore,
+                    gapAfter: gapAfter
+                };
+            });
+            
+            // Sort: available first, then by least busy
+            return availability.sort((a, b) => {
+                if (a.available && !b.available) return -1;
+                if (!a.available && b.available) return 1;
+                return a.totalJobsToday - b.totalJobsToday;
+            });
+        }
+
+        function renderAvailabilityRecommendation(date, startTime, endTime, excludeJobId = null) {
+            if (!date || !startTime || !endTime) {
+                return '<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-sm text-gray-500">Select date and time to see staff availability</div>';
+            }
+            
+            const availability = getStaffAvailability(date, startTime, endTime, excludeJobId);
+            
+            if (!availability || availability.length === 0) {
+                return '<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-sm text-gray-500">No staff available</div>';
+            }
+            
+            let html = '<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">';
+            html += '<div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3">';
+            html += '<h4 class="text-white font-semibold flex items-center gap-2">';
+            html += '<span class="material-icons md-18">people</span>';
+            html += 'Staff Availability for ' + new Date(date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + ' at ' + formatTime12Hour(startTime);
+            html += '</h4>';
+            html += '</div>';
+            
+            html += '<div class="divide-y divide-gray-200">';
+            
+            availability.forEach((item, index) => {
+                const s = item.staff;
+                const isRecommended = index === 0 && item.available;
+                
+                html += '<div class="p-4 hover:bg-gray-50 ' + (isRecommended ? 'bg-green-50' : '') + '">';
+                html += '<div class="flex items-start justify-between">';
+                
+                // Staff info
+                html += '<div class="flex-1">';
+                html += '<div class="flex items-center gap-2 mb-1">';
+                html += '<div class="w-3 h-3 rounded-full" style="background-color: ' + s.color_code + '"></div>';
+                html += '<span class="font-semibold text-gray-900">' + s.full_name + '</span>';
+                
+                if (isRecommended) {
+                    html += '<span class="px-2 py-0.5 bg-green-600 text-white text-xs rounded-full font-medium">RECOMMENDED</span>';
+                }
+                
+                html += '</div>';
+                
+                // Status
+                if (item.available) {
+                    html += '<div class="flex items-center gap-1 text-green-600 text-sm font-medium mb-2">';
+                    html += '<span class="material-icons" style="font-size: 16px;">check_circle</span>';
+                    html += '<span>AVAILABLE</span>';
+                    html += '</div>';
+                    
+                    // Additional info
+                    html += '<div class="text-xs text-gray-600 space-y-1">';
+                    
+                    if (item.totalJobsToday === 0) {
+                        html += '<div>• No other jobs scheduled today</div>';
+                    } else {
+                        html += '<div>• ' + item.totalJobsToday + ' job' + (item.totalJobsToday > 1 ? 's' : '') + ' today</div>';
+                    }
+                    
+                    if (item.gapBefore !== null && item.prevJob) {
+                        const gapHours = Math.floor(item.gapBefore / 60);
+                        const gapMins = item.gapBefore % 60;
+                        const gapText = gapHours > 0 ? gapHours + 'h ' + gapMins + 'm' : gapMins + 'm';
+                        html += '<div>• ' + gapText + ' gap after previous job (' + formatTime12Hour(item.prevJob.end_time) + ')</div>';
+                    }
+                    
+                    if (item.gapAfter !== null && item.nextJob) {
+                        const gapHours = Math.floor(item.gapAfter / 60);
+                        const gapMins = item.gapAfter % 60;
+                        const gapText = gapHours > 0 ? gapHours + 'h ' + gapMins + 'm' : gapMins + 'm';
+                        html += '<div>• ' + gapText + ' gap before next job (' + formatTime12Hour(item.nextJob.start_time) + ')</div>';
+                    }
+                    
+                    html += '</div>';
+                    
+                } else {
+                    html += '<div class="flex items-center gap-1 text-red-600 text-sm font-medium mb-2">';
+                    html += '<span class="material-icons" style="font-size: 16px;">cancel</span>';
+                    html += '<span>UNAVAILABLE</span>';
+                    html += '</div>';
+                    
+                    // Show conflict details
+                    if (item.conflicts && item.conflicts.length > 0) {
+                        const conflict = item.conflicts[0];
+                        html += '<div class="text-xs text-gray-600 space-y-1">';
+                        html += '<div class="font-medium text-red-700">Conflict:</div>';
+                        html += '<div>• Client: ' + escapeHtml(conflict.client_name) + '</div>';
+                        html += '<div>• Time: ' + formatTime12Hour(conflict.start_time) + ' - ' + formatTime12Hour(conflict.end_time) + '</div>';
+                        html += '<div>• Status: ' + conflict.status + '</div>';
+                        html += '</div>';
+                    }
+                }
+                
+                html += '</div>';
+                
+                // Action button (only for available staff)
+                if (item.available) {
+                    html += '<div>';
+                    html += '<button type="button" onclick="assignStaffQuick(\'' + s.id + '\')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium">';
+                    html += 'Assign';
+                    html += '</button>';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function assignStaffQuick(staffId) {
+            // For create job form
+            const createStaffSelect = document.querySelector('select[name="assigned_to"]');
+            if (createStaffSelect) {
+                createStaffSelect.value = staffId;
+                createStaffSelect.dispatchEvent(new Event('change'));
+            }
+            
+            // For edit job form
+            const editStaffSelect = document.getElementById('edit_assigned_to');
+            if (editStaffSelect) {
+                editStaffSelect.value = staffId;
+                editStaffSelect.dispatchEvent(new Event('change'));
+            }
         }
 
         function convertTimeToMinutes(timeStr) {
