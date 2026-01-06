@@ -805,6 +805,7 @@
         let reviewReportPeriod = 'this_week';
         let dashboardReviewPeriod = 'this_week';
         let dashboardReviewStaff = '';
+        let scheduleViewMode = 'daily'; // 'daily' or 'weekly'
 
         // ==================== IMAGE UPLOAD FUNCTIONS ====================
         async function uploadImageToSupabase(file, jobId) {
@@ -3861,23 +3862,31 @@
 
             let html = '<div class="space-y-6">';
             
-            // Header with date picker
+            // Header with date picker and view toggle
             html += '<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">';
             html += '<h2 class="text-2xl font-bold text-gray-900">Staff Schedule Grid</h2>';
-            html += '<div class="flex gap-3 items-center">';
+            html += '<div class="flex gap-3 items-center flex-wrap">';
+
+            // View mode toggle
+            html += '<div class="flex bg-gray-100 rounded-lg p-1">';
+            html += '<button onclick="scheduleViewMode = \'daily\'; renderApp();" class="px-4 py-2 rounded ' + (scheduleViewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-600') + '">Daily</button>';
+            html += '<button onclick="scheduleViewMode = \'weekly\'; renderApp();" class="px-4 py-2 rounded ' + (scheduleViewMode === 'weekly' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-600') + '">Weekly</button>';
+            html += '</div>';
+
             html += '<input type="date" id="scheduleDatePicker" value="' + selectedDate + '" onchange="window.scheduleSelectedDate = this.value; renderApp();" class="px-4 py-2 border rounded-lg">';
             html += '<button onclick="window.scheduleSelectedDate = new Date().toISOString().split(\'T\')[0]; renderApp();" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Today</button>';
             html += '</div>';
             html += '</div>';
 
-            // Date display
-            html += '<div class="bg-white rounded-lg shadow p-4">';
-            html += '<div class="text-center">';
-            html += '<div class="text-sm text-gray-500">Viewing Schedule For</div>';
-            html += '<div class="text-2xl font-bold text-gray-900">' + scheduleDate.toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) + '</div>';
-            html += '<div class="text-sm text-gray-600 mt-1">' + dayJobs.length + ' job(s) scheduled</div>';
+            // Render based on view mode
+            if (scheduleViewMode === 'weekly') {
+                html += renderWeeklyScheduleView(scheduleDate);
+            } else {
+                html += renderDailyScheduleView(scheduleDate, dayJobs);
+            }
+
             html += '</div>';
-            html += '</div>';
+            return html;
 
             // Build the schedule grid
             html += '<div class="bg-white rounded-lg shadow overflow-x-auto">';
@@ -3971,6 +3980,251 @@
 
             html += '</div>';
             return html;
+        }
+
+        function renderDailyScheduleView(scheduleDate, dayJobs) {
+            let html = '';
+            
+            // Date display
+            html += '<div class="bg-white rounded-lg shadow p-4">';
+            html += '<div class="text-center">';
+            html += '<div class="text-sm text-gray-500">Viewing Schedule For</div>';
+            html += '<div class="text-2xl font-bold text-gray-900">' + scheduleDate.toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) + '</div>';
+            html += '<div class="text-sm text-gray-600 mt-1">' + dayJobs.length + ' job(s) scheduled</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Build the schedule grid
+            html += '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full border-collapse">';
+            
+            // Header row with staff names
+            html += '<thead class="bg-gray-50 sticky top-0">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 border-r-2 border-gray-300">Time</th>';
+            
+            staff.forEach(s => {
+                html += '<th class="px-4 py-3 text-center text-xs font-medium uppercase border" style="color: ' + s.color_code + '">' + s.full_name + '</th>';
+            });
+            
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white">';
+
+            // Generate time slots (5 AM to 9:30 PM in 15-minute intervals)
+            for (let hour = 5; hour < 22; hour++) {
+                for (let minute = 0; minute < 60; minute += 15) {
+                    if (hour === 21 && minute > 30) break;
+
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+                    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+                    const period = hour >= 12 ? 'PM' : 'AM';
+                    const displayTime = `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+
+                    html += '<tr class="border-t">';
+                    html += '<td class="px-4 py-2 text-sm font-semibold text-gray-700 whitespace-nowrap sticky left-0 bg-gray-50 border-r-2 border-gray-300">' + displayTime + '</td>';
+
+                    staff.forEach(s => {
+                        const staffJob = dayJobs.find(j => {
+                            if (j.assigned_to !== s.id) return false;
+                            if (!j.start_time || !j.end_time) return false;
+
+                            const jobStartMinutes = convertTimeToMinutes(j.start_time);
+                            const jobEndMinutes = convertTimeToMinutes(j.end_time);
+                            const currentMinutes = hour * 60 + minute;
+
+                            return currentMinutes >= jobStartMinutes && currentMinutes < jobEndMinutes;
+                        });
+
+                        if (staffJob) {
+                            const jobStartMinutes = convertTimeToMinutes(staffJob.start_time);
+                            const currentMinutes = hour * 60 + minute;
+
+                            if (currentMinutes === jobStartMinutes) {
+                                const jobEndMinutes = convertTimeToMinutes(staffJob.end_time);
+                                const duration = jobEndMinutes - jobStartMinutes;
+                                const rowspan = Math.ceil(duration / 15);
+
+                                html += '<td rowspan="' + rowspan + '" class="px-2 py-2 text-xs border" style="background-color: ' + s.color_code + '20; border-left: 3px solid ' + s.color_code + '">';
+                                html += '<div class="font-semibold" style="color: ' + s.color_code + '">' + escapeHtml(staffJob.client_name) + '</div>';
+                                html += '<div class="text-gray-600 text-xs">' + formatTime12Hour(staffJob.start_time) + ' - ' + formatTime12Hour(staffJob.end_time) + '</div>';
+                                html += '<div class="text-gray-500 text-xs mt-1">' + escapeHtml(staffJob.suburb || 'N/A') + '</div>';
+                                const statusColors = {
+                                    'Assigned': 'bg-purple-100 text-purple-800',
+                                    'In Progress': 'bg-blue-100 text-blue-800',
+                                    'Unassigned': 'bg-gray-100 text-gray-800'
+                                };
+                                html += '<div class="mt-1"><span class="px-2 py-1 rounded text-xs ' + (statusColors[staffJob.status] || 'bg-gray-100 text-gray-800') + '">' + staffJob.status + '</span></div>';
+                                html += '</td>';
+                            }
+                        } else {
+                            const selectedDate = window.scheduleSelectedDate || new Date().toISOString().split('T')[0];
+                            html += '<td class="px-2 py-2 text-center text-xs text-green-600 bg-green-50 border hover:bg-green-100 cursor-pointer" onclick="quickCreateJob(\'' + s.id + '\', \'' + selectedDate + '\', \'' + timeStr + '\')">✓</td>';
+                        }
+                    });
+
+                    html += '</tr>';
+                }
+            }
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+
+            // Legend
+            html += '<div class="bg-white rounded-lg shadow p-4">';
+            html += '<div class="text-sm font-semibold text-gray-700 mb-2">Legend:</div>';
+            html += '<div class="flex flex-wrap gap-4 text-xs">';
+            html += '<div class="flex items-center gap-2"><div class="w-4 h-4 bg-green-50 border border-green-300"></div><span class="text-gray-600">Available - Click to create job</span></div>';
+            html += '<div class="flex items-center gap-2"><div class="w-4 h-4 bg-purple-100 border-l-4 border-purple-600"></div><span class="text-gray-600">Booked</span></div>';
+            html += '</div>';
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderWeeklyScheduleView(selectedDate) {
+            let html = '';
+            
+            // Calculate week range (Monday to Sunday)
+            const date = new Date(selectedDate);
+            const dayOfWeek = date.getDay();
+            const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+            const monday = new Date(date.setDate(diff));
+            
+            // Generate array of 7 days (Monday to Sunday)
+            const weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(monday);
+                day.setDate(monday.getDate() + i);
+                weekDays.push(day);
+            }
+            
+            // Get jobs for the entire week
+            const weekJobs = jobs.filter(j => {
+                if (j.status === 'Completed' || j.status === 'Cancelled') return false;
+                const jobDate = new Date(j.date);
+                jobDate.setHours(0, 0, 0, 0);
+                return jobDate >= weekDays[0] && jobDate <= weekDays[6];
+            });
+            
+            // Week display
+            html += '<div class="bg-white rounded-lg shadow p-4 mb-4">';
+            html += '<div class="text-center">';
+            html += '<div class="text-sm text-gray-500">Viewing Week</div>';
+            html += '<div class="text-xl font-bold text-gray-900">' + 
+                    weekDays[0].toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + ' - ' + 
+                    weekDays[6].toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) + '</div>';
+            html += '<div class="text-sm text-gray-600 mt-1">' + weekJobs.length + ' job(s) this week</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            // Navigation buttons
+            html += '<div class="flex justify-between items-center mb-4">';
+            html += '<button onclick="navigateWeek(-1)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center gap-2">';
+            html += '<span class="material-icons md-18">chevron_left</span> Previous Week';
+            html += '</button>';
+            html += '<button onclick="navigateWeek(1)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center gap-2">';
+            html += 'Next Week <span class="material-icons md-18">chevron_right</span>';
+            html += '</button>';
+            html += '</div>';
+            
+            // Staff availability summary cards
+            html += '<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-' + Math.min(staff.length, 6) + ' gap-3 mb-4">';
+            staff.forEach(s => {
+                const staffWeekJobs = weekJobs.filter(j => j.assigned_to === s.id);
+                html += '<div class="bg-white rounded-lg shadow p-3 border-l-4" style="border-color: ' + s.color_code + '">';
+                html += '<div class="text-sm font-semibold" style="color: ' + s.color_code + '">' + s.full_name + '</div>';
+                html += '<div class="text-2xl font-bold text-gray-900 mt-1">' + staffWeekJobs.length + '</div>';
+                html += '<div class="text-xs text-gray-500">jobs this week</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            
+            // Weekly grid - simplified view showing job count per day per staff
+            html += '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full border-collapse">';
+            html += '<thead class="bg-gray-50">';
+            html += '<tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 border-r-2 border-gray-300">Staff</th>';
+            
+            weekDays.forEach(day => {
+                const isToday = day.toDateString() === new Date().toDateString();
+                html += '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border ' + (isToday ? 'bg-blue-50' : '') + '">';
+                html += '<div>' + day.toLocaleDateString('en-US', {weekday: 'short'}) + '</div>';
+                html += '<div class="font-bold text-gray-900">' + day.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + '</div>';
+                html += '</th>';
+            });
+            
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody class="bg-white">';
+            
+            staff.forEach(s => {
+                html += '<tr class="border-t hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 font-medium sticky left-0 bg-white border-r-2 border-gray-300" style="color: ' + s.color_code + '">' + s.full_name + '</td>';
+                
+                weekDays.forEach(day => {
+                    const dayStr = day.toISOString().split('T')[0];
+                    const isToday = day.toDateString() === new Date().toDateString();
+                    const dayJobsForStaff = weekJobs.filter(j => {
+                        const jobDate = new Date(j.date);
+                        return j.assigned_to === s.id && jobDate.toDateString() === day.toDateString();
+                    });
+                    
+                    html += '<td class="px-2 py-2 border text-center ' + (isToday ? 'bg-blue-50' : '') + '" style="min-width: 120px;">';
+                    
+                    if (dayJobsForStaff.length > 0) {
+                        // Show job summary
+                        html += '<div class="space-y-1">';
+                        dayJobsForStaff.forEach(job => {
+                            html += '<div class="text-xs p-2 rounded cursor-pointer hover:shadow" style="background-color: ' + s.color_code + '20; border-left: 2px solid ' + s.color_code + '" onclick="openEditModalById(\'' + job.id + '\')">';
+                            html += '<div class="font-semibold truncate" style="color: ' + s.color_code + '">' + escapeHtml(job.client_name) + '</div>';
+                            html += '<div class="text-gray-600">' + formatTime12Hour(job.start_time) + '</div>';
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                    } else {
+                        // Available - click to view day
+                        html += '<button onclick="viewDaySchedule(\'' + dayStr + '\')" class="w-full py-4 text-green-600 hover:bg-green-50 rounded text-sm font-medium">';
+                        html += '✓ Available';
+                        html += '</button>';
+                    }
+                    
+                    html += '</td>';
+                });
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+            
+            // Legend
+            html += '<div class="bg-white rounded-lg shadow p-4 mt-4">';
+            html += '<div class="text-sm font-semibold text-gray-700 mb-2">Legend:</div>';
+            html += '<div class="flex flex-wrap gap-4 text-xs">';
+            html += '<div class="flex items-center gap-2"><div class="w-4 h-4 bg-green-50 border border-green-300"></div><span class="text-gray-600">Available - Click to view day</span></div>';
+            html += '<div class="flex items-center gap-2"><div class="w-4 h-4 bg-blue-50 border border-blue-300"></div><span class="text-gray-600">Today</span></div>';
+            html += '<div class="flex items-center gap-2"><div class="w-4 h-4 bg-purple-100 border-l-4 border-purple-600"></div><span class="text-gray-600">Booked - Click job to view details</span></div>';
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function navigateWeek(direction) {
+            const currentDate = window.scheduleSelectedDate ? new Date(window.scheduleSelectedDate) : new Date();
+            currentDate.setDate(currentDate.getDate() + (direction * 7));
+            window.scheduleSelectedDate = currentDate.toISOString().split('T')[0];
+            renderApp();
+        }
+
+        function viewDaySchedule(dateStr) {
+            window.scheduleSelectedDate = dateStr;
+            scheduleViewMode = 'daily';
+            renderApp();
         }
 
         function convertTimeToMinutes(timeStr) {
