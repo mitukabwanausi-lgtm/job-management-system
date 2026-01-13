@@ -535,6 +535,14 @@
                                     <span class="ml-3 text-sm text-gray-700">Phone</span>
                                 </label>
                                 <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.car_make ? 'checked' : ''} onchange="toggleColumn('car_make')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Car Make</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" ${visibleColumns.car_model ? 'checked' : ''} onchange="toggleColumn('car_model')" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-sm text-gray-700">Model & Year</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                     <input type="checkbox" id="export_col_email" class="w-4 h-4 text-blue-600 rounded">
                                     <span class="ml-3 text-sm text-gray-700">Email</span>
                                 </label>
@@ -795,13 +803,16 @@
             payment_method: false,
             photos: false,
             notes: false,
-            contact_method: false
+            contact_method: false,
+            car_make: true,
+            car_model: false
         };
         let columnSelectorOpen = false;
         let pendingCompletionJobId = null;
         let pendingRatingJobId = null;
         let selectedRatingValue = 0;
         let reportTimePeriod = 'last_30_days';
+        let carMakes = new Set(); // Store unique car makes
         let reportStaffFilter = '';
         let reviewReportPeriod = 'this_week';
         let dashboardReviewPeriod = 'this_week';
@@ -962,6 +973,7 @@
                 if (error) throw error;
                 jobs = data || [];
                 populateSuburbList();
+                populateCarMakesList();
                 return jobs;
             } catch (error) {
                 console.error('Error loading jobs:', error);
@@ -973,6 +985,21 @@
             const datalist = document.getElementById('suburbList');
             if (datalist) {
                 datalist.innerHTML = suburbs.map(s => '<option value="' + s + '">').join('');
+            }
+        }
+        function populateCarMakesList() {
+            // Extract unique car makes from existing jobs
+            jobs.forEach(job => {
+                if (job.car_make) {
+                    carMakes.add(job.car_make.trim());
+                }
+            });
+            
+            // Update datalist if it exists
+            const datalist = document.getElementById('carMakesList');
+            if (datalist) {
+                const sortedMakes = Array.from(carMakes).sort();
+                datalist.innerHTML = sortedMakes.map(make => '<option value="' + escapeHtml(make) + '">').join('');
             }
         }
 
@@ -2076,6 +2103,8 @@
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Client Name:</span><span class="text-gray-900">' + escapeHtml(job.client_name) + '</span></div>' +
                 '<div class="py-2 border-b"><span class="font-semibold text-gray-600 block mb-1">Address:</span><span class="text-gray-900">' + escapeHtml(job.address) + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Phone:</span><span class="text-gray-900">' + escapeHtml(job.client_phone) + '</span></div>' +
+                '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Car Make:</span><span class="text-gray-900">' + escapeHtml(job.car_make || 'N/A') + '</span></div>' +
+                '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Model & Year:</span><span class="text-gray-900">' + escapeHtml(job.car_model || 'N/A') + '</span></div>' +
                 '<div class="py-2 border-b"><span class="font-semibold text-gray-600 block mb-1">Description:</span><span class="text-gray-900 whitespace-pre-wrap">' + escapeHtml(job.job_description) + '</span></div>' +
                 '<div class="flex justify-between items-center py-2 border-b"><span class="font-semibold text-gray-600">Price:</span><span class="text-gray-900 flex items-center gap-2">$' + parseFloat(job.price).toFixed(2) + ' ' + gstBadge + '</span></div>' +
                 '<div class="flex justify-between py-2 border-b"><span class="font-semibold text-gray-600">Email:</span><span class="text-gray-900">' + (job.client_email || 'N/A') + '</span></div>' +
@@ -2177,6 +2206,8 @@
             document.getElementById('edit_client_phone').value = job.client_phone || '';
             document.getElementById('edit_client_email').value = job.client_email || '';
             document.getElementById('edit_contact_method').value = job.contact_method || '';
+            document.getElementById('edit_car_make').value = job.car_make || '';
+            document.getElementById('edit_car_model').value = job.car_model || '';
             document.getElementById('edit_address').value = job.address || '';
             document.getElementById('edit_suburb').value = job.suburb || '';
             document.getElementById('edit_job_description').value = job.job_description || '';
@@ -2243,6 +2274,8 @@
                 client_email: document.getElementById('edit_client_email').value || null,
                 address: document.getElementById('edit_address').value,
                 suburb: document.getElementById('edit_suburb').value,
+                car_make: document.getElementById('edit_car_make').value,
+                car_model: document.getElementById('edit_car_model').value || null,
                 job_description: document.getElementById('edit_job_description').value,
                 price: parseFloat(document.getElementById('edit_price').value),
                 price_includes_gst: document.querySelector('input[name="edit_price_includes_gst"]:checked').value === 'true',
@@ -3481,7 +3514,14 @@
             html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Client Name *</label><input type="text" name="client_name" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label><input type="tel" name="client_phone" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">Car Make *</label><input type="text" id="edit_car_make" list="carMakesList" required class="w-full px-4 py-2 border rounded-lg" placeholder="e.g., Toyota, BMW, Mercedes"></div>
+              <div><label class="block text-sm font-medium text-gray-700 mb-2">Model & Year</label><input type="text" id="edit_car_model" class="w-full px-4 py-2 border rounded-lg" placeholder="e.g., Camry 2020, X5 2019"></div>
+            </div>
             html += '</div>';
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Car Make *</label><input type="text" name="car_make" list="carMakesList" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base" placeholder="e.g., Toyota, BMW, Mercedes"><datalist id="carMakesList"></datalist></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Model & Year</label><input type="text" name="car_model" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base" placeholder="e.g., Camry 2020, X5 2019"></div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Address *</label><textarea name="address" required rows="2" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea></div>' +
                 '<div><label class="block text-sm font-medium text-gray-700 mb-2">Suburb *</label><input type="text" name="suburb" list="suburbList" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><datalist id="suburbList"></datalist></div>'
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Job Description *</label><textarea name="job_description" required rows="3" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></textarea></div>';
@@ -3774,7 +3814,7 @@
             const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
             const statusBg = getStatusClass(job.status);
             const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : 'Unassigned';
-            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1 flex items-center gap-1"><span class="material-icons md-18">schedule</span>' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div></div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div class="flex items-center gap-1"><span class="material-icons md-18">person</span>' + staffDisplay + '</div><div class="flex items-center gap-1"><span class="material-icons md-18">attach_money</span>$' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
+            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1 flex items-center gap-1"><span class="material-icons md-18">schedule</span>' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div>' + (job.car_make ? '<div class="text-xs text-blue-600 mt-1 flex items-center gap-1"><span class="material-icons md-18">directions_car</span>' + escapeHtml(job.car_make) + (job.car_model ? ' - ' + escapeHtml(job.car_model) : '') + '</div>' : '') + '</div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div class="flex items-center gap-1"><span class="material-icons md-18">person</span>' + staffDisplay + '</div><div class="flex items-center gap-1"><span class="material-icons md-18">attach_money</span>$' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
         }
 
         function renderDesktopTable(filteredJobs) {
@@ -3820,6 +3860,12 @@
                 if (visibleColumns.phone) {
                     row += '<td id="cell-' + job.id + '-client_phone" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'client_phone\', \'' + escapeHtml(job.client_phone).replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.client_phone) + '</td>';
                 }
+                if (visibleColumns.car_make) {
+                    row += '<td id="cell-' + job.id + '-car_make" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'car_make\', \'' + escapeHtml(job.car_make || '').replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.car_make || 'N/A') + '</td>';
+                }
+                if (visibleColumns.car_model) {
+                    row += '<td id="cell-' + job.id + '-car_model" class="editable-cell text-sm" onclick="makeEditable(\'' + job.id + '\', \'car_model\', \'' + escapeHtml(job.car_model || '').replace(/'/g, "\\'") + '\', \'text\')">' + escapeHtml(job.car_model || 'N/A') + '</td>';
+                }
                 if (visibleColumns.description) {
                     row += '<td id="cell-' + job.id + '-job_description" class="editable-cell text-sm min-w-[150px] max-w-[250px] truncate" title="' + escapeHtml(job.job_description) + '" onclick="makeEditable(\'' + job.id + '\', \'job_description\', \'' + escapeHtml(job.job_description).replace(/'/g, "\\'").replace(/\n/g, ' ') + '\', \'textarea\')">' + escapeHtml(job.job_description) + '</td>';
                 }
@@ -3864,6 +3910,8 @@
             if (visibleColumns.address) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>';
             if (visibleColumns.suburb) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suburb</th>';
             if (visibleColumns.phone) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>';
+            if (visibleColumns.car_make) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Car Make</th>';
+            if (visibleColumns.car_model) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model & Year</th>';
             if (visibleColumns.description) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>';
             if (visibleColumns.price) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>';
             if (visibleColumns.email) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>';
@@ -4887,6 +4935,8 @@
                 client_email: formData.get('client_email') || null,
                 address: formData.get('address'),
                 suburb: formData.get('suburb'),
+                car_make: formData.get('car_make'),
+                car_model: formData.get('car_model') || null,
                 job_description: formData.get('job_description'),
                 price: parseFloat(formData.get('price')),
                 price_includes_gst: formData.get('price_includes_gst') === 'true',
@@ -4985,7 +5035,9 @@
                     payment_method: true,
                     photos: false,
                     notes: false,
-                    contact_method: false
+                    contact_method: false,
+                    car_make: false,
+                    car_model: false
                 };
             } else {
                 // Reset to default columns for other views
@@ -5006,7 +5058,9 @@
                     payment_method: false,
                     photos: false,
                     notes: false,
-                    contact_method: false
+                    contact_method: false,
+                    car_make: true,
+                    car_model: false
                 };
             }
 
