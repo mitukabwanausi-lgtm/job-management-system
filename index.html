@@ -303,10 +303,10 @@
                                 <input type="date" id="edit_date" onchange="updateEditAvailabilityChecker()" required class="w-full px-4 py-2 border rounded-lg">
                             </div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-                                <select id="edit_start_time" onchange="updateEndTimeOptions('edit'); updateEditAvailabilityChecker();" required class="w-full px-4 py-2 border rounded-lg"></select>
+                                <input type="time" id="edit_start_time" onchange="updateEditAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-4 py-2 border rounded-lg">
                             </div>
                             <div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
-                                <select id="edit_end_time" onchange="updateDurationDisplay('edit'); updateEditAvailabilityChecker();" required class="w-full px-4 py-2 border rounded-lg"></select>
+                                <input type="time" id="edit_end_time" onchange="updateDurationDisplay('edit'); updateEditAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-4 py-2 border rounded-lg">
                             </div>
                             <div id="editDurationDisplay" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
                                 <div class="flex items-center gap-2">
@@ -2195,19 +2195,17 @@
             document.getElementById('edit_job_id').value = job.id || '';
             document.getElementById('edit_date').value = job.date || '';
 
-            // Set time dropdowns
-            const startTimeSelect = document.getElementById('edit_start_time');
-            const endTimeSelect = document.getElementById('edit_end_time');
+            // Set time inputs
+            const startTimeInput = document.getElementById('edit_start_time');
+            const endTimeInput = document.getElementById('edit_end_time');
 
-            if (startTimeSelect && endTimeSelect) {
-                startTimeSelect.innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.start_time);
-                endTimeSelect.innerHTML = '<option value="">Select...</option>' + generateTimeOptions(job.end_time);
+            if (startTimeInput && endTimeInput) {
+                // Convert DB format (HH:MM:SS) to input format (HH:MM)
+                startTimeInput.value = job.start_time ? convertDBFormatToTimeInput(job.start_time) : '';
+                endTimeInput.value = job.end_time ? convertDBFormatToTimeInput(job.end_time) : '';
                 
-                // Update end time options based on start time and show duration
-                updateEndTimeOptions('edit');
+                // Show duration and availability checker
                 updateDurationDisplay('edit');
-                
-                // Show availability checker
                 updateEditAvailabilityChecker();
             }
 
@@ -2276,10 +2274,22 @@
 
             const job = jobs.find(j => j.id === jobId);
             const isDuplicate = jobId === 'DUPLICATE';
+            const startTimeInput = document.getElementById('edit_start_time').value;
+            const endTimeInput = document.getElementById('edit_end_time').value;
+            
+            // Validate time range
+            const validation = validateTimeRange(startTimeInput, endTimeInput);
+            if (!validation.valid) {
+                alert(validation.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Save Changes';
+                return;
+            }
+            
             const jobData = {
                 date: document.getElementById('edit_date').value,
-                start_time: document.getElementById('edit_start_time').value,
-                end_time: document.getElementById('edit_end_time').value,
+                start_time: convertTimeInputToDBFormat(startTimeInput),
+                end_time: convertTimeInputToDBFormat(endTimeInput),
                 status: document.getElementById('edit_status').value,
                 client_name: document.getElementById('edit_client_name').value,
                 client_phone: document.getElementById('edit_client_phone').value,
@@ -2366,69 +2376,64 @@
         }
 
         function generateTimeOptions(selectedTime) {
-            const times = [];
-            for (let hour = 0; hour < 24; hour++) {
-                // Skip hours between 10pm (22:00) and 5am (05:00)
-                if (hour >= 22 || hour < 5) {
-                    continue;
-                }
-
-                // 1-minute increments for all hours
-                for (let min = 0; min < 60; min += 1) {
-                    const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
-                    const displayTime = formatTime12Hour(timeStr);
-                    times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
-                }
-            }
-            return times.join('');
+            // Not needed anymore - using time input fields
+            return '';
         }
 
         function generateValidEndTimes(startTime) {
-            if (!startTime) return generateTimeOptions();
+            // Not needed anymore - using time input fields
+            return '';
+        }
+
+        function convertTimeInputToDBFormat(timeInput) {
+            // Converts HH:MM to HH:MM:SS
+            if (!timeInput) return '';
+            return timeInput + ':00';
+        }
+        
+        function convertDBFormatToTimeInput(dbTime) {
+            // Converts HH:MM:SS to HH:MM
+            if (!dbTime) return '';
+            return dbTime.substring(0, 5);
+        }
+        
+        function validateTimeRange(startTime, endTime) {
+            // Validates that end time is after start time and within business hours
+            if (!startTime || !endTime) return { valid: false, message: 'Both times are required' };
             
-            const [startHour, startMinute] = startTime.split(':').map(Number);
-            const startTotalMinutes = startHour * 60 + startMinute;
+            const [startHour, startMin] = startTime.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
             
-            let options = '<option value="">Select End Time</option>';
-            
-            // Generate 1-minute intervals from 5 AM to 9:30 PM
-            for (let hour = 5; hour < 22; hour++) {
-                for (let minute = 0; minute < 60; minute += 1) {
-                    // Skip times after 9:30 PM
-                    if (hour === 21 && minute > 30) continue;
-                    
-                    const endTotalMinutes = hour * 60 + minute;
-                    const duration = endTotalMinutes - startTotalMinutes;
-                    
-                    // Show any time after start time (minimum 1 minute)
-                    if (duration >= 1) {
-                        const period = hour >= 12 ? 'PM' : 'AM';
-                        const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-                        const displayMinute = minute.toString().padStart(2, '0');
-                        const timeValue = `${hour.toString().padStart(2, '0')}:${displayMinute}:00`;
-                        
-                        const durationHours = Math.floor(duration / 60);
-                        const durationMinutes = duration % 60;
-                        let durationText = '';
-                        if (durationHours > 0) {
-                            durationText = `${durationHours}h ${durationMinutes}m`;
-                        } else {
-                            durationText = `${durationMinutes}m`;
-                        }
-                        
-                        options += `<option value="${timeValue}">${displayHour}:${displayMinute} ${period} (${durationText})</option>`;
-                    }
-                }
+            // Check business hours (5 AM to 9:30 PM)
+            if (startHour < 5 || startHour >= 22) {
+                return { valid: false, message: 'Start time must be between 5:00 AM and 9:30 PM' };
+            }
+            if (endHour < 5 || (endHour >= 21 && endMin > 30) || endHour >= 22) {
+                return { valid: false, message: 'End time must be between 5:00 AM and 9:30 PM' };
             }
             
-            return options;
+            const startMinutes = startHour * 60 + startMin;
+            const endMinutes = endHour * 60 + endMin;
+            
+            if (endMinutes <= startMinutes) {
+                return { valid: false, message: 'End time must be after start time' };
+            }
+            
+            return { valid: true };
         }
+
 
         function calculateDuration(startTime, endTime) {
             if (!startTime || !endTime) return '';
             
-            const [startHour, startMinute] = startTime.split(':').map(Number);
-            const [endHour, endMinute] = endTime.split(':').map(Number);
+            // Handle both HH:MM and HH:MM:SS formats
+            const startParts = startTime.split(':').map(Number);
+            const endParts = endTime.split(':').map(Number);
+            
+            const startHour = startParts[0];
+            const startMinute = startParts[1];
+            const endHour = endParts[0];
+            const endMinute = endParts[1];
             
             const startTotalMinutes = startHour * 60 + startMinute;
             const endTotalMinutes = endHour * 60 + endMinute;
@@ -2452,15 +2457,8 @@
         }
 
         function updateEndTimeOptions(prefix) {
-            const startTimeSelect = document.getElementById(prefix + 'StartTime');
-            const endTimeSelect = document.getElementById(prefix + 'EndTime');
-            
-            if (!startTimeSelect || !endTimeSelect) return;
-            
-            const startTime = startTimeSelect.value;
-            endTimeSelect.innerHTML = generateValidEndTimes(startTime);
-            
-            // Reset duration display
+            // Not needed anymore with time input fields
+            // Duration is calculated automatically in updateDurationDisplay
             updateDurationDisplay(prefix);
         }
 
@@ -3508,8 +3506,8 @@
             html += '<form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6">';
             html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" name="date" onchange="updateJobAvailabilityChecker()" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><select name="start_time" id="jobStartTime" onchange="updateEndTimeOptions(\'job\'); updateJobAvailabilityChecker();" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><select name="end_time" id="jobEndTime" onchange="updateDurationDisplay(\'job\'); updateJobAvailabilityChecker();" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">Select...</option>' + generateTimeOptions() + '</select></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><input type="time" name="start_time" id="jobStartTime" onchange="updateJobAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><input type="time" name="end_time" id="jobEndTime" onchange="updateDurationDisplay(\'job\'); updateJobAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
             html += '<div id="jobDurationDisplay" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden"><div class="flex items-center gap-2"><span class="material-icons text-blue-600">schedule</span><span class="text-sm font-semibold text-blue-900">Job Duration: <span id="jobDurationText"></span></span></div></div>';
             html += '</div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">-- Leave Unassigned --</option>' + staffOptions + '</select></div>';
@@ -4905,8 +4903,21 @@
             const formData = new FormData(e.target);
             const assignedTo = formData.get('assigned_to') || null;
             const date = formData.get('date');
-            const startTime = formData.get('start_time');
-            const endTime = formData.get('end_time');
+            const startTimeInput = formData.get('start_time');
+            const endTimeInput = formData.get('end_time');
+            
+            // Convert HH:MM to HH:MM:SS for database
+            const startTime = convertTimeInputToDBFormat(startTimeInput);
+            const endTime = convertTimeInputToDBFormat(endTimeInput);
+            
+            // Validate time range
+            const validation = validateTimeRange(startTimeInput, endTimeInput);
+            if (!validation.valid) {
+                alert(validation.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Create Job';
+                return;
+            }
             
             if (endTime <= startTime) {
                 alert('End time must be after start time.');
