@@ -2373,20 +2373,11 @@
                     continue;
                 }
 
-                // 15-minute increments for 7am-10am (hours 7, 8, 9)
-                if (hour >= 7 && hour < 10) {
-                    for (let min = 0; min < 60; min += 15) {
-                        const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
-                        const displayTime = formatTime12Hour(timeStr);
-                        times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
-                    }
-                } else {
-                    // 15-minute increments for all other hours
-                    for (let min = 0; min < 60; min += 15) {
-                        const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
-                        const displayTime = formatTime12Hour(timeStr);
-                        times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
-                    }
+                // 1-minute increments for all hours
+                for (let min = 0; min < 60; min += 1) {
+                    const timeStr = String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':00';
+                    const displayTime = formatTime12Hour(timeStr);
+                    times.push('<option value="' + timeStr + '"' + (selectedTime === timeStr ? ' selected' : '') + '>' + displayTime + '</option>');
                 }
             }
             return times.join('');
@@ -2400,17 +2391,17 @@
             
             let options = '<option value="">Select End Time</option>';
             
-            // Generate ALL 15-minute intervals from 5 AM to 9:45 PM
+            // Generate 1-minute intervals from 5 AM to 9:30 PM
             for (let hour = 5; hour < 22; hour++) {
-                for (let minute = 0; minute < 60; minute += 15) {
-                    // Skip times after 9:30 PM (last slot should be 9:30 PM)
+                for (let minute = 0; minute < 60; minute += 1) {
+                    // Skip times after 9:30 PM
                     if (hour === 21 && minute > 30) continue;
                     
                     const endTotalMinutes = hour * 60 + minute;
                     const duration = endTotalMinutes - startTotalMinutes;
                     
-                    // Only show times that are at least 45 minutes after start time
-                    if (duration >= 45) {
+                    // Show any time after start time (minimum 1 minute)
+                    if (duration >= 1) {
                         const period = hour >= 12 ? 'PM' : 'AM';
                         const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
                         const displayMinute = minute.toString().padStart(2, '0');
