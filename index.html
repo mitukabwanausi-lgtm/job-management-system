@@ -2397,24 +2397,74 @@
             return dbTime.substring(0, 5);
         }
         
+
+        function validateAndUpdateAvailability(prefix) {
+            const startTimeInput = prefix === 'job' ? 
+                document.querySelector('input[name="start_time"]') : 
+                document.getElementById('edit_start_time');
+            const endTimeInput = prefix === 'job' ? 
+                document.querySelector('input[name="end_time"]') : 
+                document.getElementById('edit_end_time');
+            
+            if (!startTimeInput || !endTimeInput) return;
+            
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            
+            if (startTime && endTime) {
+                const validation = validateTimeRange(startTime, endTime);
+                
+                if (!validation.valid) {
+                    // Show error styling
+                    startTimeInput.classList.add('border-red-500');
+                    endTimeInput.classList.add('border-red-500');
+                } else {
+                    // Remove error styling
+                    startTimeInput.classList.remove('border-red-500');
+                    endTimeInput.classList.remove('border-red-500');
+                }
+            }
+            
+            // Update duration and availability
+            updateDurationDisplay(prefix);
+            if (prefix === 'job') {
+                updateJobAvailabilityChecker();
+            } else {
+                updateEditAvailabilityChecker();
+            }
+        }
+
         function validateTimeRange(startTime, endTime) {
             // Validates that end time is after start time and within business hours
-            if (!startTime || !endTime) return { valid: false, message: 'Both times are required' };
+            if (!startTime || !endTime) return { valid: false, message: 'Both start time and end time are required' };
             
             const [startHour, startMin] = startTime.split(':').map(Number);
             const [endHour, endMin] = endTime.split(':').map(Number);
             
-            // Check business hours (5 AM to 9:30 PM)
-            if (startHour < 5 || startHour >= 22) {
-                return { valid: false, message: 'Start time must be between 5:00 AM and 9:30 PM' };
-            }
-            if (endHour < 5 || (endHour >= 21 && endMin > 30) || endHour >= 22) {
-                return { valid: false, message: 'End time must be between 5:00 AM and 9:30 PM' };
-            }
+            // Business hours: 5:00 AM to 9:30 PM
+            const businessStart = 5 * 60; // 5:00 AM in minutes
+            const businessEnd = 21 * 60 + 30; // 9:30 PM in minutes
             
             const startMinutes = startHour * 60 + startMin;
             const endMinutes = endHour * 60 + endMin;
             
+            // Check if start time is within business hours
+            if (startMinutes < businessStart) {
+                return { valid: false, message: 'Start time cannot be before 5:00 AM' };
+            }
+            if (startMinutes > businessEnd) {
+                return { valid: false, message: 'Start time cannot be after 9:30 PM' };
+            }
+            
+            // Check if end time is within business hours
+            if (endMinutes < businessStart) {
+                return { valid: false, message: 'End time cannot be before 5:00 AM' };
+            }
+            if (endMinutes > businessEnd) {
+                return { valid: false, message: 'End time cannot be after 9:30 PM' };
+            }
+            
+            // Check that end time is after start time
             if (endMinutes <= startMinutes) {
                 return { valid: false, message: 'End time must be after start time' };
             }
@@ -2488,19 +2538,23 @@
 
         function updateJobAvailabilityChecker() {
             const dateInput = document.querySelector('input[name="date"]');
-            const startTimeSelect = document.querySelector('select[name="start_time"]');
-            const endTimeSelect = document.querySelector('select[name="end_time"]');
+            const startTimeInput = document.querySelector('input[name="start_time"]');
+            const endTimeInput = document.querySelector('input[name="end_time"]');
             const checkerDiv = document.getElementById('jobAvailabilityChecker');
             
-            if (!dateInput || !startTimeSelect || !endTimeSelect || !checkerDiv) return;
+            if (!dateInput || !startTimeInput || !endTimeInput || !checkerDiv) return;
             
             const date = dateInput.value;
-            const startTime = startTimeSelect.value;
-            const endTime = endTimeSelect.value;
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
             
             if (date && startTime && endTime) {
+                // Convert HH:MM to HH:MM:SS for compatibility
+                const startTimeDB = convertTimeInputToDBFormat(startTime);
+                const endTimeDB = convertTimeInputToDBFormat(endTime);
+                
                 checkerDiv.classList.remove('hidden');
-                checkerDiv.innerHTML = renderAvailabilityRecommendation(date, startTime, endTime);
+                checkerDiv.innerHTML = renderAvailabilityRecommendation(date, startTimeDB, endTimeDB);
             } else {
                 checkerDiv.classList.add('hidden');
             }
@@ -2509,19 +2563,23 @@
         function updateEditAvailabilityChecker() {
             const jobId = document.getElementById('edit_job_id').value;
             const dateInput = document.getElementById('edit_date');
-            const startTimeSelect = document.getElementById('edit_start_time');
-            const endTimeSelect = document.getElementById('edit_end_time');
+            const startTimeInput = document.getElementById('edit_start_time');
+            const endTimeInput = document.getElementById('edit_end_time');
             const checkerDiv = document.getElementById('editAvailabilityChecker');
             
-            if (!dateInput || !startTimeSelect || !endTimeSelect || !checkerDiv) return;
+            if (!dateInput || !startTimeInput || !endTimeInput || !checkerDiv) return;
             
             const date = dateInput.value;
-            const startTime = startTimeSelect.value;
-            const endTime = endTimeSelect.value;
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
             
             if (date && startTime && endTime) {
+                // Convert HH:MM to HH:MM:SS for compatibility
+                const startTimeDB = convertTimeInputToDBFormat(startTime);
+                const endTimeDB = convertTimeInputToDBFormat(endTime);
+                
                 checkerDiv.classList.remove('hidden');
-                checkerDiv.innerHTML = renderAvailabilityRecommendation(date, startTime, endTime, jobId);
+                checkerDiv.innerHTML = renderAvailabilityRecommendation(date, startTimeDB, endTimeDB, jobId);
             } else {
                 checkerDiv.classList.add('hidden');
             }
@@ -3506,8 +3564,8 @@
             html += '<form onsubmit="handleJobSubmit(event)" class="space-y-4 md:space-y-6">';
             html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Date *</label><input type="date" name="date" onchange="updateJobAvailabilityChecker()" required class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><input type="time" name="start_time" id="jobStartTime" onchange="updateJobAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
-            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><input type="time" name="end_time" id="jobEndTime" onchange="updateDurationDisplay(\'job\'); updateJobAvailabilityChecker();" required min="05:00" max="21:30" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Time *</label><input type="time" name="start_time" id="jobStartTime" onchange="validateAndUpdateAvailability(\'job\');" required min="05:00" max="21:30" step="60" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
+            html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Time *</label><input type="time" name="end_time" id="jobEndTime" onchange="validateAndUpdateAvailability(\'job\');" required min="05:00" max="21:30" step="60" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"></div>';
             html += '<div id="jobDurationDisplay" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden"><div class="flex items-center gap-2"><span class="material-icons text-blue-600">schedule</span><span class="text-sm font-semibold text-blue-900">Job Duration: <span id="jobDurationText"></span></span></div></div>';
             html += '</div>';
             html += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label><select name="assigned_to" class="w-full px-3 md:px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">-- Leave Unassigned --</option>' + staffOptions + '</select></div>';
