@@ -4186,7 +4186,7 @@
             html += '<div class="flex justify-between items-center">';
             html += '<h2 class="text-2xl font-bold text-gray-900">Tasks</h2>';
             html += '<button onclick="changeView(\'create-task\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2">';
-            html += '<span class="material-icons md-18">add</span> Create Task';
+            html += '<span class="material-icons md-18">add</span> <span class="hidden sm:inline">Create Task</span>';
             html += '</button>';
             html += '</div>';
             
@@ -4195,18 +4195,18 @@
             const inProgressTasks = tasks.filter(t => t.status === 'In Progress').length;
             const completedTasks = tasks.filter(t => t.status === 'Completed').length;
             
-            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
-            html += '<div class="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">';
-            html += '<div class="text-sm font-medium text-yellow-700">Pending</div>';
-            html += '<div class="text-3xl font-bold text-yellow-900 mt-2">' + pendingTasks + '</div>';
+            html += '<div class="grid grid-cols-3 gap-2 sm:gap-4">';
+            html += '<div class="bg-yellow-50 rounded-lg p-3 sm:p-4 border-l-4 border-yellow-500">';
+            html += '<div class="text-xs sm:text-sm font-medium text-yellow-700">Pending</div>';
+            html += '<div class="text-2xl sm:text-3xl font-bold text-yellow-900 mt-1 sm:mt-2">' + pendingTasks + '</div>';
             html += '</div>';
-            html += '<div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">';
-            html += '<div class="text-sm font-medium text-blue-700">In Progress</div>';
-            html += '<div class="text-3xl font-bold text-blue-900 mt-2">' + inProgressTasks + '</div>';
+            html += '<div class="bg-blue-50 rounded-lg p-3 sm:p-4 border-l-4 border-blue-500">';
+            html += '<div class="text-xs sm:text-sm font-medium text-blue-700">In Progress</div>';
+            html += '<div class="text-2xl sm:text-3xl font-bold text-blue-900 mt-1 sm:mt-2">' + inProgressTasks + '</div>';
             html += '</div>';
-            html += '<div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">';
-            html += '<div class="text-sm font-medium text-green-700">Completed</div>';
-            html += '<div class="text-3xl font-bold text-green-900 mt-2">' + completedTasks + '</div>';
+            html += '<div class="bg-green-50 rounded-lg p-3 sm:p-4 border-l-4 border-green-500">';
+            html += '<div class="text-xs sm:text-sm font-medium text-green-700">Completed</div>';
+            html += '<div class="text-2xl sm:text-3xl font-bold text-green-900 mt-1 sm:mt-2">' + completedTasks + '</div>';
             html += '</div>';
             html += '</div>';
             
@@ -4218,7 +4218,15 @@
                 html += '<p class="text-gray-400 text-sm mt-2">Create your first task to get started</p>';
                 html += '</div>';
             } else {
-                html += '<div class="bg-white rounded-lg shadow overflow-hidden">';
+                // Mobile: Card View (default)
+                html += '<div class="block lg:hidden space-y-4">';
+                tasks.forEach(task => {
+                    html += renderTaskCardMobile(task);
+                });
+                html += '</div>';
+                
+                // Desktop: Table View
+                html += '<div class="hidden lg:block bg-white rounded-lg shadow overflow-hidden">';
                 html += '<table class="min-w-full">';
                 html += '<thead class="bg-gray-50">';
                 html += '<tr>';
@@ -4270,6 +4278,85 @@
                 html += '</table>';
                 html += '</div>';
             }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderTaskCardMobile(task) {
+            const staffName = task.staff ? task.staff.full_name : 'Unassigned';
+            const staffColor = task.staff ? task.staff.color_code : '#666';
+            
+            const priorityColors = {
+                'Urgent': 'bg-red-100 text-red-800 border-red-300',
+                'High': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+                'Medium': 'bg-blue-100 text-blue-800 border-blue-300',
+                'Low': 'bg-gray-100 text-gray-800 border-gray-300'
+            };
+            
+            const statusColors = {
+                'Pending': 'bg-yellow-100 text-yellow-800',
+                'In Progress': 'bg-blue-100 text-blue-800',
+                'Completed': 'bg-green-100 text-green-800',
+                'Cancelled': 'bg-gray-100 text-gray-800'
+            };
+            
+            const priorityClass = priorityColors[task.priority] || priorityColors['Medium'];
+            const statusClass = statusColors[task.status] || 'bg-gray-100 text-gray-800';
+            
+            const dueDateDisplay = task.due_date 
+                ? new Date(task.due_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})
+                : 'No date';
+            
+            let html = '<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">';
+            
+            // Header: Priority + Status
+            html += '<div class="flex items-center justify-between mb-3">';
+            html += '<span class="px-2 py-1 rounded-full text-xs font-medium border ' + priorityClass + '">' + task.priority + '</span>';
+            html += '<span class="px-2 py-1 rounded-full text-xs font-medium ' + statusClass + '">' + task.status + '</span>';
+            html += '</div>';
+            
+            // Title
+            html += '<h3 class="font-bold text-gray-900 mb-2">' + escapeHtml(task.title) + '</h3>';
+            
+            // Description
+            if (task.description) {
+                html += '<p class="text-sm text-gray-600 mb-3">' + escapeHtml(task.description) + '</p>';
+            }
+            
+            // Details
+            html += '<div class="space-y-2 text-sm mb-4">';
+            html += '<div class="flex items-center gap-2">';
+            html += '<span class="material-icons md-16 text-gray-400">person</span>';
+            html += '<span style="color: ' + staffColor + '">' + staffName + '</span>';
+            html += '</div>';
+            html += '<div class="flex items-center gap-2">';
+            html += '<span class="material-icons md-16 text-gray-400">event</span>';
+            html += '<span class="text-gray-700">' + dueDateDisplay + '</span>';
+            html += '</div>';
+            if (task.category) {
+                html += '<div class="flex items-center gap-2">';
+                html += '<span class="material-icons md-16 text-gray-400">label</span>';
+                html += '<span class="text-gray-700">' + task.category + '</span>';
+                html += '</div>';
+            }
+            if (task.location) {
+                html += '<div class="flex items-center gap-2">';
+                html += '<span class="material-icons md-16 text-gray-400">place</span>';
+                html += '<span class="text-gray-700">' + escapeHtml(task.location) + '</span>';
+                html += '</div>';
+            }
+            html += '</div>';
+            
+            // Action Buttons
+            html += '<div class="flex gap-2 pt-3 border-t border-gray-200">';
+            html += '<button onclick="editTask(\'' + task.id + '\')" class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">';
+            html += '<span class="material-icons md-18">edit</span> Edit';
+            html += '</button>';
+            html += '<button onclick="deleteTask(\'' + task.id + '\')" class="flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">';
+            html += '<span class="material-icons md-18">delete</span>';
+            html += '</button>';
+            html += '</div>';
             
             html += '</div>';
             return html;
