@@ -4208,6 +4208,7 @@
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>';
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>';
                 html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>';
+                html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
                 html += '</tr>';
                 html += '</thead>';
                 html += '<tbody class="divide-y divide-gray-200">';
@@ -4233,6 +4234,16 @@
                     html += '<td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium ' + priorityClass + '">' + task.priority + '</span></td>';
                     html += '<td class="px-4 py-3 text-sm">' + (task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date') + '</td>';
                     html += '<td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusClass + '">' + task.status + '</span></td>';
+                    html += '<td class="px-4 py-3 text-sm">';
+                    html += '<div class="flex gap-2">';
+                    html += '<button onclick="editTask(\'' + task.id + '\')" class="text-blue-600 hover:text-blue-800" title="Edit">';
+                    html += '<span class="material-icons md-18">edit</span>';
+                    html += '</button>';
+                    html += '<button onclick="deleteTask(\'' + task.id + '\')" class="text-red-600 hover:text-red-800" title="Delete">';
+                    html += '<span class="material-icons md-18">delete</span>';
+                    html += '</button>';
+                    html += '</div>';
+                    html += '</td>';
                     html += '</tr>';
                 });
                 
@@ -4413,6 +4424,231 @@
             } catch (error) {
                 console.error('Error creating task:', error);
                 alert('Error creating task: ' + error.message);
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+            
+            try {
+                const {error} = await supabaseClient
+                    .from('tasks')
+                    .delete()
+                    .eq('id', taskId);
+                
+                if (error) throw error;
+                
+                alert('Task deleted successfully!');
+                await loadTasks();
+                renderApp();
+                
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                alert('Error deleting task: ' + error.message);
+            }
+        }
+
+        function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) {
+                alert('Task not found');
+                return;
+            }
+            
+            let html = '<div class="space-y-6">';
+            
+            // Header with Back Button
+            html += '<div class="flex items-center gap-4">';
+            html += '<button onclick="changeView(\'tasks\')" class="text-gray-600 hover:text-gray-900">';
+            html += '<span class="material-icons">arrow_back</span>';
+            html += '</button>';
+            html += '<h2 class="text-2xl font-bold text-gray-900">Edit Task</h2>';
+            html += '</div>';
+            
+            // Form
+            html += '<form id="editTaskForm" onsubmit="handleEditTaskSubmit(event, \'' + task.id + '\')" class="bg-white rounded-lg shadow p-6 space-y-6">';
+            
+            // Task Title
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>';
+            html += '<input type="text" id="editTaskTitle" required value="' + escapeHtml(task.title) + '" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '</div>';
+            
+            // Description
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Description</label>';
+            html += '<textarea id="editTaskDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">' + (task.description ? escapeHtml(task.description) : '') + '</textarea>';
+            html += '</div>';
+            
+            // Row 1: Assigned To + Priority
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+            
+            // Assigned To
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Assign To</label>';
+            html += '<select id="editTaskAssignedTo" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '<option value="">Unassigned</option>';
+            staff.forEach(s => {
+                const selected = task.assigned_to === s.id ? 'selected' : '';
+                html += '<option value="' + s.id + '" ' + selected + '>' + escapeHtml(s.full_name) + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+            
+            // Priority
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>';
+            html += '<select id="editTaskPriority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            ['Low', 'Medium', 'High', 'Urgent'].forEach(p => {
+                const selected = task.priority === p ? 'selected' : '';
+                html += '<option value="' + p + '" ' + selected + '>' + p + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+            
+            html += '</div>';
+            
+            // Row 2: Due Date + Due Time
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+            
+            // Due Date
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>';
+            html += '<input type="date" id="editTaskDueDate" value="' + (task.due_date || '') + '" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '</div>';
+            
+            // Due Time
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Due Time</label>';
+            html += '<input type="time" id="editTaskDueTime" value="' + (task.due_time || '') + '" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '</div>';
+            
+            html += '</div>';
+            
+            // Row 3: Category + Status
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+            
+            // Category
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Category</label>';
+            html += '<select id="editTaskCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '<option value="">Select category...</option>';
+            ['Pickup', 'Purchase', 'Delivery', 'Inspection', 'General'].forEach(c => {
+                const selected = task.category === c ? 'selected' : '';
+                html += '<option value="' + c + '" ' + selected + '>' + c + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+            
+            // Status
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Status</label>';
+            html += '<select id="editTaskStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            ['Pending', 'In Progress', 'Completed', 'Cancelled'].forEach(s => {
+                const selected = task.status === s ? 'selected' : '';
+                html += '<option value="' + s + '" ' + selected + '>' + s + '</option>';
+            });
+            html += '</select>';
+            html += '</div>';
+            
+            html += '</div>';
+            
+            // Location
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Location</label>';
+            html += '<input type="text" id="editTaskLocation" value="' + (task.location ? escapeHtml(task.location) : '') + '" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">';
+            html += '</div>';
+            
+            // Notes
+            html += '<div>';
+            html += '<label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>';
+            html += '<textarea id="editTaskNotes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">' + (task.notes ? escapeHtml(task.notes) : '') + '</textarea>';
+            html += '</div>';
+            
+            // Buttons
+            html += '<div class="flex gap-3 justify-end pt-4 border-t">';
+            html += '<button type="button" onclick="changeView(\'tasks\')" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>';
+            html += '<button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Update Task</button>';
+            html += '</div>';
+            
+            html += '</form>';
+            html += '</div>';
+            
+            document.getElementById('content').innerHTML = html;
+        }
+
+        async function handleEditTaskSubmit(event, taskId) {
+            event.preventDefault();
+            
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="material-icons animate-spin">refresh</span> Updating...';
+            
+            try {
+                // Get form values
+                const title = document.getElementById('editTaskTitle').value.trim();
+                const description = document.getElementById('editTaskDescription').value.trim();
+                const assignedTo = document.getElementById('editTaskAssignedTo').value || null;
+                const priority = document.getElementById('editTaskPriority').value;
+                const dueDate = document.getElementById('editTaskDueDate').value || null;
+                const dueTime = document.getElementById('editTaskDueTime').value || null;
+                const category = document.getElementById('editTaskCategory').value || null;
+                const status = document.getElementById('editTaskStatus').value;
+                const location = document.getElementById('editTaskLocation').value.trim() || null;
+                const notes = document.getElementById('editTaskNotes').value.trim() || null;
+                
+                // Validate required fields
+                if (!title) {
+                    alert('Please enter a task title');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                    return;
+                }
+                
+                // Prepare update data
+                const updateData = {
+                    title: title,
+                    description: description || null,
+                    assigned_to: assignedTo,
+                    priority: priority,
+                    status: status,
+                    category: category,
+                    due_date: dueDate,
+                    due_time: dueTime,
+                    location: location,
+                    notes: notes,
+                    updated_at: new Date().toISOString()
+                };
+                
+                // If status changed to Completed, set completed_at
+                const oldTask = tasks.find(t => t.id === taskId);
+                if (status === 'Completed' && oldTask.status !== 'Completed') {
+                    updateData.completed_at = new Date().toISOString();
+                } else if (status !== 'Completed') {
+                    updateData.completed_at = null;
+                }
+                
+                // Update in database
+                const {error} = await supabaseClient
+                    .from('tasks')
+                    .update(updateData)
+                    .eq('id', taskId);
+                
+                if (error) throw error;
+                
+                // Success
+                alert('Task updated successfully!');
+                await loadTasks();
+                changeView('tasks');
+                
+            } catch (error) {
+                console.error('Error updating task:', error);
+                alert('Error updating task: ' + error.message);
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
             }
