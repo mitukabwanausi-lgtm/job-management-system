@@ -1032,12 +1032,30 @@
             try {
                 const {data, error} = await supabaseClient
                     .from('tasks')
-                    .select('*, staff:assigned_to (full_name, color_code)')
-                    .order('due_date', {ascending: true})
-                    .order('due_time', {ascending: true});
+                    .select('*')
+                    .order('due_date', {ascending: true, nullsFirst: false})
+                    .order('due_time', {ascending: true, nullsFirst: false});
                 
                 if (error) throw error;
-                tasks = data || [];
+                
+                // Manually attach staff info to each task
+                if (data) {
+                    tasks = data.map(task => {
+                        if (task.assigned_to) {
+                            const assignedStaff = staff.find(s => s.id === task.assigned_to);
+                            if (assignedStaff) {
+                                task.staff = {
+                                    full_name: assignedStaff.full_name,
+                                    color_code: assignedStaff.color_code
+                                };
+                            }
+                        }
+                        return task;
+                    });
+                } else {
+                    tasks = [];
+                }
+                
                 return tasks;
             } catch (error) {
                 console.error('Error loading tasks:', error);
@@ -2884,7 +2902,8 @@
             if (currentView === 'staff-management') return renderStaffManagement();
             if (currentView === 'review-requests') return renderReviewRequests();
             if (currentView === 'tasks') return renderTasksView();
-            if (currentView === 'create-task') return renderTaskForm(); 
+            if (currentView === 'create-task') return renderTaskForm();
+            if (currentView === 'edit-task') return renderEditTaskForm(); 
             if (currentView === 'staff-schedule') return renderStaffSchedule();
             return renderDashboard();
         }
@@ -4459,6 +4478,20 @@
                 return;
             }
             
+            // Set a temporary view state
+            currentView = 'edit-task';
+            window.currentEditTaskId = taskId;
+            renderApp();
+        }
+
+        function renderEditTaskForm() {
+            const taskId = window.currentEditTaskId;
+            const task = tasks.find(t => t.id === taskId);
+            
+            if (!task) {
+                return '<div class="text-center p-12">Task not found</div>';
+            }
+            
             let html = '<div class="space-y-6">';
             
             // Header with Back Button
@@ -4578,7 +4611,7 @@
             html += '</form>';
             html += '</div>';
             
-            document.getElementById('content').innerHTML = html;
+            return html;
         }
 
         async function handleEditTaskSubmit(event, taskId) {
