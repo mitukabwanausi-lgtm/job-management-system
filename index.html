@@ -246,6 +246,10 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">group</span> Staff
                 </button>
+                <button onclick="changeView('tasks'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">task_alt</span> Tasks
+                </button>
                 <hr class="my-4">
                 <button onclick="logout(); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium flex items-center gap-3">
@@ -2846,6 +2850,7 @@
                 {key: 'archived-jobs', label: 'Archived'},
                 {key: 'review-requests', label: 'Reviews'},
                 {key: 'staff-management', label: 'Staff'},
+                {key: 'tasks', label: 'Tasks'},
                 {key: 'staff-schedule', label: 'Schedule'}
             ];
             const navButtons = views.map(v => '<button onclick="changeView(\'' + v.key + '\')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (currentView === v.key ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50') + '">' + v.label + '</button>').join('');
@@ -2860,6 +2865,7 @@
             if (currentView === 'archived-jobs') return renderJobsList('archived');
             if (currentView === 'staff-management') return renderStaffManagement();
             if (currentView === 'review-requests') return renderReviewRequests();
+            if (currentView === 'tasks') return renderTasksView(); 
             if (currentView === 'staff-schedule') return renderStaffSchedule();
             return renderDashboard();
         }
@@ -4133,6 +4139,19 @@
 
             html += '</div>';
             return html;
+        }
+
+        function renderTasksView() {
+            return '<div class="space-y-6">' +
+                '<div class="flex justify-between items-center">' +
+                '<h2 class="text-2xl font-bold text-gray-900">Tasks</h2>' +
+                '<button onclick="alert(\'Create task feature coming soon!\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">+ Create Task</button>' +
+                '</div>' +
+                '<div class="bg-white rounded-lg shadow p-12 text-center">' +
+                '<span class="material-icons text-gray-300" style="font-size: 64px;">task_alt</span>' +
+                '<p class="text-gray-500 mt-4">Tasks feature - Coming soon!</p>' +
+                '</div>' +
+                '</div>';
         }
 
         function renderDailyScheduleView(scheduleDate, dayJobs) {
