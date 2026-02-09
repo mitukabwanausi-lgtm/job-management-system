@@ -226,10 +226,6 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">dashboard</span> Dashboard
                 </button>
-                <button onclick="changeView('create-job'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <span class="material-icons md-18">add_circle</span> Create Job
-                </button>
                 <button onclick="changeView('all-jobs'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">work</span> Active Jobs
@@ -2845,7 +2841,6 @@
         function renderHeader() {
             const views = [
                 {key: 'dashboard', label: 'Dashboard'},
-                {key: 'create-job', label: 'Create'},
                 {key: 'all-jobs', label: 'Active'},
                 {key: 'completed-jobs', label: 'Completed'},
                 {key: 'archived-jobs', label: 'Archived'},
