@@ -4257,7 +4257,7 @@
             html += '</div>';
             
             // Form
-            html += '<form id="taskForm" class="bg-white rounded-lg shadow p-6 space-y-6">';
+            html += '<form id="taskForm" onsubmit="handleTaskSubmit(event)" class="bg-white rounded-lg shadow p-6 space-y-6">';
             
             // Task Title
             html += '<div>';
@@ -4350,6 +4350,72 @@
             html += '</div>';
             
             return html;
+        }
+
+        async function handleTaskSubmit(event) {
+            event.preventDefault();
+            
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="material-icons animate-spin">refresh</span> Creating...';
+            
+            try {
+                // Get form values
+                const title = document.getElementById('taskTitle').value.trim();
+                const description = document.getElementById('taskDescription').value.trim();
+                const assignedTo = document.getElementById('taskAssignedTo').value || null;
+                const priority = document.getElementById('taskPriority').value;
+                const dueDate = document.getElementById('taskDueDate').value || null;
+                const dueTime = document.getElementById('taskDueTime').value || null;
+                const category = document.getElementById('taskCategory').value || null;
+                const location = document.getElementById('taskLocation').value.trim() || null;
+                const notes = document.getElementById('taskNotes').value.trim() || null;
+                
+                // Validate required fields
+                if (!title) {
+                    alert('Please enter a task title');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                    return;
+                }
+                
+                // Prepare task data
+                const taskData = {
+                    title: title,
+                    description: description || null,
+                    assigned_to: assignedTo,
+                    created_by: currentUser.id,
+                    priority: priority,
+                    status: 'Pending',
+                    category: category,
+                    due_date: dueDate,
+                    due_time: dueTime,
+                    location: location,
+                    notes: notes,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                // Insert into database
+                const {data, error} = await supabaseClient
+                    .from('tasks')
+                    .insert([taskData])
+                    .select();
+                
+                if (error) throw error;
+                
+                // Success
+                alert('Task created successfully!');
+                await loadTasks(); // Reload tasks
+                changeView('tasks'); // Go back to tasks list
+                
+            } catch (error) {
+                console.error('Error creating task:', error);
+                alert('Error creating task: ' + error.message);
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
         }
 
         function renderDailyScheduleView(scheduleDate, dayJobs) {
