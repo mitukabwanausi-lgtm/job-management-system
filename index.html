@@ -2412,9 +2412,20 @@
                     renderApp();
                 }
             } catch (error) {
-                console.error('Error saving job:', error);
-                alert('Failed to save job: ' + error.message);
-            }
+    console.error('Error saving job:', error);
+    console.error('Full error:', JSON.stringify(error, null, 2));
+    console.error('Error details:', error.details);
+    console.error('Error hint:', error.hint);
+    console.error('Error code:', error.code);
+    
+    let errorMsg = 'Failed to save job: ' + (error.message || 'Unknown error');
+    if (error.details) errorMsg += '\n\nDetails: ' + error.details;
+    if (error.hint) errorMsg += '\n\nHint: ' + error.hint;
+    
+    alert(errorMsg);
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonText;
+}
         }
 
         function generateTimeOptions(selectedTime) {
@@ -5950,3 +5961,4 @@
 </body>
 
 </html>
+
