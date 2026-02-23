@@ -226,6 +226,10 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">dashboard</span> Dashboard
                 </button>
+                <button onclick="changeView('pending-review'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-orange-50 text-orange-600 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">schedule</span> Pending Review
+                </button>
                 <button onclick="changeView('all-jobs'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">work</span> Active Jobs
@@ -247,7 +251,7 @@
                     <span class="material-icons md-18">group</span> Staff
                 </button>
                 <button onclick="changeView('tasks'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium flex items-center gap-3">
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">task_alt</span> Tasks
                 </button>
                 <hr class="my-4">
@@ -2881,6 +2885,7 @@
         function renderHeader() {
             const views = [
                 {key: 'dashboard', label: 'Dashboard'},
+                {key: 'pending-review', label: 'Pending'},
                 {key: 'all-jobs', label: 'Active'},
                 {key: 'completed-jobs', label: 'Completed'},
                 {key: 'archived-jobs', label: 'Archived'},
@@ -2892,12 +2897,21 @@
             const navButtons = views.map(v => {
                 const isActive = currentView === v.key;
                 const isTasks = v.key === 'tasks';
-                let buttonClass = 'px-4 py-2 rounded-lg text-sm font-medium transition-colors ';
-                if (isActive) {
-                    buttonClass += isTasks ? 'bg-red-600 text-white' : 'bg-blue-50 text-blue-700';
+                const isPending = v.key === 'pending-review';
+                let activeClass, inactiveClass;
+                
+                if (isTasks) {
+                    activeClass = 'bg-red-600 text-white';
+                    inactiveClass = 'text-red-600 hover:bg-red-50';
+                } else if (isPending) {
+                    activeClass = 'bg-orange-500 text-white';
+                    inactiveClass = 'text-orange-600 hover:bg-orange-50';
                 } else {
-                    buttonClass += isTasks ? 'text-red-600 hover:bg-red-50' : 'text-gray-600 hover:bg-gray-50';
+                    activeClass = 'bg-blue-50 text-blue-700';
+                    inactiveClass = 'text-gray-600 hover:bg-gray-50';
                 }
+                
+                const buttonClass = 'px-4 py-2 rounded-lg text-sm font-medium transition-colors ' + (isActive ? activeClass : inactiveClass);
                 return '<button onclick="changeView(\'' + v.key + '\')" class="' + buttonClass + '">' + v.label + '</button>';
             }).join('');
             return '<nav class="bg-white border-b border-gray-200 sticky top-0 z-30"><div class="max-w-full mx-auto px-4"><div class="flex justify-between items-center h-16"><div class="flex items-center space-x-4"><button onclick="toggleMobileMenu()" class="md:hidden text-gray-600 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button><div class="flex items-center gap-3 cursor-pointer" onclick="changeView(\'dashboard\')"><img src="https://scratchvanish.com.au/wp-content/uploads/2021/11/logo.png" alt="Company Logo" class="h-8 w-auto"><h1 class="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors">Job Management</h1></div><div class="hidden md:flex space-x-1">' + navButtons + '</div></div><div class="flex items-center space-x-4"><span class="text-sm text-gray-600 hidden sm:inline">Hi, ' + escapeHtml(currentUser.full_name) + '</span><button onclick="logout()" class="text-sm text-red-600 hover:text-red-700 font-medium">Logout</button></div></div></div></nav>';
@@ -2906,6 +2920,7 @@
         function renderContent() {
             if (currentView === 'dashboard') return renderDashboard();
             if (currentView === 'create-job') return renderJobForm();
+            if (currentView === 'pending-review') return renderJobsList('pending');
             if (currentView === 'all-jobs') return renderJobsList(false);
             if (currentView === 'completed-jobs') return renderJobsList(true);
             if (currentView === 'archived-jobs') return renderJobsList('archived');
@@ -3685,7 +3700,11 @@
             let title;
             let emptyMsg;
 
-            if (showCompleted === 'archived') {
+            if (showCompleted === 'pending') {
+                filteredJobs = jobs.filter(j => j.status === 'Pending Review');
+                title = 'Pending Review - Client Bookings';
+                emptyMsg = 'No pending bookings to review.';
+            } else if (showCompleted === 'archived') {
                 filteredJobs = jobs.filter(j => j.status === 'Cancelled');
                 title = 'Archived Jobs';
                 emptyMsg = 'No archived jobs yet.';
@@ -3694,7 +3713,7 @@
                 title = 'Completed Jobs';
                 emptyMsg = 'No completed jobs yet.';
             } else {
-                filteredJobs = jobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled');
+                filteredJobs = jobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled' && j.status !== 'Pending Review');
                 title = 'Active Jobs';
                 emptyMsg = 'No active jobs.';
             }
