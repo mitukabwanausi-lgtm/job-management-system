@@ -279,11 +279,26 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (error) {
-                console.error('Error submitting booking:', error);
-                alert('Sorry, there was an error submitting your booking. Please try again or call us directly.');
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonText;
-            }
+    console.error('Error submitting booking:', error);
+    
+    // Detailed error logging
+    console.error('Full error object:', JSON.stringify(error, null, 2));
+    console.error('Error message:', error.message);
+    console.error('Error details:', error.details);
+    console.error('Error hint:', error.hint);
+    console.error('Error code:', error.code);
+    
+    // Show detailed error to help debug
+    let errorMessage = 'Sorry, there was an error submitting your booking.\n\n';
+    errorMessage += 'Error: ' + (error.message || 'Unknown error') + '\n';
+    if (error.details) errorMessage += 'Details: ' + error.details + '\n';
+    if (error.hint) errorMessage += 'Hint: ' + error.hint + '\n';
+    errorMessage += '\nPlease try again or call us directly.';
+    
+    alert(errorMessage);
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonText;
+}
         }
 
         function calculateEndTime(startTime) {
