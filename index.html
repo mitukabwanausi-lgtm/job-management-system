@@ -3154,10 +3154,8 @@
             console.log('Active jobs (excluding Completed & Cancelled):', activeJobs);
             console.log('All jobs count:', jobs.length);
 
-            const unassigned = jobs.filter(j => {
-                const jobDate = new Date(j.date);
-                jobDate.setHours(0, 0, 0, 0);
-                return j.status === 'Unassigned' && jobDate.getTime() === today.getTime();
+            const pendingReview = jobs.filter(j => {
+                return j.status === 'Pending Review';
             }).length;
 
             const assigned = jobs.filter(j => {
@@ -3210,7 +3208,7 @@
             html += '<h2 class="text-2xl font-semibold text-gray-900">Dashboard</h2>';
             html += '<div class="grid grid-cols-2 md:grid-cols-5 gap-4">';
             html += '<div onclick="changeView(\'all-jobs\')" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Jobs</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + activeJobs + '</div></div>';
-            html += '<div onclick="filterTodayUnassigned()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today\'s Unassigned</div><div class="text-3xl font-semibold text-yellow-600 mt-2">' + unassigned + '</div></div>';
+            html += '<div onclick="changeView(\'pending-review\')" class="bg-white rounded-xl border border-orange-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-orange-500 uppercase tracking-wide">Pending Review</div><div class="text-3xl font-semibold text-orange-600 mt-2">' + pendingReview + '</div></div>';
             html += '<div onclick="filterTodayAssigned()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Today\'s Assigned</div><div class="text-3xl font-semibold text-purple-600 mt-2">' + assigned + '</div></div>';
             html += '<div onclick="filterCompletedToday()" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Done Today</div><div class="text-3xl font-semibold text-green-600 mt-2">' + completedToday + '</div></div>';
             const reviewRequestsCount = jobs.filter(j => j.status === 'Completed' && j.request_review === true && j.review_sent !== true).length;
