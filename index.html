@@ -2897,6 +2897,60 @@
             return 'bg-gray-100 text-gray-800';
         }
 
+        function getCategoryColors(category) {
+            const colors = {
+                'Bumper Repair': {
+                    bg: 'bg-blue-50',
+                    border: 'border-blue-200',
+                    text: 'text-blue-700',
+                    badge: 'bg-blue-100 text-blue-800 border-blue-300'
+                },
+                'Panel Repair': {
+                    bg: 'bg-green-50',
+                    border: 'border-green-200',
+                    text: 'text-green-700',
+                    badge: 'bg-green-100 text-green-800 border-green-300'
+                },
+                'Wheel Repair': {
+                    bg: 'bg-purple-50',
+                    border: 'border-purple-200',
+                    text: 'text-purple-700',
+                    badge: 'bg-purple-100 text-purple-800 border-purple-300'
+                },
+                'Factory Repair': {
+                    bg: 'bg-orange-50',
+                    border: 'border-orange-200',
+                    text: 'text-orange-700',
+                    badge: 'bg-orange-100 text-orange-800 border-orange-300'
+                },
+                'Minor Dent Repair': {
+                    bg: 'bg-yellow-50',
+                    border: 'border-yellow-200',
+                    text: 'text-yellow-700',
+                    badge: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                },
+                'Multiple Repair': {
+                    bg: 'bg-pink-50',
+                    border: 'border-pink-200',
+                    text: 'text-pink-700',
+                    badge: 'bg-pink-100 text-pink-800 border-pink-300'
+                }
+            };
+            
+            return colors[category] || {
+                bg: 'bg-white',
+                border: 'border-gray-200',
+                text: 'text-gray-700',
+                badge: 'bg-gray-100 text-gray-600 border-gray-300'
+            };
+        }
+
+        function getCategoryBadge(category) {
+            if (!category) return '';
+            const colors = getCategoryColors(category);
+            return '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ' + colors.badge + '">' + category + '</span>';
+        }
+
         function renderApp() {
             const app = document.getElementById('app');
             if (!currentUser) {
@@ -3993,7 +4047,8 @@
             const borderColor = job.priority === 'Urgent' ? 'border-red-500' : job.priority === 'High' ? 'border-yellow-500' : 'border-gray-300';
             const statusBg = getStatusClass(job.status);
             const staffDisplay = job.staff ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>' : 'Unassigned';
-            return '<div class="job-card bg-white border-l-4 ' + borderColor + ' p-4 border-b hover:bg-gray-50" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="text-xs text-gray-500 mt-1 flex items-center gap-1"><span class="material-icons md-18">schedule</span>' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div>' + (job.car_make ? '<div class="text-xs text-blue-600 mt-1 flex items-center gap-1"><span class="material-icons md-18">directions_car</span>' + escapeHtml(job.car_make) + (job.car_model ? ' - ' + escapeHtml(job.car_model) : '') + (job.car_colour ? ' (' + escapeHtml(job.car_colour) + ')' : '') + '</div>' : '') + '</div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div class="flex items-center gap-1"><span class="material-icons md-18">person</span>' + staffDisplay + '</div><div class="flex items-center gap-1"><span class="material-icons md-18">attach_money</span>$' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
+            const categoryColors = getCategoryColors(job.category);
+            return '<div class="job-card border-l-4 ' + borderColor + ' ' + categoryColors.bg + ' ' + categoryColors.border + ' p-4 border-b hover:bg-gray-100" onclick="openMobileJobModal(\'' + job.id + '\')"><div class="flex justify-between items-start mb-2"><div class="flex-1"><div class="font-semibold text-gray-900">' + escapeHtml(job.client_name) + '</div><div class="mt-1">' + getCategoryBadge(job.category) + '</div><div class="text-xs text-gray-500 mt-1 flex items-center gap-1"><span class="material-icons md-18">schedule</span>' + formatTime12Hour(job.start_time) + ' - ' + formatTime12Hour(job.end_time) + '</div>' + (job.car_make ? '<div class="text-xs text-blue-600 mt-1 flex items-center gap-1"><span class="material-icons md-18">directions_car</span>' + escapeHtml(job.car_make) + (job.car_model ? ' - ' + escapeHtml(job.car_model) : '') + (job.car_colour ? ' (' + escapeHtml(job.car_colour) + ')' : '') + '</div>' : '') + '</div><span class="px-2 py-1 rounded-full text-xs font-medium ' + statusBg + '">' + job.status + '</span></div><div class="space-y-1 text-sm text-gray-600"><div class="flex items-center gap-1"><span class="material-icons md-18">person</span>' + staffDisplay + '</div><div class="flex items-center gap-1"><span class="material-icons md-18">attach_money</span>$' + parseFloat(job.price).toFixed(2) + gstBadge + '</div></div></div>';
         }
 
         function renderDesktopTable(filteredJobs) {
@@ -4007,7 +4062,8 @@
                     ? '<span style="color: ' + job.staff.color_code + '">' + job.staff.full_name + '</span>'
                     : '<span class="text-gray-400">Unassigned</span>';
 
-                let row = '<tr class="' + (job.status === 'In Progress' ? 'in-progress-row' : 'hover:bg-gray-50') + '">';
+                const categoryColors = getCategoryColors(job.category);
+                let row = '<tr class="' + categoryColors.bg + ' ' + categoryColors.border + ' border-l-4 ' + (job.status === 'In Progress' ? 'in-progress-row' : 'hover:bg-gray-100') + '">';
 
 
                 if (visibleColumns.date) {
@@ -4015,6 +4071,7 @@
                 }
                 const reviewBadge = job.request_review ? '<span class="text-yellow-500 text-lg mr-2" title="Review requested">⭐</span>' : '';
                 row += '<td class="px-4 py-2 text-sm whitespace-nowrap">' + reviewBadge + '<button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-3" title="Duplicate"><span class="material-icons md-18">content_copy</span></button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit"><span class="material-icons md-18">edit</span></button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800" title="Delete"><span class="material-icons md-18">delete</span></button></td>';
+                row += '<td class="px-4 py-2 text-sm whitespace-nowrap">' + getCategoryBadge(job.category) + '</td>';
                 if (visibleColumns.start_time) {
                     row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.start_time) + '</span></td>';
                 }
@@ -4084,6 +4141,7 @@
             let headers = '<thead class="bg-gray-50"><tr>';
             if (visibleColumns.date) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="min-width: 140px;">Date</th>';
             headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>';
+            headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>';
             if (visibleColumns.start_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>';
             if (visibleColumns.end_time) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>';
             if (visibleColumns.assigned_to) headers += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>';
@@ -6003,4 +6061,3 @@
 </body>
 
 </html>
-
