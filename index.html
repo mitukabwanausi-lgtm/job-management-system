@@ -3279,6 +3279,38 @@
             html += '<div onclick="changeView(\'create-job\')" class="bg-blue-600 rounded-xl border border-blue-700 p-5 hover:shadow-md transition-all cursor-pointer transform hover:scale-105"><div class="text-xs font-medium text-blue-100 uppercase tracking-wide">Quick Action</div><div class="text-2xl font-semibold text-white mt-2 flex items-center gap-2"><span class="material-icons">add_circle</span>Create Job</div></div>';
             html += '</div>';
             html += '<div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white">';
+            // Category breakdown card
+            const categoryStats = [
+                {name: 'Bumper Repair', color: 'bg-blue-500', count: jobs.filter(j => j.category === 'Bumper Repair').length},
+                {name: 'Panel Repair', color: 'bg-green-500', count: jobs.filter(j => j.category === 'Panel Repair').length},
+                {name: 'Wheel Repair', color: 'bg-purple-500', count: jobs.filter(j => j.category === 'Wheel Repair').length},
+                {name: 'Factory Repair', color: 'bg-orange-500', count: jobs.filter(j => j.category === 'Factory Repair').length},
+                {name: 'Minor Dent Repair', color: 'bg-yellow-500', count: jobs.filter(j => j.category === 'Minor Dent Repair').length},
+                {name: 'Multiple Repair', color: 'bg-pink-500', count: jobs.filter(j => j.category === 'Multiple Repair').length},
+                {name: 'Uncategorized', color: 'bg-gray-400', count: jobs.filter(j => !j.category).length}
+            ];
+            const totalCategorizedJobs = categoryStats.reduce((sum, cat) => sum + cat.count, 0);
+
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">';
+            html += '<h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"><span class="material-icons text-blue-600">category</span>Jobs by Category</h3>';
+            html += '<div class="space-y-2">';
+            categoryStats.forEach(cat => {
+                if (cat.count > 0) {
+                    html += '<div onclick="currentCategoryFilter = \'' + (cat.name === 'Uncategorized' ? 'uncategorized' : cat.name) + '\'; changeView(\'all-jobs\');" class="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors">';
+                    html += '<div class="flex items-center gap-3">';
+                    html += '<span class="w-3 h-3 rounded-full ' + cat.color + '"></span>';
+                    html += '<span class="text-sm font-medium text-gray-700">' + cat.name + '</span>';
+                    html += '</div>';
+                    html += '<span class="text-sm font-bold text-gray-900">' + cat.count + '</span>';
+                    html += '</div>';
+                }
+            });
+            html += '</div>';
+            html += '<div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">';
+            html += '<span class="text-sm font-medium text-gray-600">Total Jobs</span>';
+            html += '<span class="text-lg font-bold text-gray-900">' + totalCategorizedJobs + '</span>';
+            html += '</div>';
+            html += '</div>';
             html += '<h3 class="text-sm font-medium mb-3 opacity-90">Today\'s Revenue</h3>';
             html += '<div class="text-4xl font-semibold mb-4">$' + todayRevenue.toFixed(2) + '</div>';
             html += '<div class="flex space-x-6 text-sm">';
