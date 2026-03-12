@@ -812,6 +812,7 @@
         let selectedMobileJob = null;
         let currentStaffFilter = '';
         let currentDateFilter = '';
+        let currentCategoryFilter = null;
         let dashboardTimePeriod = 'this_month';
         let currentReviewTab = 'pending';
         let showAllColumns = false;
@@ -2951,6 +2952,11 @@
             return '<span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ' + colors.badge + '">' + category + '</span>';
         }
 
+        function filterByCategory(category) {
+            currentCategoryFilter = category;
+            renderApp();
+        }
+
         function renderApp() {
             const app = document.getElementById('app');
             if (!currentUser) {
@@ -3894,8 +3900,30 @@
             if (window.statusFilter) {
                 filteredJobs = filteredJobs.filter(j => j.status === window.statusFilter);
             }
+            if (currentCategoryFilter) {
+                if (currentCategoryFilter === 'uncategorized') {
+                    filteredJobs = filteredJobs.filter(j => !j.category);
+                } else {
+                    filteredJobs = filteredJobs.filter(j => j.category === currentCategoryFilter);
+                }
+            }
             const staffOptions = staff.map(s => '<option value="' + s.id + '"' + (currentStaffFilter === s.id ? ' selected' : '') + '>' + s.full_name + '</option>').join('');
             const staffFilterDropdown = '<select onchange="currentStaffFilter = this.value; renderApp();" class="px-4 py-2 border rounded-lg text-sm md:text-base"><option value="">All Staff</option>' + staffOptions + '</select>';
+            const categoryButtons = [
+                {label: 'All', value: null},
+                {label: 'Bumper', value: 'Bumper Repair'},
+                {label: 'Panel', value: 'Panel Repair'},
+                {label: 'Wheel', value: 'Wheel Repair'},
+                {label: 'Factory', value: 'Factory Repair'},
+                {label: 'Minor Dent', value: 'Minor Dent Repair'},
+                {label: 'Multiple', value: 'Multiple Repair'},
+                {label: 'None', value: 'uncategorized'}
+            ];
+            const categoryFilter = '<div class="flex gap-2 flex-wrap">' + categoryButtons.map(cat => {
+                const isActive = currentCategoryFilter === cat.value;
+                const activeClass = isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100';
+                return '<button onclick="filterByCategory(' + (cat.value ? '\'' + cat.value + '\'' : 'null') + ')" class="px-3 py-2 border rounded-lg text-xs md:text-sm font-medium ' + activeClass + '">' + cat.label + '</button>';
+            }).join('') + '</div>';
             // Different filters for active vs completed jobs
             let dateFilterDropdown;
             if (showCompleted === true) {
@@ -4026,7 +4054,7 @@
                 </button>
             `;
             if (filteredJobs.length === 0) {
-                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
+                return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base">+ Create Job</button></div></div><div class="mb-4">' + categoryFilter + '</div><div class="bg-white rounded-lg shadow p-8 md:p-12 text-center"><p class="text-gray-500">' + emptyMsg + '</p></div></div>';
             }
             const jobsByDate = {};
             filteredJobs.forEach(job => {
@@ -4039,7 +4067,7 @@
                 const cards = dateJobs.map(job => renderMobileJobCard(job)).join('');
                 return dateHeader + cards;
             }).join('');
-            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
+            return '<div class="space-y-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><h2 class="text-xl md:text-2xl font-bold text-gray-900">' + title + '</h2><div class="flex gap-3 w-full sm:w-auto flex-wrap">' + dateFilterDropdown + staffFilterDropdown + columnSelector + exportButton + summaryButton + '<button onclick="changeView(\'create-job\')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm md:text-base whitespace-nowrap">+ Create Job</button></div></div><div class="mb-4">' + categoryFilter + '</div><div class="bg-white rounded-lg shadow overflow-x-auto">' + renderDesktopTable(filteredJobs) + '</div></div>';
         }
 
         function renderMobileJobCard(job) {
