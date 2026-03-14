@@ -2088,6 +2088,11 @@
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
                 const methods = ['', 'Cash', 'Bank Transfer/Card'];
                 input.innerHTML = methods.map(m => '<option value="' + m + '"' + (currentValue === m ? ' selected' : '') + '>' + (m || 'Not specified') + '</option>').join('');
+            } else if (type === 'select-category') {
+                input = document.createElement('select');
+                input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
+                const categories = ['', 'Bumper Repair', 'Panel Repair', 'Wheel Repair', 'Factory Repair', 'Minor Dent Repair', 'Multiple Repair'];
+                input.innerHTML = categories.map(c => '<option value="' + c + '"' + (currentValue === c ? ' selected' : '') + '>' + (c || '-- No Category --') + '</option>').join('');        
             } else if (type === 'select-contact') {
                 input = document.createElement('select');
                 input.className = 'w-full px-2 py-1 border border-blue-500 rounded focus:outline-none';
@@ -4132,7 +4137,7 @@
                 }
                 const reviewBadge = job.request_review ? '<span class="text-yellow-500 text-lg mr-2" title="Review requested">⭐</span>' : '';
                 row += '<td class="px-4 py-2 text-sm whitespace-nowrap">' + reviewBadge + '<button onclick="duplicateJob(\'' + job.id + '\')" class="text-green-600 hover:text-green-800 mr-3" title="Duplicate"><span class="material-icons md-18">content_copy</span></button><button onclick="openEditModalById(\'' + job.id + '\')" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit"><span class="material-icons md-18">edit</span></button><button onclick="deleteJob(\'' + job.id + '\')" class="text-red-600 hover:text-red-800" title="Delete"><span class="material-icons md-18">delete</span></button></td>';
-                row += '<td class="px-4 py-2 text-sm whitespace-nowrap">' + getCategoryBadge(job.category) + '</td>';
+                row += '<td id="cell-' + job.id + '-category" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'category\', \'' + (job.category || '') + '\', \'select-category\')">' + (getCategoryBadge(job.category) || '<span class="text-gray-400 px-2 py-1">No Category</span>') + '</td>';
                 if (visibleColumns.start_time) {
                     row += '<td id="cell-' + job.id + '-start_time" class="editable-cell text-sm whitespace-nowrap" onclick="makeEditable(\'' + job.id + '\', \'start_time\', \'' + job.start_time + '\', \'time\')"><span class="px-2 py-1 bg-blue-600 text-white rounded font-semibold">' + formatTime12Hour(job.start_time) + '</span></td>';
                 }
