@@ -2666,21 +2666,6 @@
             try {
                 const {data, error} = await supabaseClient.from('jobs').insert([jobData]).select();
                 if (error) throw error;
-                // Send booking confirmation email if client has an email
-                if (newJob.client_email) {
-                    try {
-                        await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-booking-confirmation', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
-                            },
-                            body: JSON.stringify({ job: newJob })
-                        });
-                    } catch (emailError) {
-                        console.error('Email send failed:', emailError);
-                    }
-                }
                 alert('Job created successfully!');
                 await loadJobs();
                 currentView = 'dashboard';
@@ -5929,6 +5914,22 @@
                         alert('Job created, but failed to upload photos: ' + uploadError.message);
                     }
                 } else {
+                    // Send booking confirmation email if client has an email
+                    if (newJob && newJob.client_email) {
+                        try {
+                            await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-booking-confirmation', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
+                                },
+                                body: JSON.stringify({ job: newJob })
+                            });
+                            console.log('Booking confirmation email sent');
+                        } catch (emailError) {
+                            console.error('Email send failed:', emailError);
+                        }
+                    }
                     alert('Job created successfully!');
                 }
 
