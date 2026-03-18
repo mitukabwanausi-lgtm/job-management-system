@@ -104,20 +104,20 @@ serve(async (req) => {
       <td align="center">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" width="600" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-          <!-- ═══ HEADER ═══ -->
+          <!-- HEADER -->
           <tr>
             <td class="header-pad" style="background-color: #ffffff; padding: 36px 30px 28px 30px; text-align: center; border-bottom: 3px solid #283891;">
               <img src="https://scratchvanish.com.au/wp-content/uploads/2021/11/logo.png" alt="Scratch Vanish" style="max-width: 220px; height: auto; display: block; margin: 0 auto;">
             </td>
           </tr>
 
-          <!-- ═══ MAIN CONTENT ═══ -->
+          <!-- MAIN CONTENT -->
           <tr>
             <td class="content-pad" style="padding: 40px 30px; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
 
               <!-- Greeting -->
               <p style="font-size: 24px; color: #283891; margin: 0 0 16px 0; font-weight: 800; letter-spacing: -0.5px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                Hi {{CLIENT_NAME}}, you're all booked in 🎉
+                Hi ${job.client_name}, you're all booked in 🎉
               </p>
               <p style="font-size: 16px; color: #4a5568; line-height: 1.7; margin: 0 0 24px 0; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                 Thanks for choosing Scratch Vanish. We're looking forward to getting your car looking its best. Here's everything you need to know about your upcoming appointment.
@@ -141,7 +141,7 @@ serve(async (req) => {
                       📅 &nbsp;Date
                     </td>
                     <td style="font-size: 14px; color: #1e293b; padding: 8px 0; font-weight: 700; vertical-align: top; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                      {{DATE_FORMATTED}}
+                      ${dateFormatted}
                     </td>
                   </tr>
                   <tr>
@@ -149,7 +149,7 @@ serve(async (req) => {
                       🕐 &nbsp;Time Slot
                     </td>
                     <td style="font-size: 14px; color: #1e293b; padding: 8px 0; font-weight: 700; vertical-align: top; border-top: 1px solid rgba(255,126,24,0.2); font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                      {{START_TIME}} to {{END_TIME}}
+                      ${startTime} to ${endTime}
                     </td>
                   </tr>
                   <tr>
@@ -157,7 +157,7 @@ serve(async (req) => {
                       📍 &nbsp;Location
                     </td>
                     <td style="font-size: 14px; color: #1e293b; padding: 8px 0; font-weight: 700; vertical-align: top; border-top: 1px solid rgba(255,126,24,0.2); font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                      {{ADDRESS}}, {{SUBURB}}
+                      ${address}
                     </td>
                   </tr>
                 </table>
@@ -207,7 +207,7 @@ serve(async (req) => {
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="btn-table">
                         <tr>
                           <td class="btn-cell" style="padding-right: 10px;">
-                            <a href="/cdn-cgi/l/email-protection#bed7d0d8d1fecdddccdfcaddd6c8dfd0d7cdd690ddd1d390dfcb" class="btn-link" style="display: inline-block; background-color: #283891; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 6px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                            <a href="mailto:info@scratchvanish.com" class="btn-link" style="display: inline-block; background-color: #283891; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 6px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                               ✉ &nbsp;Send us an email
                             </a>
                           </td>
@@ -246,7 +246,7 @@ serve(async (req) => {
             </td>
           </tr>
 
-          <!-- ═══ FOOTER ═══ -->
+          <!-- FOOTER -->
           <tr>
             <td class="footer-pad" style="background-color: #1e293b; padding: 35px 30px;">
               <p style="font-size: 16px; color: #ff7e18; margin: 0 0 20px 0; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Our Services</p>
@@ -270,7 +270,7 @@ serve(async (req) => {
                 <a href="https://scratchvanish.com.au" class="contact-link" style="color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; margin: 0 12px; display: inline-block; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                   🌐 Website
                 </a>
-                <a href="/cdn-cgi/l/email-protection#99f0f7fff6d9eafaebf8edfaf1eff8f7f0eaf1b7faf6f4b7f8ec" class="contact-link" style="color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; margin: 0 12px; display: inline-block; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                <a href="mailto:info@scratchvanish.com" class="contact-link" style="color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; margin: 0 12px; display: inline-block; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                   ✉️ Email
                 </a>
               </div>
@@ -279,11 +279,13 @@ serve(async (req) => {
                 This is an automated confirmation, please do not reply to this email.<br>
                 &copy; 2026 Scratch Vanish Pty Ltd. All rights reserved.
               </p>
-</td></tr>
+            </td>
+          </tr>
 
-</table>
-</td></tr>
-</table>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 
