@@ -195,11 +195,24 @@ serve(async (req) => {
                   </tr>
                 </table>
 
-                <!-- Step 3 -->
+                <!-- Step 3 - Power access -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                  <tr>
+                    <td style="vertical-align: top; width: 36px; padding-top: 2px;">
+                      <div style="width: 28px; height: 28px; background-color: #283891; border-radius: 50%; text-align: center; line-height: 28px; color: #ffffff; font-size: 13px; font-weight: 800; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">3</div>
+                    </td>
+                    <td style="vertical-align: top; padding-left: 12px;">
+                      <p style="font-size: 15px; font-weight: 800; color: #1e293b; margin: 0 0 4px 0; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Please ensure power access within 30 metres</p>
+                      <p style="font-size: 14px; color: #64748b; margin: 0; line-height: 1.6; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Our technician will need access to a power source within 30 metres of your vehicle to carry out the repair.</p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Step 4 - Reschedule -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                   <tr>
                     <td style="vertical-align: top; width: 36px; padding-top: 2px;">
-                      <div style="width: 28px; height: 28px; background-color: #ff7e18; border-radius: 50%; text-align: center; line-height: 28px; color: #ffffff; font-size: 13px; font-weight: 800; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">3</div>
+                      <div style="width: 28px; height: 28px; background-color: #ff7e18; border-radius: 50%; text-align: center; line-height: 28px; color: #ffffff; font-size: 13px; font-weight: 800; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">4</div>
                     </td>
                     <td style="vertical-align: top; padding-left: 12px;">
                       <p style="font-size: 15px; font-weight: 800; color: #1e293b; margin: 0 0 6px 0; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Need to reschedule</p>
@@ -257,6 +270,7 @@ serve(async (req) => {
                 <span style="background-color: rgba(255,255,255,0.1); color: #ffffff; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Scratch Repair</span>
                 <span style="background-color: rgba(255,255,255,0.1); color: #ffffff; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Wheel Arch Repair</span>
                 <span style="background-color: rgba(255,255,255,0.1); color: #ffffff; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Door Scratch Repair</span>
+                <span style="background-color: rgba(255,255,255,0.1); color: #ffffff; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Dent Repair</span>
                 <span style="background-color: rgba(255,255,255,0.1); color: #ffffff; padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin: 4px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">Pre-Sale Car Cleanup</span>
               </div>
 
