@@ -1540,9 +1540,6 @@
 
                // Auto-create invoice and send email
                 const completedJob = jobs.find(j => j.id === pendingCompletionJobId);
-                console.log('Found completed job:', completedJob);
-                console.log('Job email:', completedJob ? completedJob.client_email : 'NO JOB FOUND');
-                console.log('Job postcode:', completedJob ? completedJob.postcode : 'NO JOB FOUND');
 
                 if (completedJob) {
                     const invoiceJob = {
@@ -1551,11 +1548,9 @@
                         amount_paid: amountPaid
                     };
                     const invoice = await createInvoiceForJob(invoiceJob);
-                    console.log('Invoice created:', invoice);
 
                     if (invoice && invoiceJob.client_email) {
                         try {
-                            console.log('Sending email to:', invoiceJob.client_email);
                             const emailResponse = await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-invoice-review', {
                                 method: 'POST',
                                 headers: {
@@ -1564,8 +1559,6 @@
                                 },
                                 body: JSON.stringify({ job: invoiceJob, invoice: invoice })
                             });
-                            const emailResult = await emailResponse.json();
-                            console.log('Email response:', emailResult);
                         } catch (emailError) {
                             console.error('Email send failed:', emailError);
                         }
