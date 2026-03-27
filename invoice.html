@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice - Scratch Vanish</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #f0f2f5;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 750px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      padding: 32px 40px 24px;
+      border-bottom: 3px solid #283891;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .header-left img {
+      height: 58px;
+      width: auto;
+    }
+    .company-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #283891;
+      margin-bottom: 5px;
+    }
+    .company-detail {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .paid-stamp {
+      border: 3px solid #16a34a;
+      border-radius: 6px;
+      padding: 5px 14px;
+      transform: rotate(15deg);
+      margin-top: 10px;
+    }
+    .paid-stamp span {
+      font-size: 20px;
+      font-weight: 800;
+      color: #16a34a;
+      letter-spacing: 3px;
+    }
+    .meta-row {
+      padding: 18px 40px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      gap: 48px;
+    }
+    .meta-item label {
+      font-size: 12px;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 800;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .meta-item span {
+      font-size: 14px;
+      font-weight: 800;
+      color: #283891;
+    }
+    .meta-item span.dark {
+      color: #1e293b;
+    }
+    .client-section {
+      padding: 20px 40px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .section-label {
+      font-size: 12px;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .client-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 3px;
+    }
+    .client-detail {
+      font-size: 13px;
+      color: #4a5568;
+      margin-bottom: 2px;
+    }
+    .items-section {
+      padding: 20px 40px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead tr {
+      background: #283891;
+    }
+    thead td {
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    tbody td {
+      padding: 16px 14px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    tbody td.dark {
+      color: #1e293b;
+      font-weight: 600;
+    }
+    tbody td.total-col {
+      color: #1e293b;
+      font-weight: 700;
+      text-align: right;
+    }
+    .totals-section {
+      padding: 0 40px 20px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .totals-table {
+      width: 260px;
+    }
+    .totals-table tr td {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+    .totals-table tr td:first-child {
+      color: #64748b;
+    }
+    .totals-table tr td:last-child {
+      color: #1e293b;
+      font-weight: 600;
+      text-align: right;
+    }
+    .totals-table tr.total-row {
+      background: #283891;
+    }
+    .totals-table tr.total-row td {
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .border-bottom-line {
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .notes-section {
+      padding: 20px 40px;
+      background: #fef9f0;
+      border-top: 1px solid #fde8c0;
+    }
+    .notes-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .notes-text {
+      font-size: 13px;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .notes-text.bold {
+      font-weight: 600;
+    }
+    .footer-section {
+      padding: 18px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer-copy {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .print-btn {
+      background: #283891;
+      color: #ffffff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .print-btn:hover {
+      background: #1e2d6b;
+    }
+    .loading {
+      text-align: center;
+      padding: 80px 40px;
+      color: #64748b;
+      font-size: 16px;
+    }
+    .error {
+      text-align: center;
+      padding: 80px 40px;
+      color: #dc2626;
+      font-size: 16px;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .container { border: none; border-radius: 0; }
+      .print-btn { display: none; }
+    }
+    @media (max-width: 600px) {
+      body { padding: 0; }
+      .container { border-radius: 0; border: none; }
+      .header { padding: 20px; flex-direction: column; gap: 16px; }
+      .paid-stamp { transform: none; }
+      .meta-row { padding: 16px 20px; gap: 20px; flex-wrap: wrap; }
+      .client-section { padding: 16px 20px; }
+      .items-section { padding: 16px 20px 0; }
+      .totals-section { padding: 0 20px 16px; }
+      .notes-section { padding: 16px 20px; }
+      .footer-section { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="invoiceContainer">
+    <div class="loading">Loading invoice...</div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ssxcjsdoxtgddnkugntl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function getInvoiceNumberFromURL() {
+        const path = window.location.pathname;
+        const parts = path.split('/');
+        const fullId = parts[parts.length - 1];
+        if (!fullId || fullId === 'invoice.html' || fullId === '') return null;
+        return fullId;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-AU', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function loadAndRenderInvoice() {
+      const invoiceNumber = getInvoiceNumberFromURL();
+
+      if (!invoiceNumber || invoiceNumber === 'invoice') {
+        document.getElementById('invoiceContainer').innerHTML =
+          '<div class="error">Invalid invoice URL.</div>';
+        return;
+      }
+
+      // Split token from invoice number
+      const parts = invoiceNumber.split('-');
+      const token = parts[parts.length - 1];
+      const invoiceNum = parts.slice(0, -1).join('-');
+
+      const { data: invoice, error } = await supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('invoice_number', invoiceNum)
+          .eq('token', token)
+          .single();
+
+      if (error || !invoice) {
+        document.getElementById('invoiceContainer').innerHTML =
+          '<div class="error">Invoice not found. Please check the link and try again.</div>';
+        return;
+      }
+
+      const subtotal = parseFloat(invoice.subtotal || 0).toFixed(2);
+      const gst = parseFloat(invoice.gst || 0).toFixed(2);
+      const total = parseFloat(invoice.total || 0).toFixed(2);
+      const unitPrice = subtotal;
+
+      document.title = 'Invoice ' + invoice.invoice_number + ' - Scratch Vanish';
+
+      document.getElementById('invoiceContainer').innerHTML = `
+        <div class="header">
+          <div class="header-left">
+            <img src="https://scratchvanish.com.au/wp-content/uploads/2021/11/logo.png" alt="Scratch Vanish">
+            <div>
+              <div class="company-name">Scratch Vanish Pty Ltd</div>
+              <div class="company-detail">119 Willoughby Road, Crows Nest NSW Sydney 2065</div>
+              <div class="company-detail">Phone: 0467 551 564 &middot; Email: info@scratchvanish.com.au</div>
+              <div class="company-detail">ABN: 40 688 437 630</div>
+            </div>
+          </div>
+          <div class="paid-stamp"><span>PAID</span></div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-item">
+            <label>Invoice No</label>
+            <span>${escapeHtml(invoice.invoice_number)}</span>
+          </div>
+          <div class="meta-item">
+            <label>Reference</label>
+            <span>${escapeHtml(invoice.invoice_number)}</span>
+          </div>
+          <div class="meta-item">
+            <label>Job Date</label>
+            <span class="dark">${formatDate(invoice.job_date)}</span>
+          </div>
+          <div class="meta-item">
+            <label>Payment Method</label>
+            <span class="dark">${escapeHtml(invoice.payment_method || 'N/A')}</span>
+          </div>
+        </div>
+
+        <div class="client-section">
+          <div class="section-label">Billed To</div>
+          <div class="client-name">${escapeHtml(invoice.client_name || '')}</div>
+          ${invoice.client_email ? `<div class="client-detail">${escapeHtml(invoice.client_email)}</div>` : ''}
+          ${invoice.client_phone ? `<div class="client-detail">${escapeHtml(invoice.client_phone)}</div>` : ''}
+          ${invoice.client_address ? `<div class="client-detail">${escapeHtml(invoice.client_address)}${invoice.client_suburb ? ', ' + escapeHtml(invoice.client_suburb) : ''}</div>` : ''}
+        </div>
+
+        <div class="items-section">
+          <table>
+            <thead>
+              <tr>
+                <td style="width:44px">SR.</td>
+                <td>Description</td>
+                <td style="text-align:center;width:60px">Qty</td>
+                <td style="text-align:right;width:90px">Unit Price</td>
+                <td style="text-align:right;width:110px">GST</td>
+                <td style="text-align:right;width:90px">Total</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align:center;color:#94a3b8">1</td>
+                <td class="dark">${escapeHtml(invoice.job_description || '')}</td>
+                <td style="text-align:center">1</td>
+                <td style="text-align:right">$${unitPrice}</td>
+                <td style="text-align:right">(10%) $${gst}</td>
+                <td class="total-col">$${total}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="totals-section">
+          <table class="totals-table">
+            <tr>
+              <td>Subtotal</td>
+              <td>$${subtotal}</td>
+            </tr>
+            <tr class="border-bottom-line">
+              <td style="border-bottom:1px solid #e2e8f0;padding-bottom:8px">GST (10%)</td>
+              <td style="border-bottom:1px solid #e2e8f0;padding-bottom:8px;text-align:right">$${gst}</td>
+            </tr>
+            <tr class="total-row">
+              <td>Total</td>
+              <td style="text-align:right">$${total}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="notes-section">
+          <div class="notes-label">Note</div>
+          <div class="notes-text">Bank Details: Account Name Scratch Vanish Pty Ltd &nbsp; BSB 012013 &nbsp; AC 176726104</div>
+          <div class="notes-text bold">Thank you for choosing Scratch Vanish. All repairs come with a 3 year warranty from the day the repair is completed.</div>
+        </div>
+
+        <div class="footer-section">
+          <div class="footer-copy">Scratch Vanish Pty Ltd &copy; 2026</div>
+          <button class="print-btn" onclick="window.print()">Download / Print PDF</button>
+        </div>
+      `;
+    }
+
+    loadAndRenderInvoice();
+  </script>
+</body>
+</html>
