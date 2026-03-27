@@ -5591,10 +5591,18 @@
 
                 const invoiceNumber = await generateInvoiceNumber(job.date);
 
+                // Generate secure random token
+                const tokenArray = new Uint8Array(16);
+                window.crypto.getRandomValues(tokenArray);
+                const token = Array.from(tokenArray)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+
                 const { data, error } = await supabaseClient
                     .from('invoices')
                     .insert([{
                         invoice_number: invoiceNumber,
+                        token: token,
                         job_id: job.id,
                         client_name: job.client_name,
                         client_email: job.client_email,
@@ -5669,7 +5677,7 @@
             html += '<tbody class="bg-white divide-y divide-gray-200">';
 
             invoices.forEach(inv => {
-                const invoiceUrl = 'https://job-management-system-tau.vercel.app/invoice/' + inv.invoice_number;
+                const invoiceUrl = 'https://job-management-system-tau.vercel.app/invoice/' + inv.invoice_number + '-' + inv.token;
                 html += '<tr class="hover:bg-gray-50">';
                 html += '<td class="px-4 py-3 text-sm font-semibold text-blue-600">' + inv.invoice_number + '</td>';
                 html += '<td class="px-4 py-3 text-sm whitespace-nowrap">' + (inv.job_date ? new Date(inv.job_date + 'T00:00:00').toLocaleDateString('en-AU') : 'N/A') + '</td>';
