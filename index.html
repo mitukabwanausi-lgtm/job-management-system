@@ -1548,6 +1548,18 @@
                 if (error) throw error;
 
                 closeManagerPaymentModal();
+
+                // Auto-create invoice for completed job
+                const completedJob = jobs.find(j => j.id === pendingCompletionJobId);
+                if (completedJob) {
+                    const invoiceJob = {
+                        ...completedJob,
+                        payment_method: paymentMethod,
+                        amount_paid: amountPaid
+                    };
+                    await createInvoiceForJob(invoiceJob);
+                }
+
                 await loadJobs();
                 renderApp();
             } catch (error) {
@@ -3006,7 +3018,12 @@
             if (currentView === 'completed-jobs') return renderJobsList(true);
             if (currentView === 'staff-management') return renderStaffManagement();
             if (currentView === 'review-requests') return renderReviewRequests();
-            if (currentView === 'invoicing') return renderInvoicingView();
+            if (currentView === 'invoicing') {
+                renderInvoicingView().then(html => {
+                    document.querySelector('#app > div > div').innerHTML = html;
+                });
+                return '<div class="p-8 text-center text-gray-500">Loading invoices...</div>';
+            }
             if (currentView === 'staff-schedule') return renderStaffSchedule();
             return renderDashboard();
         }
@@ -5565,6 +5582,137 @@
             // Store the status filter
             window.statusFilter = 'Assigned';
             renderApp();
+        }
+
+        async function generateInvoiceNumber(jobDate) {
+            const date = new Date(jobDate);
+            const yy = String(date.getFullYear()).slice(2);
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const datePart = yy + mm + dd;
+
+            const { data, error } = await supabaseClient.rpc('increment_invoice_counter');
+            if (error) throw error;
+
+            const seq = String(data).padStart(4, '0');
+            return `SV-${datePart}-${seq}`;
+        }
+
+        async function createInvoiceForJob(job) {
+            try {
+                if (!job.client_email) return null;
+
+                const price = parseFloat(job.price) || 0;
+                let subtotal, gst, total;
+
+                if (job.price_includes_gst) {
+                    total = price;
+                    gst = 0;
+                    subtotal = price;
+                } else {
+                    subtotal = price;
+                    gst = parseFloat((price * 0.10).toFixed(2));
+                    total = parseFloat((price + gst).toFixed(2));
+                }
+
+                const invoiceNumber = await generateInvoiceNumber(job.date);
+
+                const { data, error } = await supabaseClient
+                    .from('invoices')
+                    .insert([{
+                        invoice_number: invoiceNumber,
+                        job_id: job.id,
+                        client_name: job.client_name,
+                        client_email: job.client_email,
+                        client_phone: job.client_phone || '',
+                        client_address: job.address || '',
+                        client_suburb: job.suburb || '',
+                        job_description: job.job_description,
+                        job_date: job.date,
+                        payment_method: job.payment_method || '',
+                        subtotal: subtotal,
+                        gst: gst,
+                        total: total
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                return data;
+            } catch (error) {
+                console.error('Error creating invoice:', error);
+                return null;
+            }
+        }
+
+        async function renderInvoicingView() {
+            const { data: invoices, error } = await supabaseClient
+                .from('invoices')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                return '<div class="p-8 text-center text-red-600">Failed to load invoices: ' + error.message + '</div>';
+            }
+
+            const totalRevenue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0);
+            const totalGST = invoices.reduce((sum, inv) => sum + (parseFloat(inv.gst) || 0), 0);
+            const totalCount = invoices.length;
+
+            let html = '<div class="space-y-6">';
+            html += '<div class="flex justify-between items-center">';
+            html += '<h2 class="text-2xl font-semibold text-gray-900">Invoices</h2>';
+            html += '</div>';
+
+            // Summary cards
+            html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Invoices</div><div class="text-3xl font-semibold text-blue-600 mt-2">' + totalCount + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Revenue</div><div class="text-3xl font-semibold text-green-600 mt-2">$' + totalRevenue.toFixed(2) + '</div></div>';
+            html += '<div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total GST</div><div class="text-3xl font-semibold text-purple-600 mt-2">$' + totalGST.toFixed(2) + '</div></div>';
+            html += '</div>';
+
+            if (invoices.length === 0) {
+                html += '<div class="bg-white rounded-lg shadow p-12 text-center"><p class="text-gray-500">No invoices yet. Invoices are created automatically when a job is completed.</p></div>';
+                html += '</div>';
+                return html;
+            }
+
+            // Invoices table
+            html += '<div class="bg-white rounded-lg shadow overflow-x-auto">';
+            html += '<table class="min-w-full border-collapse">';
+            html += '<thead class="bg-gray-50"><tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice No</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Suburb</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">GST</th>';
+            html += '<th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>';
+            html += '</tr></thead>';
+            html += '<tbody class="bg-white divide-y divide-gray-200">';
+
+            invoices.forEach(inv => {
+                const invoiceUrl = 'https://job-management-system-tau.vercel.app/invoice/' + inv.invoice_number;
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm font-semibold text-blue-600">' + inv.invoice_number + '</td>';
+                html += '<td class="px-4 py-3 text-sm whitespace-nowrap">' + (inv.job_date ? new Date(inv.job_date + 'T00:00:00').toLocaleDateString('en-AU') : 'N/A') + '</td>';
+                html += '<td class="px-4 py-3 text-sm font-medium">' + escapeHtml(inv.client_name || '') + '<div class="text-xs text-gray-500">' + escapeHtml(inv.client_email || '') + '</div></td>';
+                html += '<td class="px-4 py-3 text-sm">' + escapeHtml(inv.client_suburb || '') + '</td>';
+                html += '<td class="px-4 py-3 text-sm max-w-xs truncate" title="' + escapeHtml(inv.job_description || '') + '">' + escapeHtml((inv.job_description || '').substring(0, 40)) + (inv.job_description && inv.job_description.length > 40 ? '...' : '') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right">$' + parseFloat(inv.subtotal || 0).toFixed(2) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right">$' + parseFloat(inv.gst || 0).toFixed(2) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-right font-semibold text-green-600">$' + parseFloat(inv.total || 0).toFixed(2) + '</td>';
+                html += '<td class="px-4 py-3 text-sm">' + escapeHtml(inv.payment_method || 'N/A') + '</td>';
+                html += '<td class="px-4 py-3 text-sm"><a href="' + invoiceUrl + '" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-medium">View</a></td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            html += '</div>';
+            return html;
         }
 
         initialize();
