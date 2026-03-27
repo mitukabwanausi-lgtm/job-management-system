@@ -264,9 +264,16 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function getInvoiceNumberFromURL() {
+      // Try pathname first e.g. /invoice/SV-260325-0001
       const path = window.location.pathname;
       const parts = path.split('/');
-      return parts[parts.length - 1];
+      const fromPath = parts[parts.length - 1];
+      if (fromPath && fromPath !== 'invoice.html' && fromPath !== '') {
+          return fromPath;
+      }
+      // Fallback to query string e.g. ?id=SV-260325-0001
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
     }
 
     function formatDate(dateStr) {
