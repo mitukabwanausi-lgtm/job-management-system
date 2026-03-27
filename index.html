@@ -1547,8 +1547,6 @@
 
                 if (error) throw error;
 
-                closeManagerPaymentModal();
-
                 // Auto-create invoice for completed job
                 const completedJob = jobs.find(j => j.id === pendingCompletionJobId);
                 if (completedJob) {
@@ -1557,9 +1555,17 @@
                         payment_method: paymentMethod,
                         amount_paid: amountPaid
                     };
-                    await createInvoiceForJob(invoiceJob);
+                    const invoice = await createInvoiceForJob(invoiceJob);
+                    if (invoice) {
+                        console.log('Invoice created:', invoice.invoice_number);
+                    } else {
+                        console.warn('Invoice creation skipped or failed');
+                    }
+                } else {
+                    console.warn('Could not find job for invoice creation, job ID:', pendingCompletionJobId);
                 }
 
+                closeManagerPaymentModal();
                 await loadJobs();
                 renderApp();
             } catch (error) {
