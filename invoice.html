@@ -264,16 +264,11 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function getInvoiceNumberFromURL() {
-      // Try pathname first e.g. /invoice/SV-260325-0001
-      const path = window.location.pathname;
-      const parts = path.split('/');
-      const fromPath = parts[parts.length - 1];
-      if (fromPath && fromPath !== 'invoice.html' && fromPath !== '') {
-          return fromPath;
-      }
-      // Fallback to query string e.g. ?id=SV-260325-0001
-      const params = new URLSearchParams(window.location.search);
-      return params.get('id');
+        const path = window.location.pathname;
+        const parts = path.split('/');
+        const fullId = parts[parts.length - 1];
+        if (!fullId || fullId === 'invoice.html' || fullId === '') return null;
+        return fullId;
     }
 
     function formatDate(dateStr) {
@@ -300,11 +295,17 @@
         return;
       }
 
+      // Split token from invoice number
+      const parts = invoiceNumber.split('-');
+      const token = parts[parts.length - 1];
+      const invoiceNum = parts.slice(0, -1).join('-');
+
       const { data: invoice, error } = await supabaseClient
-        .from('invoices')
-        .select('*')
-        .eq('invoice_number', invoiceNumber)
-        .single();
+          .from('invoices')
+          .select('*')
+          .eq('invoice_number', invoiceNum)
+          .eq('token', token)
+          .single();
 
       if (error || !invoice) {
         document.getElementById('invoiceContainer').innerHTML =
