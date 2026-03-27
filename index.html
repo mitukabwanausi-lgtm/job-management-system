@@ -5660,7 +5660,15 @@
 
             // Get current filter period
             const period = window.invoicePeriod || 'this_month';
-            const { startDate, endDate } = getDateRangeForPeriod(period);
+            let startDate, endDate;
+            if (period === 'custom' && window.customStartDate && window.customEndDate) {
+                startDate = new Date(window.customStartDate + 'T00:00:00');
+                endDate = new Date(window.customEndDate + 'T23:59:59');
+            } else {
+                const range = getDateRangeForPeriod(period);
+                startDate = range.startDate;
+                endDate = range.endDate;
+            }
 
             // Filter invoices by period
             const filteredInvoices = invoices.filter(inv => {
@@ -5731,11 +5739,24 @@
             html += '<div class="flex flex-wrap gap-2">';
             const periods = ['today', 'this_week', 'last_week', 'this_month', 'last_month', 'last_3_months', 'last_6_months', 'this_year', 'all_time'];
             periods.forEach(p => {
-                const isActive = period === p;
+                const isActive = period === p && period !== 'custom';
                 html += '<button onclick="window.invoicePeriod = \'' + p + '\'; refreshInvoicingView();" class="px-3 py-2 rounded-lg text-sm font-medium ' + (isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200') + '">' + periodLabels[p] + '</button>';
             });
+
+            // Custom date range
+            const isCustom = period === 'custom';
+            html += '<button onclick="toggleCustomDateRange()" class="px-3 py-2 rounded-lg text-sm font-medium ' + (isCustom ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200') + '">Custom</button>';
             html += '</div>';
+
+            // Custom date range inputs
+            html += '<div id="customDateRange" class="' + (isCustom ? 'flex' : 'hidden') + ' gap-4 mt-3 items-end flex-wrap">';
+            html += '<div><label class="block text-xs font-medium text-gray-600 mb-1">From</label><input type="date" id="customStartDate" value="' + (window.customStartDate || '') + '" class="px-3 py-2 border rounded-lg text-sm"></div>';
+            html += '<div><label class="block text-xs font-medium text-gray-600 mb-1">To</label><input type="date" id="customEndDate" value="' + (window.customEndDate || '') + '" class="px-3 py-2 border rounded-lg text-sm"></div>';
+            html += '<button onclick="applyCustomDateRange()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Apply</button>';
+            html += '<button onclick="window.invoicePeriod = \'this_month\'; refreshInvoicingView();" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Clear</button>';
             html += '</div>';
+
+            html += '</div>'; // close period filter card
 
             // Summary stats
             html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">';
@@ -6031,6 +6052,28 @@
                 console.error('Error creating manual invoice:', error);
                 alert('Failed to create invoice: ' + error.message);
             }
+        }
+
+        function toggleCustomDateRange() {
+            window.invoicePeriod = 'custom';
+            refreshInvoicingView();
+        }
+
+        function applyCustomDateRange() {
+            const start = document.getElementById('customStartDate').value;
+            const end = document.getElementById('customEndDate').value;
+            if (!start || !end) {
+                alert('Please select both a start and end date.');
+                return;
+            }
+            if (new Date(start) > new Date(end)) {
+                alert('Start date must be before end date.');
+                return;
+            }
+            window.customStartDate = start;
+            window.customEndDate = end;
+            window.invoicePeriod = 'custom';
+            refreshInvoicingView();
         }
 
         initialize();
