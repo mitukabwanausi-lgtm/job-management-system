@@ -238,7 +238,7 @@
                 <button onclick="changeView('pending-review'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-orange-50 text-orange-600 font-medium flex items-center justify-between">
                     <span class="flex items-center gap-3">
-                        <span class="material-icons md-18">schedule</span> 
+                        <span class="material-icons md-18">schedule</span>
                         Pending Review
                     </span>
                     <span id="mobilePendingBadge"></span>
@@ -251,21 +251,21 @@
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">check_circle</span> Completed Jobs
                 </button>
-                <button onclick="changeView('archived-jobs'); toggleMobileMenu();"
+                <button onclick="changeView('invoicing'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <span class="material-icons md-18">archive</span> Archived Jobs
+                    <span class="material-icons md-18">receipt_long</span> Invoicing
                 </button>
                 <button onclick="changeView('review-requests'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <span class="material-icons md-18">rate_review</span> Review Requests
+                    <span class="material-icons md-18">rate_review</span> Reviews
+                </button>
+                <button onclick="changeView('staff-schedule'); toggleMobileMenu();"
+                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
+                    <span class="material-icons md-18">calendar_month</span> Calendar
                 </button>
                 <button onclick="changeView('staff-management'); toggleMobileMenu();"
                     class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
                     <span class="material-icons md-18">group</span> Staff
-                </button>
-                <button onclick="changeView('tasks'); toggleMobileMenu();"
-                    class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium flex items-center gap-3">
-                    <span class="material-icons md-18">task_alt</span> Tasks
                 </button>
                 <hr class="my-4">
                 <button onclick="logout(); toggleMobileMenu();"
@@ -2995,11 +2995,10 @@
                 {key: 'pending-review', label: 'Pending'},
                 {key: 'all-jobs', label: 'Active'},
                 {key: 'completed-jobs', label: 'Completed'},
-                {key: 'archived-jobs', label: 'Archived'},
+                {key: 'invoicing', label: 'Invoicing'},
                 {key: 'review-requests', label: 'Reviews'},
+                {key: 'staff-schedule', label: 'Calendar'},
                 {key: 'staff-management', label: 'Staff'},
-                {key: 'tasks', label: 'Tasks'},
-                {key: 'staff-schedule', label: 'Schedule'}
             ];
             const navButtons = views.map(v => {
                 const isActive = currentView === v.key;
@@ -3041,12 +3040,9 @@
             if (currentView === 'pending-review') return renderJobsList('pending');
             if (currentView === 'all-jobs') return renderJobsList(false);
             if (currentView === 'completed-jobs') return renderJobsList(true);
-            if (currentView === 'archived-jobs') return renderJobsList('archived');
             if (currentView === 'staff-management') return renderStaffManagement();
             if (currentView === 'review-requests') return renderReviewRequests();
-            if (currentView === 'tasks') return renderTasksView();
-            if (currentView === 'create-task') return renderTaskForm();
-            if (currentView === 'edit-task') return renderEditTaskForm(); 
+            if (currentView === 'invoicing') return renderInvoicingView();
             if (currentView === 'staff-schedule') return renderStaffSchedule();
             return renderDashboard();
         }
@@ -3854,10 +3850,6 @@
                 filteredJobs = jobs.filter(j => j.status === 'Pending Review');
                 title = 'Pending Review - Client Bookings';
                 emptyMsg = 'No pending bookings to review.';
-            } else if (showCompleted === 'archived') {
-                filteredJobs = jobs.filter(j => j.status === 'Cancelled');
-                title = 'Archived Jobs';
-                emptyMsg = 'No archived jobs yet.';
             } else if (showCompleted) {
                 filteredJobs = jobs.filter(j => j.status === 'Completed');
                 title = 'Completed Jobs';
