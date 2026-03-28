@@ -712,8 +712,8 @@
                 <div>
                     <label
                         class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input type="checkbox" id="manager_request_review" class="w-4 h-4 text-blue-600 rounded">
-                        <span class="ml-3 text-gray-900">😊 Happy customer - Request review</span>
+                        <input type="checkbox" id="manager_request_review" class="w-4 h-4 text-red-600 rounded">
+                        <span class="ml-3 text-gray-900">😞 Unhappy customer - No review request</span>
                     </label>
                 </div>
             </div>
@@ -1551,19 +1551,18 @@
 
                     if (invoice && invoiceJob.client_email) {
                         try {
-                            const emailResponse = await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-invoice-review', {
+                            const unhappyCustomer = document.getElementById('manager_request_review').checked;
+                            await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-invoice-review', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
                                 },
-                                body: JSON.stringify({ job: invoiceJob, invoice: invoice })
+                                body: JSON.stringify({ job: invoiceJob, invoice: invoice, includeReview: !unhappyCustomer })
                             });
                         } catch (emailError) {
                             console.error('Email send failed:', emailError);
                         }
-                    } else {
-                        console.warn('Email not sent. Invoice:', invoice, 'Client email:', invoiceJob.client_email);
                     }
                 } else {
                     console.warn('No job found with ID:', pendingCompletionJobId);
@@ -6027,7 +6026,7 @@
 
                 if (error) throw error;
 
-                // Send email
+                // Send email — manual invoices never include review request
                 if (clientEmail) {
                     const fakeJob = {
                         client_name: clientName,
@@ -6040,7 +6039,7 @@
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
                         },
-                        body: JSON.stringify({ job: fakeJob, invoice: invoice })
+                        body: JSON.stringify({ job: fakeJob, invoice: invoice, includeReview: false })
                     });
                 }
 
