@@ -2406,6 +2406,41 @@
 
                     const {error} = await supabaseClient.from('jobs').update(jobData).eq('id', jobId);
                     if (error) throw error;
+
+                    // Send booking confirmation for client form jobs being assigned for first time
+                    if (
+                        (jobData.status === 'Assigned' || jobData.status === 'Assigned/Fix') &&
+                        job.contact_method === 'Client Form' &&
+                        job.client_email &&
+                        !job.booking_confirmation_sent &&
+                        jobData.date &&
+                        jobData.start_time &&
+                        jobData.end_time
+                    ) {
+                        try {
+                            const confirmedJob = {
+                                ...job,
+                                ...jobData,
+                                id: jobId
+                            };
+                            await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-booking-confirmation', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
+                                },
+                                body: JSON.stringify({ job: confirmedJob })
+                            });
+                            // Mark confirmation as sent
+                            await supabaseClient
+                                .from('jobs')
+                                .update({ booking_confirmation_sent: true })
+                                .eq('id', jobId);
+                        } catch (emailError) {
+                            console.error('Booking confirmation email failed:', emailError);
+                        }
+                    }
+
                     alert('Job updated successfully!');
                     closeEditModal();
                     await loadJobs();
@@ -5384,11 +5419,16 @@
                                 },
                                 body: JSON.stringify({ job: newJob })
                             });
-                            console.log('Booking confirmation email sent');
+                            // Mark confirmation as sent
+                            await supabaseClient
+                                .from('jobs')
+                                .update({ booking_confirmation_sent: true })
+                                .eq('id', newJob.id);
                         } catch (emailError) {
                             console.error('Email send failed:', emailError);
                         }
                     }
+
                     alert('Job created successfully!');
                 }
 
