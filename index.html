@@ -2030,10 +2030,6 @@
                     job.client_email &&
                     !job.booking_confirmation_sent
                 ) {
-                    if (!job.date || !job.start_time || !job.end_time) {
-                        alert('⚠️ Please set the date and time on this job before assigning it — the booking confirmation email needs these details.');
-                        return true;
-                    }
                     try {
                         await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-booking-confirmation', {
                             method: 'POST',
