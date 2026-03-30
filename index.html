@@ -2013,6 +2013,16 @@
                 if (error) throw error;
 
                 // Send booking confirmation for client form jobs being assigned inline
+                console.log('--- Booking confirmation check ---');
+                console.log('field === status:', field === 'status');
+                console.log('value:', value);
+                console.log('contact_method:', job.contact_method);
+                console.log('client_email:', job.client_email);
+                console.log('booking_confirmation_sent:', job.booking_confirmation_sent);
+                console.log('date:', job.date);
+                console.log('start_time:', job.start_time);
+                console.log('end_time:', job.end_time);
+
                 if (
                     field === 'status' &&
                     (value === 'Assigned' || value === 'Assigned/Fix') &&
