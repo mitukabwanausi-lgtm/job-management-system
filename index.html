@@ -2026,7 +2026,6 @@
                 if (
                     field === 'status' &&
                     (value === 'Assigned' || value === 'Assigned/Fix') &&
-                    job.contact_method === 'Client Form' &&
                     job.client_email &&
                     !job.booking_confirmation_sent
                 ) {
@@ -2445,26 +2444,52 @@
                     const {error} = await supabaseClient.from('jobs').update(jobData).eq('id', jobId);
                     if (error) throw error;
 
+                    // Send booking confirmation if being assigned for the first time
+                    if (
+                        (jobData.status === 'Assigned' || jobData.status === 'Assigned/Fix') &&
+                        jobData.client_email &&
+                        job && !job.booking_confirmation_sent
+                    ) {
+                        try {
+                            const confirmedJob = { ...job, ...jobData, id: jobId };
+                            await fetch('https://ssxcjsdoxtgddnkugntl.supabase.co/functions/v1/send-booking-confirmation', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeGNqc2RveHRnZGRua3VnbnRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDEwODgsImV4cCI6MjA3NzMxNzA4OH0.C-lkPRJtFYa7YAgPavXRIGvV1LPkCXOJQYoVrZ4nCMw'
+                                },
+                                body: JSON.stringify({ job: confirmedJob })
+                            });
+                            await supabaseClient
+                                .from('jobs')
+                                .update({ booking_confirmation_sent: true })
+                                .eq('id', jobId);
+                            job.booking_confirmation_sent = true;
+                        } catch (emailError) {
+                            console.error('Booking confirmation email failed:', emailError);
+                        }
+                    }
+
                     alert('Job updated successfully!');
                     closeEditModal();
                     await loadJobs();
                     renderApp();
                 }
             } catch (error) {
-    console.error('Error saving job:', error);
-    console.error('Full error:', JSON.stringify(error, null, 2));
-    console.error('Error details:', error.details);
-    console.error('Error hint:', error.hint);
-    console.error('Error code:', error.code);
-    
-    let errorMsg = 'Failed to save job: ' + (error.message || 'Unknown error');
-    if (error.details) errorMsg += '\n\nDetails: ' + error.details;
-    if (error.hint) errorMsg += '\n\nHint: ' + error.hint;
-    
-    alert(errorMsg);
-    submitButton.disabled = false;
-    submitButton.innerHTML = originalButtonText;
-}
+            console.error('Error saving job:', error);
+            console.error('Full error:', JSON.stringify(error, null, 2));
+            console.error('Error details:', error.details);
+            console.error('Error hint:', error.hint);
+            console.error('Error code:', error.code);
+            
+            let errorMsg = 'Failed to save job: ' + (error.message || 'Unknown error');
+            if (error.details) errorMsg += '\n\nDetails: ' + error.details;
+            if (error.hint) errorMsg += '\n\nHint: ' + error.hint;
+            
+            alert(errorMsg);
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+        }
         }
 
         function generateTimeOptions(selectedTime) {
