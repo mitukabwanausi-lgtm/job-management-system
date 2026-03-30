@@ -2407,7 +2407,16 @@
                     const {error} = await supabaseClient.from('jobs').update(jobData).eq('id', jobId);
                     if (error) throw error;
 
-                    // Send booking confirmation for client form jobs being assigned for first time
+                   // Send booking confirmation for client form jobs being assigned for first time
+                    console.log('Checking booking confirmation conditions:');
+                    console.log('Status:', jobData.status);
+                    console.log('Contact method:', job.contact_method);
+                    console.log('Client email:', job.client_email);
+                    console.log('Confirmation sent:', job.booking_confirmation_sent);
+                    console.log('Date:', jobData.date);
+                    console.log('Start time:', jobData.start_time);
+                    console.log('End time:', jobData.end_time);
+
                     if (
                         (jobData.status === 'Assigned' || jobData.status === 'Assigned/Fix') &&
                         job.contact_method === 'Client Form' &&
