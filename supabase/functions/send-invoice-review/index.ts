@@ -84,10 +84,7 @@ serve(async (req) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Invoice & Review Request - Scratch Vanish</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
+ <style>
     body, table, td, a {
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
@@ -97,7 +94,7 @@ serve(async (req) => {
       padding: 0;
       width: 100% !important;
       background-color: #f0f2f5;
-      font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     .email-container {
       max-width: 600px;
@@ -163,25 +160,33 @@ serve(async (req) => {
 
                               <!-- Google Review -->
                               <div style="background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                  <div style="width: 40px; height: 40px; background: #ffffff; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; border: 1px solid #e2e8f0; font-weight: 800; color: #4285f4; flex-shrink: 0;">G</div>
-                                  <div>
-                                    <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0;">Google Review</p>
-                                    <p style="font-size: 12px; color: #64748b; margin: 0;">Helps new customers find us on Google</p>
-                                  </div>
-                                </div>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
+                                  <tr>
+                                    <td style="width: 48px; vertical-align: middle; padding-right: 12px;">
+                                      <div style="width: 40px; height: 40px; background: #ffffff; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; border: 1px solid #e2e8f0; font-weight: 800; color: #4285f4;">G</div>
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                      <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Google Review</p>
+                                      <p style="font-size: 12px; color: #64748b; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Helps new customers find us on Google</p>
+                                    </td>
+                                  </tr>
+                                </table>
                                 <a href="${googleLink}" style="display: block; background-color: #283891; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 12px; border-radius: 8px; text-align: center;">Leave a Google Review</a>
                               </div>
 
                               <!-- Facebook Review -->
                               <div style="background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                  <div style="width: 40px; height: 40px; background: #1877f2; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; color: #ffffff; font-weight: 800; flex-shrink: 0;">f</div>
-                                  <div>
-                                    <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0;">Facebook Review</p>
-                                    <p style="font-size: 12px; color: #64748b; margin: 0;">Share your experience on our Facebook page</p>
-                                  </div>
-                                </div>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
+                                  <tr>
+                                    <td style="width: 48px; vertical-align: middle; padding-right: 12px;">
+                                      <div style="width: 40px; height: 40px; background: #1877f2; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; color: #ffffff; font-weight: 800;">f</div>
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                      <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Facebook Review</p>
+                                      <p style="font-size: 12px; color: #64748b; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">Share your experience on our Facebook page</p>
+                                    </td>
+                                  </tr>
+                                </table>
                                 <a href="${FACEBOOK_REVIEW}" style="display: block; background-color: #1877f2; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 12px; border-radius: 8px; text-align: center;">Leave a Facebook Review</a>
                               </div>
                             </div>
