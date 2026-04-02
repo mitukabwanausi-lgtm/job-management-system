@@ -258,7 +258,7 @@ serve(async (req) => {
             personalizations: [
                 {
                     to: [{ email: job.client_email, name: job.client_name }],
-                    subject: `Your Invoice & How Did We Do? – Scratch Vanish`,
+                    subject: includeReview ? `Your Invoice & Review Request – Scratch Vanish` : `Your Invoice – Scratch Vanish`,
                 },
             ],
             from: { email: FROM_EMAIL, name: FROM_NAME },
