@@ -162,36 +162,28 @@ serve(async (req) => {
                               </p>
 
                               <!-- Google Review -->
-                              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
-                                <tr>
-                                  <td style="vertical-align: middle; width: 44px; padding-right: 14px;">
-                                    <div style="width: 40px; height: 40px; background: #ffffff; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; border: 1px solid #e2e8f0; font-weight: 800; color: #4285f4;">G</div>
-                                  </td>
-                                  <td style="vertical-align: middle;">
+                              <div style="background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                  <div style="width: 40px; height: 40px; background: #ffffff; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; border: 1px solid #e2e8f0; font-weight: 800; color: #4285f4; flex-shrink: 0;">G</div>
+                                  <div>
                                     <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0;">Google Review</p>
                                     <p style="font-size: 12px; color: #64748b; margin: 0;">Helps new customers find us on Google</p>
-                                  </td>
-                                  <td style="vertical-align: middle; text-align: right;">
-                                    <a href="${googleLink}" style="display: inline-block; background-color: #283891; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 6px;">Leave a review</a>
-                                  </td>
-                                </tr>
-                              </table>
+                                  </div>
+                                </div>
+                                <a href="${googleLink}" style="display: block; background-color: #283891; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 12px; border-radius: 8px; text-align: center;">Leave a Google Review</a>
+                              </div>
 
                               <!-- Facebook Review -->
-                              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                  <td style="vertical-align: middle; width: 44px; padding-right: 14px;">
-                                    <div style="width: 40px; height: 40px; background: #1877f2; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; color: #ffffff; font-weight: 800;">f</div>
-                                  </td>
-                                  <td style="vertical-align: middle;">
+                              <div style="background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                  <div style="width: 40px; height: 40px; background: #1877f2; border-radius: 8px; text-align: center; line-height: 40px; font-size: 20px; color: #ffffff; font-weight: 800; flex-shrink: 0;">f</div>
+                                  <div>
                                     <p style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 2px 0;">Facebook Review</p>
                                     <p style="font-size: 12px; color: #64748b; margin: 0;">Share your experience on our Facebook page</p>
-                                  </td>
-                                  <td style="vertical-align: middle; text-align: right;">
-                                    <a href="${FACEBOOK_REVIEW}" style="display: inline-block; background-color: #1877f2; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 6px;">Leave a review</a>
-                                  </td>
-                                </tr>
-                              </table>
+                                  </div>
+                                </div>
+                                <a href="${FACEBOOK_REVIEW}" style="display: block; background-color: #1877f2; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 12px; border-radius: 8px; text-align: center;">Leave a Facebook Review</a>
+                              </div>
                             </div>
               ` : ''}
 
